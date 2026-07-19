@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+gem build chronos-ruby.gemspec

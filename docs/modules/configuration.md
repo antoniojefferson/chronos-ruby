@@ -1,0 +1,9 @@
+# Configuration module
+
+Configuration separates mutable setup from immutable runtime state. `Chronos::Configuration` owns defaults and validation; `Snapshot` is shared with runtime components.
+
+This module is separate from capture because configuration errors should be found before any event enters the pipeline. It can be extended by adding a validated attribute and immutable snapshot field.
+
+Risks include accidentally logging credentials and changing settings while events run. The snapshot prevents mutation, while logger and transport code never interpolate `project_key`.
+
+Tests in `spec/unit/configuration_spec.rb` verify required fields, HTTPS defaults, immutable containers, disabled operation, and bounded numeric settings.

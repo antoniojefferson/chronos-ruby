@@ -1,4 +1,6 @@
 /.bundle/
+/Gemfile.lock
+/*.gem
 /.yardoc
 /_yardoc/
 /coverage/
@@ -17,7 +19,4 @@ gemfiles/*.lock
 .rvmrc
 .ruby-version
 .ruby-gemset
-Gemfile.lock
 *.log
-*.md
-!README.md

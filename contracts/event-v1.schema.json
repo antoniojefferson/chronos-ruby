@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://chronos.example/schemas/event-v1.schema.json",
+  "title": "Chronos event envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "sent_at",
+    "project_key",
+    "environment",
+    "service",
+    "runtime",
+    "context",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "event_id": {"type": "string", "minLength": 1},
+    "event_type": {"enum": ["exception"]},
+    "occurred_at": {"type": "string"},
+    "sent_at": {"type": "string"},
+    "project_key": {"type": "string", "minLength": 1},
+    "environment": {"type": "string"},
+    "service": {
+      "type": "object",
+      "required": ["name", "version", "instance_id"],
+      "properties": {
+        "name": {"type": ["string", "null"]},
+        "version": {"type": ["string", "null"]},
+        "instance_id": {"type": ["string", "null"]}
+      }
+    },
+    "runtime": {"type": "object"},
+    "context": {"type": "object"},
+    "payload": {
+      "type": "object",
+      "required": ["exception", "severity"],
+      "properties": {
+        "exception": {
+          "type": "object",
+          "required": ["class", "message", "backtrace", "causes"]
+        },
+        "severity": {"type": "string"}
+      }
+    }
+  }
+}
