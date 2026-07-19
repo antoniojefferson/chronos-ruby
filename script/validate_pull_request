@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+body = ENV["PR_BODY"].to_s
+required_sections = ["Description", "Added features"]
+errors = []
+
+required_sections.each do |section|
+  match = body.match(/^## #{Regexp.escape(section)}\s*$\n(.*?)(?=^## |\z)/m)
+  content = match && match[1]
+  content = content.to_s.gsub(/<!--.*?-->/m, "").strip
+  content = content.gsub(/^[-*]\s*$/, "").strip
+
+  if content.length < 10
+    errors << "Section '#{section}' is required and must contain a meaningful explanation."
+  end
+end
+
+unless errors.empty?
+  warn errors.join("\n")
+  exit 1
+end
+
+puts "Pull request description is valid"
