@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+require "json"
+
+root = File.expand_path("..", __dir__)
+required_documents = %w(
+  README.md
+  CHANGELOG.md
+  CONTRIBUTING.md
+  SECURITY.md
+  docs/architecture.md
+  docs/compatibility.md
+  docs/configuration.md
+  docs/data-collected.md
+  docs/privacy-lgpd.md
+  docs/performance.md
+  docs/troubleshooting.md
+  docs/modules/configuration.md
+  docs/modules/notice-pipeline.md
+  docs/modules/transport.md
+  docs/modules/async-queue.md
+)
+
+missing = required_documents.reject { |path| File.file?(File.join(root, path)) }
+abort "Missing documentation: #{missing.join(', ')}" unless missing.empty?
+
+Dir[File.join(root, "lib/**/*.rb")].each do |path|
+  lines = File.readlines(path)
+  lines.each_with_index do |line, index|
+    next unless line =~ /^\s*class\s+[A-Z]/
+
+    comments = lines[[index - 16, 0].max...index].join
+    abort "Undocumented public class at #{path}:#{index + 1}" unless comments.include?("@responsibility")
+  end
+end
+
+schema_path = File.join(root, "contracts/event-v1.schema.json")
+schema = JSON.parse(File.read(schema_path))
+abort "Contract schema must be version 1.0" unless schema["properties"]["schema_version"]["const"] == "1.0"
+
+readme = File.read(File.join(root, "README.md"))
+abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\]/
+
+puts "Documentation verification passed"

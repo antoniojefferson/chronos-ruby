@@ -1,5 +1,7 @@
 require "bundler/setup"
-require "chronos/ruby"
+require "chronos"
+
+Dir[File.expand_path("support/**/*.rb", __dir__)].sort.each { |file| require file }
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -10,5 +12,9 @@ RSpec.configure do |config|
 
   config.expect_with :rspec do |c|
     c.syntax = :expect
+  end
+
+  config.after do
+    Chronos.close(0.2)
   end
 end

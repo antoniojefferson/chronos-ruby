@@ -1,0 +1,24 @@
+name: Security
+
+on:
+  pull_request:
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "2.6"
+      - run: gem install bundler -v 1.17.3
+      - run: gem install bundler-audit -v 0.9.1
+      - run: bundle _1.17.3_ install
+      - run: bundle _1.17.3_ audit check --update

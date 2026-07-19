@@ -1,0 +1,34 @@
+name: Legacy CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ruby:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - ruby:2.2.10
+          - ruby:2.3.8
+          - ruby:2.4.10
+          - ruby:2.5.9
+          - ruby:2.6.10
+    name: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run legacy suite
+        run: |
+          docker run --rm \
+            --volume "$PWD:/app" \
+            --workdir /app \
+            "${{ matrix.image }}" \
+            sh -lc 'gem install bundler -v 1.17.3 && bundle _1.17.3_ install && bundle _1.17.3_ exec rake'

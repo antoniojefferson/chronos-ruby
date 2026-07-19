@@ -1,3 +1,1 @@
-module Chronos
-  VERSION = "0.0.1"
-end
+require "chronos/version"
