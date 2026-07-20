@@ -1,16 +1,18 @@
 # Chronos Ruby
 
-Chronos Ruby is the framework-independent client for sending Ruby application errors to Chronos. Version 0.3 adds bounded resilience to the privacy-focused legacy foundation: manual exceptions are sanitized before queueing, retried under a finite policy, retained in a fixed-size memory backlog during outages, and controlled by a restricted remote policy.
+Chronos Ruby is the framework-independent client for sending Ruby application errors to Chronos. Version 0.4 adds automatic Rack exception capture, isolated request context, and bounded breadcrumbs to the privacy and resilience foundations from earlier releases.
 
 ## What the gem collects
 
-For each exception, version 0.3 can collect:
+For each exception, version 0.4 can collect:
 
 - exception class, message, structured backtrace, and chained causes;
 - timestamp, severity, tags, and an optional fingerprint;
 - application-supplied context, parameters, session, and user fields;
 - Ruby version, engine, platform, process ID, opaque thread ID, and hostname;
 - application version, environment, and service name.
+- Rack method, normalized route, status, duration, request ID, host, query-free path, optional user agent, controller/action, response size, trace ID, and already-parsed parameters when the middleware is used;
+- bounded breadcrumbs explicitly supplied by the application or integration.
 
 See [Data collected](docs/data-collected.md) for the complete field table.
 
@@ -20,7 +22,7 @@ Chronos Ruby does not inspect environment variables, request bodies, cookies, HT
 
 ## Supported Ruby and Rails versions
 
-Version 0.x targets Ruby 2.2.10 through Ruby 2.6. Version 0.3 is independent of Rails and does not yet declare support for any Rails integration. All supported combinations must pass dedicated CI before being listed as supported.
+Version 0.x targets Ruby 2.2.10 through Ruby 2.6. Version 0.4 implements the Rack protocol but does not yet declare Rails support. All supported combinations must pass dedicated CI before being listed as supported.
 
 See [Compatibility](docs/compatibility.md).
 
@@ -29,7 +31,7 @@ See [Compatibility](docs/compatibility.md).
 The current public build is a pre-release. Add its exact version to the application's `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "0.3.0.pre.1"
+gem "chronos-ruby", "0.4.0.pre.1"
 ```
 
 Install with a Bundler version compatible with the application. For the oldest supported runtime:
@@ -47,7 +49,7 @@ gem install chronos-ruby --pre
 
 ## Rails installation
 
-Rails automatic integration is not part of version 0.3. A Rails application may use the plain Ruby API, but this does not constitute declared Rails support. Rack and Rails adapters are planned for later legacy releases.
+Rails automatic installation is not part of version 0.4. A Rails application may install the Rack middleware manually, but this does not constitute declared Rails support. Railtie and generator support are planned for version 0.5.
 
 ## Minimum configuration
 
@@ -70,7 +72,14 @@ HTTPS verification is enabled by default. HTTP requires explicitly setting `ssl_
 
 ## Automatic capture
 
-Automatic exception capture is not implemented in version 0.3. Applications must call `Chronos.notify` or `Chronos.notify_sync`. Rack, Rails, and worker hooks will be introduced only after their compatibility suites exist.
+Rack applications can capture unhandled exceptions automatically and preserve the application error semantics:
+
+```ruby
+use Chronos::Integrations::Rack::Middleware,
+    :include_user_agent => false
+```
+
+The middleware notifies asynchronously and re-raises the same exception. It never reads the request body, raw query string, cookies, authorization headers, or response body. See [Rack integration and context](docs/modules/rack-context.md).
 
 ## Manual capture
 
@@ -101,15 +110,25 @@ User data is opt-in and must contain only values your application is allowed to 
 Chronos.notify(error, :user => {"id" => "customer-42", "role" => "operator"})
 ```
 
-Version 0.3 sanitizes this context before delivery and before it can enter retry storage. Data minimization remains the application's responsibility.
+Version 0.4 sanitizes this context before delivery and before it can enter retry storage. Data minimization remains the application's responsibility.
 
 ## Breadcrumbs
 
-Breadcrumbs are not implemented in version 0.3.
+Breadcrumbs use a fixed circular buffer scoped to the current execution:
+
+```ruby
+Chronos.add_breadcrumb(
+  :category => "custom",
+  :message => "payment started",
+  :metadata => {"provider" => "example"}
+)
+```
+
+No log, SQL, HTTP, cache, job, request body, or response body payload is collected automatically. Unknown categories become `custom`, and metadata is bounded and sanitized before queueing.
 
 ## Filters and LGPD
 
-Version 0.3 recursively redacts sensitive keys and detects Bearer tokens, JWTs, e-mail addresses, CPF, CNPJ, and valid payment-card candidates in free text. IPv4 addresses are anonymized by default. Applications can add blocklist matchers, hash selected identifiers, or install custom filters:
+Version 0.4 recursively redacts sensitive keys and detects Bearer tokens, JWTs, e-mail addresses, CPF, CNPJ, and valid payment-card candidates in free text. IPv4 addresses are anonymized by default. Applications can add blocklist matchers, hash selected identifiers, or install custom filters:
 
 ```ruby
 Chronos.configure do |config|
@@ -133,19 +152,19 @@ Chronos.configure do |config|
 end
 ```
 
-Local exception-specific ignore callbacks are not available in version 0.3. The server may provide a bounded list of exact fingerprints to ignore; it cannot provide regular expressions or executable rules.
+Local exception-specific ignore callbacks are not available in version 0.4. The server may provide a bounded list of exact fingerprints to ignore; it cannot provide regular expressions or executable rules.
 
 ## Performance monitoring
 
-Request, SQL, cache, job, and external HTTP monitoring are not implemented in version 0.3. The local capture pipeline is bounded and HTTP delivery runs outside the caller thread when `Chronos.notify` is used.
+Request timing events, SQL, cache, job, and external HTTP monitoring are not implemented in version 0.4. Rack exception context is bounded, and HTTP delivery runs outside the caller thread when `Chronos.notify` is used.
 
 ## Sidekiq and Active Job
 
-Sidekiq and Active Job integrations are not implemented in version 0.3. Calling the manual API from a job is possible, but automatic capture and deduplication are not yet guaranteed.
+Sidekiq and Active Job integrations are not implemented in version 0.4. Calling the manual API from a job is possible, but automatic capture and deduplication are not yet guaranteed.
 
 ## Deploy tracking
 
-Deploy notifications are not implemented in version 0.3. `app_version` may be included in exception events for release correlation.
+Deploy notifications are not implemented in version 0.4. `app_version` may be included in exception events for release correlation.
 
 ## Asynchronous queue
 
@@ -168,7 +187,7 @@ Use `Chronos.flush(timeout)` to wait for accepted events and `Chronos.close(time
 
 ## Retry and backlog
 
-Version 0.3 retries network errors, HTTP `408`, `429`, and `5xx` responses with exponential backoff, bounded jitter, and a finite attempt count. Other `4xx` responses are permanent and are not retried. A circuit breaker pauses requests after repeated failures, preventing retry storms.
+The resilience layer introduced in version 0.3 retries network errors, HTTP `408`, `429`, and `5xx` responses with exponential backoff, bounded jitter, and a finite attempt count. Other `4xx` responses are permanent and are not retried. A circuit breaker pauses requests after repeated failures, preventing retry storms.
 
 After retries are exhausted, the already sanitized `SerializedEvent` may enter a fixed-capacity memory backlog. The backlog drops new items when full, is lost when the process exits, and never writes to disk. A later successful half-open probe drains backlog items as new events arrive.
 
@@ -182,7 +201,8 @@ The code follows hexagonal boundaries:
 - `Chronos::Application` coordinates capture;
 - `Chronos::Application::DeliveryPipeline` owns bounded retry and remote policy;
 - `Chronos::Ports` defines delivery behavior;
-- `Chronos::Adapters` implements Net::HTTP delivery;
+- `Chronos::Adapters` implements Net::HTTP delivery and thread-local context;
+- `Chronos::Integrations::Rack` implements optional automatic Rack capture;
 - `Chronos::Internal` owns bounded queueing, workers, and defensive logging.
 
 The core has no dependency on Rails, Rack, Sidekiq, or ActiveSupport. See [Architecture](docs/architecture.md).
@@ -210,6 +230,9 @@ Chronos.configure do |config|
   config.circuit_failure_threshold = 5
   config.circuit_reset_timeout = 30.0
   config.remote_configuration = true
+  config.context_store = :thread_local
+  config.breadcrumb_capacity = 20
+  config.breadcrumb_max_bytes = 2048
 end
 ```
 
@@ -221,7 +244,7 @@ Configuration errors are raised during `Chronos.configure`. Capture and delivery
 
 ## Benchmark
 
-Run the version 0.3 benchmarks with:
+Run the version 0.4 benchmarks with:
 
 ```bash
 bundle _1.17.3_ exec ruby benchmarks/capture_exception.rb
@@ -229,13 +252,14 @@ bundle _1.17.3_ exec ruby benchmarks/serialization.rb
 bundle _1.17.3_ exec ruby benchmarks/filtering.rb
 bundle _1.17.3_ exec ruby benchmarks/queue.rb
 bundle _1.17.3_ exec ruby benchmarks/retry_backlog.rb
+bundle _1.17.3_ exec ruby benchmarks/request_overhead.rb
 ```
 
 Results depend on runtime, hardware, and payload. No performance comparison is claimed until repeatable measurements are published.
 
 ## Migration from Airbrake
 
-An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.3 does not claim API compatibility or automatic replacement.
+An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.4 does not claim API compatibility or automatic replacement.
 
 ## Local development
 

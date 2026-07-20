@@ -24,6 +24,7 @@ module Chronos
       token access_token refresh_token private_key client_secret cookie set-cookie
       session credit_card card_number cvv cpf cnpj
     ).freeze
+    CONTEXT_STORE_METHODS = [:get, :set, :clear, :with_context].freeze
 
     ATTRIBUTES = [
       :project_id, :project_key, :host, :environment, :app_version,
@@ -35,7 +36,8 @@ module Chronos
       :retry_base_interval, :retry_max_interval, :retry_jitter,
       :backlog_size, :circuit_failure_threshold, :circuit_reset_timeout,
       :remote_configuration, :remote_config_max_bytes, :sampling_rate,
-      :enabled_event_types, :max_remote_send_interval
+      :enabled_event_types, :max_remote_send_interval, :context_store,
+      :breadcrumb_capacity, :breadcrumb_max_bytes
     ].freeze
 
     attr_accessor(*ATTRIBUTES)
@@ -57,7 +59,7 @@ module Chronos
       validation_errors.empty?
     end
 
-    def validation_errors
+    def validation_errors # rubocop:disable Metrics/AbcSize
       errors = []
       if enabled
         errors << "project_id is required" if blank?(project_id)
@@ -71,6 +73,7 @@ module Chronos
       errors << "max_payload_size must be a positive integer" unless positive_integer?(max_payload_size)
       errors.concat(resilience_errors)
       errors.concat(privacy_errors)
+      errors.concat(context_errors)
       errors
     end
 
@@ -97,6 +100,9 @@ module Chronos
       @user_agent = "chronos-ruby/#{Chronos::VERSION}"
       @max_payload_size = 1_048_576
       @gzip = false
+      @context_store = :thread_local
+      @breadcrumb_capacity = 20
+      @breadcrumb_max_bytes = 2048
     end
 
     def initialize_privacy_defaults
@@ -184,6 +190,20 @@ module Chronos
       errors.concat(matcher_errors("hash_keys", hash_keys))
       errors.concat(filter_errors)
       errors.concat(anonymization_errors)
+      errors
+    end
+
+    def context_errors
+      errors = []
+      unless context_store == :thread_local || CONTEXT_STORE_METHODS.all? do |method_name|
+        context_store.respond_to?(method_name)
+      end
+        errors << "context_store must be :thread_local or implement get, set, clear, and with_context"
+      end
+      errors << "breadcrumb_capacity must be a positive integer" unless positive_integer?(breadcrumb_capacity)
+      unless breadcrumb_max_bytes.is_a?(Integer) && breadcrumb_max_bytes >= 128
+        errors << "breadcrumb_max_bytes must be an integer greater than or equal to 128"
+      end
       errors
     end
 
@@ -278,7 +298,7 @@ module Chronos
       private
 
       def deep_freeze(value)
-        return value if value.respond_to?(:call)
+        return value if value.respond_to?(:call) || context_store?(value)
 
         case value
         when Hash
@@ -290,6 +310,12 @@ module Chronos
           value.each { |child| deep_freeze(child) }
         end
         value.freeze
+      end
+
+      def context_store?(value)
+        CONTEXT_STORE_METHODS.all? { |method_name| value.respond_to?(method_name) }
+      rescue StandardError
+        false
       end
     end
   end
