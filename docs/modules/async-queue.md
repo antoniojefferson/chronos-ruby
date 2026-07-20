@@ -10,8 +10,12 @@ stateDiagram-v2
   Accepted --> Queued
   Queued --> Sending
   Sending --> Sent
-  Sending --> Dropped: delivery failure in 0.1
+  Sending --> Retried: retryable failure
+  Retried --> Sending: policy permits
+  Retried --> Backlog: attempts exhausted
+  Backlog --> Sending: later recovery probe
+  Sending --> Rejected: permanent 4xx
   Accepted --> Dropped: queue full
 ```
 
-Version 0.2 has no disk persistence and no retry. Only sanitized serialized events enter the queue. Queue statistics expose current size, capacity, accepted events, and dropped events. Tests cover full queues, waiter wakeup, lazy startup, contained failures, timed shutdown, double close, flush, and fork behavior.
+Version 0.3 adds retry and a separate fixed-size memory backlog, but no disk persistence. Only sanitized serialized events enter either structure. Queue statistics expose current size, capacity, accepted events, and dropped events. Delivery diagnostics additionally expose state counters, backlog statistics, and circuit state. Tests cover full queues, waiter wakeup, lazy startup, contained failures, timed shutdown, double close, flush, fork behavior, and prolonged endpoint failure.

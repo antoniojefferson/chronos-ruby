@@ -10,7 +10,7 @@ The agent may be unconfigured, disabled, ignored in the current environment, una
 
 ## `Chronos.notify_sync` returns false
 
-Check DNS, TLS certificates, credentials, HTTP status, proxy configuration, and timeout values. Version 0.2 does not retry.
+Check DNS, TLS certificates, credentials, HTTP status, proxy configuration, and timeout values. Version 0.3 retries only network errors, HTTP `408`, `429`, and `5xx` responses. Inspect `agent.diagnostics` when constructing an agent directly to see retry state, backlog usage, and the circuit state.
 
 ## Events disappear during shutdown
 

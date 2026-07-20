@@ -29,6 +29,18 @@
 | `hash_keys` | Optional | `[]` | Scalar identifier keys replaced by scoped SHA-256 values |
 | `filters` | Optional | `[]` | Callable application-specific privacy filters |
 | `anonymize_ip` | Recommended | `true` | Replaces the final octet of supplied IPv4 addresses |
+| `max_retries` | Optional | `3` | Maximum retry attempts after the first delivery failure |
+| `retry_base_interval` | Optional | `0.5` | Initial exponential-backoff delay in seconds |
+| `retry_max_interval` | Optional | `30.0` | Maximum local or `Retry-After` delay in seconds |
+| `retry_jitter` | Optional | `0.25` | Random positive jitter fraction between `0.0` and `1.0` |
+| `backlog_size` | Optional | `100` | Maximum sanitized events retained in memory after delivery failure; `0` disables retention |
+| `circuit_failure_threshold` | Optional | `5` | Consecutive retryable failures before opening the circuit |
+| `circuit_reset_timeout` | Optional | `30.0` | Seconds before one half-open delivery probe |
+| `remote_configuration` | Optional | `true` | Accepts only the documented bounded remote policy fields |
+| `remote_config_max_bytes` | Optional | `4096` | Maximum remote policy response-header bytes |
+| `sampling_rate` | Optional | `1.0` | Local upper bound for exception sampling |
+| `enabled_event_types` | Optional | `["exception"]` | Local event-type allowlist; only exception exists in version 0.3 |
+| `max_remote_send_interval` | Optional | `60.0` | Local upper bound for remotely requested send spacing |
 
 ```ruby
 Chronos.configure do |config|
@@ -41,9 +53,14 @@ Chronos.configure do |config|
   config.workers = 1
   config.blocklist_keys += [:medical_record, /bank_account/i]
   config.hash_keys += [:customer_id]
+  config.max_retries = 3
+  config.backlog_size = 100
+  config.circuit_failure_threshold = 5
 end
 ```
 
 Privacy matcher collections and filters are copied into the immutable runtime snapshot. Matchers must be String, Symbol, or Regexp values, and every custom filter must respond to `call`.
 
 The gem never reads all environment variables automatically. The host application decides which values to pass. See [Privacy and LGPD](privacy-lgpd.md) before adding application context.
+
+Remote configuration can only reduce collection within local bounds. It cannot increase `max_payload_size` or `sampling_rate`, enable an unsupported or locally disabled event type, change the endpoint, replace credentials, disable TLS verification, or install executable matching rules.
