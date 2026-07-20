@@ -19,12 +19,19 @@ module Chronos
   #   config.host = 'https://chronos.example.com'
   #   snapshot = config.snapshot
   class Configuration
+    DEFAULT_BLOCKLIST_KEYS = %w(
+      password password_confirmation passwd secret api_key apikey authorization
+      token access_token refresh_token private_key client_secret cookie set-cookie
+      session credit_card card_number cvv cpf cnpj
+    ).freeze
+
     ATTRIBUTES = [
       :project_id, :project_key, :host, :environment, :app_version,
       :service_name, :root_directory, :logger, :timeout, :open_timeout,
       :queue_size, :workers, :enabled, :error_notifications,
       :ignored_environments, :proxy, :ssl_verify, :user_agent,
-      :max_payload_size, :gzip
+      :max_payload_size, :gzip, :blocklist_keys, :allowlist_keys,
+      :filters, :hash_keys, :anonymize_ip
     ].freeze
 
     attr_accessor(*ATTRIBUTES)
@@ -50,6 +57,11 @@ module Chronos
       @user_agent = "chronos-ruby/#{Chronos::VERSION}"
       @max_payload_size = 1_048_576
       @gzip = false
+      @blocklist_keys = DEFAULT_BLOCKLIST_KEYS.dup
+      @allowlist_keys = []
+      @filters = []
+      @hash_keys = []
+      @anonymize_ip = true
     end
 
     def snapshot
@@ -75,6 +87,7 @@ module Chronos
       errors << "queue_size must be a positive integer" unless positive_integer?(queue_size)
       errors << "workers must be a positive integer" unless positive_integer?(workers)
       errors << "max_payload_size must be a positive integer" unless positive_integer?(max_payload_size)
+      errors.concat(privacy_errors)
       errors
     end
 
@@ -83,8 +96,53 @@ module Chronos
     def to_hash
       ATTRIBUTES.each_with_object({}) do |attribute, values|
         value = public_send(attribute)
-        value = value.dup if value.is_a?(Array) || value.is_a?(Hash) || value.is_a?(String)
-        values[attribute] = value
+        values[attribute] = deep_copy(value)
+      end
+    end
+
+    def privacy_errors
+      errors = []
+      errors << "blocklist_keys must be an array" unless blocklist_keys.is_a?(Array)
+      errors << "allowlist_keys must be an array" unless allowlist_keys.is_a?(Array)
+      errors << "hash_keys must be an array" unless hash_keys.is_a?(Array)
+      errors.concat(matcher_errors("blocklist_keys", blocklist_keys))
+      errors.concat(matcher_errors("allowlist_keys", allowlist_keys))
+      errors.concat(matcher_errors("hash_keys", hash_keys))
+      errors.concat(filter_errors)
+      errors.concat(anonymization_errors)
+      errors
+    end
+
+    def filter_errors
+      return ["filters must be an array"] unless filters.is_a?(Array)
+      return [] if filters.all? { |filter| filter.respond_to?(:call) }
+
+      ["filters must contain only callable objects"]
+    end
+
+    def anonymization_errors
+      return [] if anonymize_ip == true || anonymize_ip == false
+
+      ["anonymize_ip must be true or false"]
+    end
+
+    def matcher_errors(name, values)
+      return [] unless values.is_a?(Array)
+      return [] if values.all? { |value| value.is_a?(String) || value.is_a?(Symbol) || value.is_a?(Regexp) }
+
+      ["#{name} must contain only String, Symbol, or Regexp values"]
+    end
+
+    def deep_copy(value)
+      case value
+      when Hash
+        value.each_with_object({}) { |(key, child), result| result[deep_copy(key)] = deep_copy(child) }
+      when Array
+        value.map { |child| deep_copy(child) }
+      when String, Regexp
+        value.dup
+      else
+        value
       end
     end
 
@@ -125,7 +183,7 @@ module Chronos
       def initialize(values)
         ATTRIBUTES.each do |attribute|
           value = values[attribute]
-          value.freeze if value.is_a?(Array) || value.is_a?(Hash) || value.is_a?(String)
+          deep_freeze(value)
           instance_variable_set("@#{attribute}", value)
         end
         freeze
@@ -133,6 +191,23 @@ module Chronos
 
       def enabled_for_environment?
         enabled && !ignored_environments.map(&:to_s).include?(environment.to_s)
+      end
+
+      private
+
+      def deep_freeze(value)
+        return value if value.respond_to?(:call)
+
+        case value
+        when Hash
+          value.each do |key, child|
+            deep_freeze(key)
+            deep_freeze(child)
+          end
+        when Array
+          value.each { |child| deep_freeze(child) }
+        end
+        value.freeze
       end
     end
   end

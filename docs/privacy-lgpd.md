@@ -1,16 +1,84 @@
 # Privacy and LGPD
 
-Version 0.1 enforces structural limits but does not yet implement the recursive sensitive-data sanitizer planned for version 0.2.
+Version 0.2 sanitizes every exception event before JSON serialization, queueing, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
 
-Applications must not pass passwords, tokens, authorization headers, cookies, session secrets, private keys, card data, CPF, CNPJ, health data, or other unnecessary personal information.
+## Default policy
 
-Recommended practice:
+| Data | Default behavior |
+|---|---|
+| Keys such as `password`, `secret`, `token`, `authorization`, `cookie`, `session`, `card_number`, `cpf`, and `cnpj` | Replaced with `[FILTERED]` |
+| Bearer tokens and JWT-like strings | Replaced in free text |
+| E-mail addresses | Replaced with `[FILTERED_EMAIL]` |
+| CPF and CNPJ candidates with valid check digits | Replaced with `[FILTERED_DOCUMENT]` |
+| Payment-card candidates that pass the Luhn check | Replaced with `[FILTERED_CARD]` |
+| IPv4 addresses | Last octet replaced with `0` |
+| Unknown Ruby objects | Represented by class name without calling application serialization |
+| Request/response bodies, cookies, HTTP headers, SQL binds, environment variables | Never collected automatically in version 0.2 |
 
-1. pass opaque internal identifiers instead of names or e-mail addresses;
-2. allowlist context fields in application code;
-3. inspect payloads against a local fake server before production;
-4. keep TLS verification enabled;
-5. document the lawful purpose and retention policy in the SaaS;
-6. disable the agent in environments where collection is not authorized.
+Blocklist matching accepts `String`, `Symbol`, and `Regexp`. String and Symbol matching is case-insensitive after punctuation normalization and also protects namespaced keys such as `user_password`.
 
-Version 0.1 limits object depth, hash keys, array items, string bytes, backtrace frames, queue capacity, and total payload size. Unknown Ruby objects are represented by class name without calling their `to_json` implementation.
+## Configuration
+
+```ruby
+Chronos.configure do |config|
+  # required connection settings omitted
+  config.blocklist_keys += [:medical_record, /bank_account/i]
+  config.allowlist_keys += [:authorization_state]
+  config.hash_keys += [:customer_id]
+  config.anonymize_ip = true
+
+  config.filters << proc do |key, value|
+    key.to_s == "internal_reference" ? "[REMOVED]" : value
+  end
+end
+```
+
+An allowlisted key bypasses only key-name redaction. Content detection remains active, so an allowlisted field containing a Bearer token or e-mail address is still filtered. Identifier hashing uses SHA-256 scoped by the public project identifier. It is irreversible output, but low-entropy identifiers may still be guessable and should not be treated as anonymized data.
+
+Custom filters receive the key and already sanitized value. If a filter raises, that field becomes `[FILTERED]`; the error does not escape into the host application.
+
+## Health applications
+
+Do not send diagnoses, exam results, prescriptions, patient names, or free-form clinical notes. Use a scoped opaque identifier only when it is necessary and authorized:
+
+```ruby
+config.blocklist_keys += [:patient_name, :diagnosis, :clinical_notes]
+config.hash_keys += [:patient_id]
+
+Chronos.notify(error, :context => {
+  "operation" => "schedule_exam",
+  "patient_id" => "internal-opaque-id"
+})
+```
+
+## Financial applications
+
+Do not send cardholder names, full account identifiers, CVV, authentication tokens, or transaction payloads. Prefer categorical operational context:
+
+```ruby
+config.blocklist_keys += [:account_number, :pix_key, :bank_payload]
+config.hash_keys += [:customer_id]
+
+Chronos.notify(error, :context => {
+  "operation" => "authorize_payment",
+  "provider" => "example-gateway",
+  "customer_id" => "internal-opaque-id"
+})
+```
+
+## Payload audit procedure
+
+1. Point `host` to a local fake HTTP server controlled by the development team.
+2. Exercise representative exception paths with synthetic sensitive fixtures.
+3. Inspect the final JSON body, including exception messages and causes.
+4. Search for every fixture value in plaintext.
+5. Add missing application keys to `blocklist_keys` and repeat the audit.
+6. Keep the audit fixtures synthetic and run the privacy contract in CI.
+
+Run the included local example with:
+
+```bash
+bundle _1.17.3_ exec ruby examples/plain-ruby/privacy_audit.rb
+```
+
+The output must contain redaction placeholders and must not contain any fixture secret.

@@ -26,30 +26,27 @@ module Chronos
 
     # Converts a Notice into the versioned Chronos JSON envelope.
     #
-    # @responsibility Normalize values to JSON primitives and enforce size limits.
-    # @motivation Prevent arbitrary application objects or invalid encodings from breaking capture.
-    # @limits Version 0.1 applies structural limits, not the advanced privacy rules from 0.2.
-    # @collaborators Notice and SerializedEvent.
+    # @responsibility Sanitize an event, normalize it to JSON primitives, and enforce size limits.
+    # @motivation Ensure sensitive or unsafe application values never reach transport unchanged.
+    # @limits Detection is bounded and does not replace application-specific data governance.
+    # @collaborators Notice, Sanitizer, SafeSerializer, and SerializedEvent.
     # @thread_safety Stateless apart from immutable configuration.
     # @compatibility Uses the JSON standard library available on Ruby 2.2.10.
     # @example
     #   event = serializer.call(notice)
     #   event.body #=> "{...}"
     # @errors Serialization failures are handled by CaptureException.
-    # @performance Linear in payload size with bounded depth and collection sizes.
+    # @performance Linear in payload size with bounded depth, nodes, and collection sizes.
     class PayloadSerializer
-      MAX_DEPTH = 10
-      MAX_KEYS = 100
-      MAX_ITEMS = 100
-      MAX_STRING_BYTES = 8192
-
-      def initialize(config, clock = nil)
+      def initialize(config, clock = nil, options = {})
         @config = config
         @clock = clock || proc { Time.now }
+        @sanitizer = options[:sanitizer] || Sanitizer.new(config)
+        @safe_serializer = options[:safe_serializer] || SafeSerializer.new
       end
 
       def call(notice)
-        envelope = build_envelope(notice)
+        envelope = @safe_serializer.call(@sanitizer.call(build_envelope(notice)))
         body = JSON.generate(envelope)
         body = JSON.generate(compact_envelope(envelope)) if body.bytesize > @config.max_payload_size
         raise Error, "event exceeds max_payload_size" if body.bytesize > @config.max_payload_size
@@ -66,99 +63,50 @@ module Chronos
           "event_type" => "exception",
           "occurred_at" => notice.timestamp,
           "sent_at" => @clock.call.utc.iso8601(6),
-          "project_key" => safe_string(@config.project_id),
-          "environment" => safe_string(notice.environment),
+          "project_key" => @config.project_id,
+          "environment" => notice.environment,
           "service" => {
-            "name" => safe_string(@config.service_name),
-            "version" => safe_string(@config.app_version),
-            "instance_id" => safe_string(notice.host)
+            "name" => @config.service_name,
+            "version" => @config.app_version,
+            "instance_id" => notice.host
           },
-          "runtime" => normalize(notice.runtime, 0),
-          "context" => normalize(notice.context, 0),
+          "runtime" => notice.runtime,
+          "context" => notice.context,
           "payload" => payload(notice)
         }
       end
 
       def payload(notice)
-        normalize({
-                    "exception" => {
-                      "class" => notice.exception_class,
-                      "message" => notice.message,
-                      "backtrace" => notice.backtrace,
-                      "causes" => notice.causes
-                    },
-                    "severity" => notice.severity,
-                    "parameters" => notice.parameters,
-                    "session" => notice.session,
-                    "user" => notice.user,
-                    "versions" => notice.versions,
-                    "host" => notice.host,
-                    "process" => notice.process,
-                    "thread" => notice.thread,
-                    "tags" => notice.tags,
-                    "fingerprint" => notice.fingerprint
-                  }, 0)
+        {
+          "exception" => {
+            "class" => notice.exception_class,
+            "message" => notice.message,
+            "backtrace" => notice.backtrace,
+            "causes" => notice.causes
+          },
+          "severity" => notice.severity,
+          "parameters" => notice.parameters,
+          "session" => notice.session,
+          "user" => notice.user,
+          "versions" => notice.versions,
+          "host" => notice.host,
+          "process" => notice.process,
+          "thread" => notice.thread,
+          "tags" => notice.tags,
+          "fingerprint" => notice.fingerprint
+        }
       end
 
       def compact_envelope(envelope)
         payload = envelope["payload"]
         exception = payload["exception"]
-        exception["message"] = truncate_string(exception["message"], 1024)
+        exception["message"] = @safe_serializer.call(exception["message"], :max_string_bytes => 1024)
         exception["backtrace"] = Array(exception["backtrace"]).first(20)
         payload["parameters"] = {"_truncated" => true}
         payload["session"] = {"_truncated" => true}
         payload["user"] = {"_truncated" => true}
         envelope["context"] = {"_truncated" => true}
         envelope
-      end
-
-      def normalize(value, depth)
-        return "<maximum depth reached>" if depth >= MAX_DEPTH
-
-        case value
-        when nil, true, false, Integer
-          value
-        when Float
-          value.finite? ? value : value.to_s
-        when String, Symbol
-          truncate_string(safe_string(value), MAX_STRING_BYTES)
-        when Array
-          value.first(MAX_ITEMS).map { |child| normalize(child, depth + 1) }
-        when Hash
-          normalize_hash(value, depth)
-        else
-          "<#{safe_class_name(value)}>"
-        end
-      rescue StandardError
-        "<unserializable value>"
-      end
-
-      def normalize_hash(value, depth)
-        result = {}
-        value.to_a.first(MAX_KEYS).each do |key, child|
-          result[truncate_string(safe_string(key), 256)] = normalize(child, depth + 1)
-        end
-        result
-      end
-
-      def safe_string(value)
-        return nil if value.nil?
-
-        value.to_s.encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => "�")
-      rescue StandardError
-        "<unreadable value>"
-      end
-
-      def truncate_string(value, limit)
-        return value if value.nil? || value.bytesize <= limit
-
-        value.byteslice(0, limit).to_s.encode("UTF-8", :invalid => :replace, :undef => :replace, :replace => "�") + "…"
-      end
-
-      def safe_class_name(value)
-        value.class.name.to_s
-      rescue StandardError
-        "Object"
       end
     end
   end

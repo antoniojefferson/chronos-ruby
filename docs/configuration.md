@@ -24,6 +24,11 @@
 | `user_agent` | Optional | Agent version | HTTP user agent |
 | `max_payload_size` | Optional | `1048576` | Maximum serialized payload bytes |
 | `gzip` | Optional | `false` | Compresses request bodies with gzip |
+| `blocklist_keys` | Recommended | Sensitive-key defaults | String, Symbol, or Regexp keys whose values are redacted |
+| `allowlist_keys` | Optional | `[]` | Explicit key-name exceptions; content detection still runs |
+| `hash_keys` | Optional | `[]` | Scalar identifier keys replaced by scoped SHA-256 values |
+| `filters` | Optional | `[]` | Callable application-specific privacy filters |
+| `anonymize_ip` | Recommended | `true` | Replaces the final octet of supplied IPv4 addresses |
 
 ```ruby
 Chronos.configure do |config|
@@ -34,7 +39,11 @@ Chronos.configure do |config|
   config.service_name = "billing"
   config.queue_size = 100
   config.workers = 1
+  config.blocklist_keys += [:medical_record, /bank_account/i]
+  config.hash_keys += [:customer_id]
 end
 ```
 
-The gem never reads all environment variables automatically. The host application decides which values to pass.
+Privacy matcher collections and filters are copied into the immutable runtime snapshot. Matchers must be String, Symbol, or Regexp values, and every custom filter must respond to `call`.
+
+The gem never reads all environment variables automatically. The host application decides which values to pass. See [Privacy and LGPD](privacy-lgpd.md) before adding application context.

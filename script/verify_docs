@@ -1,5 +1,15 @@
 #!/usr/bin/env ruby
+# encoding: UTF-8
+
 require "json"
+
+def read_utf8(path)
+  File.open(path, "r:UTF-8", &:read)
+end
+
+def readlines_utf8(path)
+  File.open(path, "r:UTF-8", &:readlines)
+end
 
 root = File.expand_path("..", __dir__)
 required_documents = %w(
@@ -16,6 +26,8 @@ required_documents = %w(
   docs/troubleshooting.md
   docs/modules/configuration.md
   docs/modules/notice-pipeline.md
+  docs/modules/sanitization.md
+  docs/modules/serialization.md
   docs/modules/transport.md
   docs/modules/async-queue.md
 )
@@ -24,7 +36,7 @@ missing = required_documents.reject { |path| File.file?(File.join(root, path)) }
 abort "Missing documentation: #{missing.join(', ')}" unless missing.empty?
 
 Dir[File.join(root, "lib/**/*.rb")].each do |path|
-  lines = File.readlines(path)
+  lines = readlines_utf8(path)
   lines.each_with_index do |line, index|
     next unless line =~ /^\s*class\s+[A-Z]/
 
@@ -34,10 +46,16 @@ Dir[File.join(root, "lib/**/*.rb")].each do |path|
 end
 
 schema_path = File.join(root, "contracts/event-v1.schema.json")
-schema = JSON.parse(File.read(schema_path))
+schema = JSON.parse(read_utf8(schema_path))
 abort "Contract schema must be version 1.0" unless schema["properties"]["schema_version"]["const"] == "1.0"
 
-readme = File.read(File.join(root, "README.md"))
+readme = read_utf8(File.join(root, "README.md"))
 abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\]/
+abort "README does not document version 0.2 privacy" unless readme.include?("Version 0.2")
+
+privacy = read_utf8(File.join(root, "docs/privacy-lgpd.md"))
+%w(password token cookie CPF CNPJ health financial audit).each do |topic|
+  abort "Privacy documentation is missing #{topic}" unless privacy.downcase.include?(topic.downcase)
+end
 
 puts "Documentation verification passed"

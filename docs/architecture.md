@@ -1,6 +1,6 @@
 # Architecture
 
-Chronos Ruby 0.1 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
+Chronos Ruby 0.2 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
 
 ```mermaid
 flowchart TB
@@ -24,7 +24,7 @@ The `Chronos` module is a thin facade. Rails, Rack, ActiveSupport, Sidekiq, and 
 
 ## Capture flow
 
-An exception becomes an immutable notice, then a bounded JSON envelope. Asynchronous capture inserts the serialized event into a bounded queue. A fixed worker sends it through the transport. Synchronous capture bypasses the queue.
+An exception becomes an immutable notice. `Sanitizer` removes sensitive values before `SafeSerializer` creates a bounded JSON envelope. Asynchronous capture inserts only that sanitized serialized event into the queue. A fixed worker sends it through the transport. Synchronous capture bypasses the queue but uses the same privacy boundary.
 
 ## Failure policy
 

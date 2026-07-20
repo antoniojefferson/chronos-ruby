@@ -22,7 +22,7 @@ module Chronos
           },
           :host => safe_hostname,
           :process => {"pid" => Process.pid},
-          :thread => {"id" => Thread.current.object_id.to_s}
+          :thread => {"id" => "0x#{Thread.current.object_id.to_s(16)}"}
         }
       end
 

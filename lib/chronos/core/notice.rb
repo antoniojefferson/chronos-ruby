@@ -4,7 +4,7 @@ module Chronos
     #
     # @responsibility Carry exception and diagnostic context through the pipeline.
     # @motivation Keep transport details separate from exception normalization.
-    # @limits It does not sanitize, serialize, enqueue, or send itself.
+    # @limits It does not sanitize, serialize, enqueue, or send itself; raw values live only in memory.
     # @collaborators NoticeBuilder and PayloadSerializer.
     # @thread_safety Immutable after construction and safe to share.
     # @compatibility Ruby 2.2.10 through Ruby 2.6; independent of Rails.
