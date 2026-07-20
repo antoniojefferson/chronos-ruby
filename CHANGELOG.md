@@ -11,6 +11,29 @@ All notable changes are documented here. The project follows Semantic Versioning
 - legacy CI now resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector.
 - documentation verification now reads source and Markdown files explicitly as UTF-8 on legacy container locales.
 
+## [0.4.0.pre.1] - 2026-07-20
+
+### Added
+
+- Rack-protocol middleware for automatic exception capture with propagation of the original failure;
+- request context for method, normalized route, status, duration, request ID, optional user agent, host, path, controller/action, approximate response size, user, and sanitized parameters;
+- selectable context-store port with a thread-local legacy adapter and guaranteed scope cleanup;
+- bounded circular breadcrumbs for custom, log, request, query, external HTTP, cache, and job categories;
+- public `Chronos.with_context` and `Chronos.add_breadcrumb` APIs;
+- Rack context contract, concurrency tests, module documentation, ADR, executable example, and request-overhead benchmark.
+
+### Changed
+
+- manual notifications now inherit the current execution context and breadcrumbs;
+- version advanced to `0.4.0.pre.1`.
+
+### Known limitations
+
+- generic route normalization cannot identify every application-specific dynamic segment;
+- thread-local context does not propagate into application-created threads or fibers;
+- deferred exceptions raised only while enumerating a streaming response body are not captured;
+- Rails-specific installation and route discovery remain planned for version 0.5.
+
 ## [0.3.0.pre.1] - 2026-07-20
 
 ### Added

@@ -21,4 +21,21 @@ RSpec.describe Chronos::Agent do
     expect(pool.started?).to eq(false)
     pool.close(0.1)
   end
+
+  it "inherits scoped context and bounded breadcrumbs for manual notifications" do
+    transport = FakeTransport.new
+    agent = described_class.new(snapshot(:breadcrumb_capacity => 1), :transport => transport)
+
+    agent.with_context(:context => {"request_id" => "request-1"}, :user => {"id" => "user-1"}) do
+      agent.add_breadcrumb(:category => "custom", :message => "discarded")
+      agent.add_breadcrumb(:category => "job", :message => "retained")
+      agent.notify_sync(RuntimeError.new("failed"))
+    end
+
+    payload = JSON.parse(transport.events.first.body)
+    expect(payload["context"]["request_id"]).to eq("request-1")
+    expect(payload["context"]["breadcrumbs"].map { |item| item["message"] }).to eq(["retained"])
+    expect(payload["payload"]["user"]).to eq("id" => "user-1")
+    agent.close(1.0)
+  end
 end
