@@ -2,7 +2,7 @@
 
 ## Configuration raises an error
 
-Verify `project_id`, `project_key`, and `host`. HTTPS is required while `ssl_verify` is true. Queue size, worker count, payload size, and timeouts must be positive.
+Verify `project_id`, `project_key`, and `host`. HTTPS is required while `ssl_verify` is true. Queue size, worker count, payload size, breadcrumb capacity, and timeouts must be positive. `breadcrumb_max_bytes` must be at least 128.
 
 ## `Chronos.notify` returns false
 
@@ -10,7 +10,15 @@ The agent may be unconfigured, disabled, ignored in the current environment, una
 
 ## `Chronos.notify_sync` returns false
 
-Check DNS, TLS certificates, credentials, HTTP status, proxy configuration, and timeout values. Version 0.3 retries only network errors, HTTP `408`, `429`, and `5xx` responses. Inspect `agent.diagnostics` when constructing an agent directly to see retry state, backlog usage, and the circuit state.
+Check DNS, TLS certificates, credentials, HTTP status, proxy configuration, and timeout values. The resilience layer retries only network errors, HTTP `408`, `429`, and `5xx` responses. Inspect `agent.diagnostics` when constructing an agent directly to see retry state, backlog usage, and the circuit state.
+
+## Rack exception is not captured
+
+Confirm that `Chronos.configure` runs before the middleware handles requests and that the middleware wraps the application component that raises. Version 0.4 captures exceptions raised by the initial downstream Rack call; an exception raised later while a server enumerates a streaming response body is outside this release. The original exception is always re-raised, so the server log should still show it.
+
+## Context appears missing
+
+The legacy context store is thread-local. A new application-created thread does not inherit context. Establish a new `Chronos.with_context` scope inside that thread, and issue manual notification before the scope exits. For Rack capture, supply user and explicit parameters through the documented environment keys.
 
 ## Events disappear during shutdown
 
