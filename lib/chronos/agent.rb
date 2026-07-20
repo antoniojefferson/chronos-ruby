@@ -1,10 +1,10 @@
 module Chronos
   # Runtime composition root for the framework-independent Chronos agent.
   #
-  # @responsibility Own transport, queue, workers, and the capture use case.
+  # @responsibility Own transport, resilient delivery pipeline, and the capture use case.
   # @motivation Keep construction details outside the public module facade.
   # @limits It does not integrate with Rails, Rack, or job systems.
-  # @collaborators Configuration snapshot, CaptureException, BoundedQueue, and NetHttpTransport.
+  # @collaborators Configuration snapshot, CaptureException, DeliveryPipeline, and NetHttpTransport.
   # @thread_safety Runtime collaborators synchronize mutable state.
   # @compatibility Ruby 2.2.10 through Ruby 2.6.
   # @example
@@ -23,9 +23,16 @@ module Chronos
       unless Ports::Transport.compatible?(@transport)
         raise ArgumentError, "transport does not implement the Chronos transport port"
       end
-      @queue = options[:queue] || Internal::BoundedQueue.new(config.queue_size)
-      @worker_pool = options[:worker_pool] || Internal::WorkerPool.new(@queue, @transport, config.workers, @logger)
-      @capture = options[:capture] || Application::CaptureException.new(config, @worker_pool, @transport, @logger)
+      pipeline_options = {}
+      pipeline_options[:queue] = options[:queue] if options[:queue]
+      pipeline_options[:worker_pool] = options[:worker_pool] if options[:worker_pool]
+      @delivery_pipeline = options[:delivery_pipeline] || Application::DeliveryPipeline.new(
+        config,
+        @transport,
+        @logger,
+        pipeline_options
+      )
+      @capture = options[:capture] || Application::CaptureException.new(config, @delivery_pipeline, @logger)
     end
 
     def notify(exception, context = {})
@@ -37,21 +44,22 @@ module Chronos
     end
 
     def flush(timeout = DEFAULT_FLUSH_TIMEOUT)
-      @worker_pool.flush(timeout)
+      @delivery_pipeline.flush(timeout)
     rescue StandardError => error
       @logger.warn("Chronos flush failed: #{error.class}")
       false
     end
 
     def close(timeout = DEFAULT_FLUSH_TIMEOUT)
-      @worker_pool.close(timeout)
+      @delivery_pipeline.close(timeout)
     rescue StandardError => error
       @logger.warn("Chronos close failed: #{error.class}")
       false
     end
 
     def diagnostics
-      @queue.stats
+      details = @delivery_pipeline.diagnostics
+      details[:queue].merge(details)
     end
   end
 end

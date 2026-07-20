@@ -4,17 +4,18 @@ module Chronos
     #
     # @responsibility Describe delivery outcome and retry classification.
     # @motivation Keep HTTP implementation details outside the application layer.
-    # @limits It does not schedule retries; retry is outside version 0.2.
+    # @limits It classifies outcomes but does not schedule retries.
     # @thread_safety Immutable after construction.
     # @compatibility Ruby 2.2.10 through Ruby 2.6.
     class TransportResult
-      attr_reader :status, :status_code, :retry_after, :error
+      attr_reader :status, :status_code, :retry_after, :error, :remote_configuration
 
       def initialize(status, options = {})
         @status = status
         @status_code = options[:status_code]
         @retry_after = options[:retry_after]
         @error = options[:error]
+        @remote_configuration = options[:remote_configuration]
         freeze
       end
 
@@ -23,7 +24,7 @@ module Chronos
       end
 
       def retryable?
-        [:rate_limited, :server_error, :network_error].include?(status)
+        [:request_timeout, :rate_limited, :server_error, :network_error].include?(status)
       end
     end
 

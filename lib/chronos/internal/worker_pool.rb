@@ -4,8 +4,8 @@ module Chronos
     #
     # @responsibility Start workers on first use, deliver events, flush, and shut down predictably.
     # @motivation Keep serialization and network delivery outside the caller's critical path.
-    # @limits Version 0.2 does not retry failed deliveries or persist a backlog.
-    # @collaborators BoundedQueue, Transport, and SafeLogger.
+    # @limits Retry policy belongs to the delivery collaborator.
+    # @collaborators BoundedQueue, DeliveryPipeline, and SafeLogger.
     # @thread_safety Internal state is synchronized and active delivery is counted.
     # @compatibility Ruby 2.2.10 through Ruby 2.6; workers are recreated after fork.
     # @example
@@ -16,9 +16,9 @@ module Chronos
     class WorkerPool
       POLL_INTERVAL = 0.05
 
-      def initialize(queue, transport, worker_count, logger = nil)
+      def initialize(queue, delivery, worker_count, logger = nil)
         @queue = queue
-        @transport = transport
+        @delivery = delivery
         @worker_count = worker_count
         @logger = logger || SafeLogger.new(nil)
         @mutex = Mutex.new
@@ -59,7 +59,6 @@ module Chronos
         flushed = flush_without_reopening(timeout)
         @queue.close
         join_workers(timeout)
-        @transport.close
         flushed
       rescue StandardError => error
         @logger.warn("Chronos worker shutdown failed: #{error.class}")
@@ -87,7 +86,7 @@ module Chronos
 
           increment_active
           begin
-            @transport.send_event(event)
+            @delivery.send_event(event)
           rescue StandardError => error
             @logger.warn("Chronos worker contained #{error.class}")
           ensure

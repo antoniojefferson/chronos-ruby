@@ -1,5 +1,6 @@
 require "net/http"
 require "openssl"
+require "json"
 require "stringio"
 require "uri"
 require "zlib"
@@ -10,16 +11,17 @@ module Chronos
     #
     # @responsibility Send serialized events over bounded HTTPS requests.
     # @motivation Use the Ruby standard library to preserve legacy compatibility.
-    # @limits It classifies failures but does not retry or persist events in version 0.2.
+    # @limits It classifies failures but leaves retry and backlog policy to the application layer.
     # @collaborators Configuration::Snapshot, SerializedEvent, and TransportResult.
     # @thread_safety Creates a new Net::HTTP connection per call and synchronizes health state.
     # @compatibility Ruby 2.2.10 through Ruby 2.6; no Rails dependency.
     # @example
     #   result = transport.send_event(serialized_event)
     # @errors Network, TLS, and HTTP errors are returned, never raised to callers.
-    # @performance One bounded network request per event in version 0.2.
+    # @performance One bounded network request per delivery attempt in version 0.3.
     class NetHttpTransport
       EVENT_PATH = "/api/v1/events".freeze
+      REMOTE_CONFIGURATION_HEADER = "X-Chronos-Remote-Configuration".freeze
 
       def initialize(config, logger = nil)
         @config = config
@@ -100,7 +102,11 @@ module Chronos
       def classify(response)
         code = response.code.to_i
         options = {:status_code => code}
-        return Ports::TransportResult.new(:success, options) if code >= 200 && code < 300
+        if code >= 200 && code < 300
+          options[:remote_configuration] = parse_remote_configuration(response)
+          return Ports::TransportResult.new(:success, options)
+        end
+        return Ports::TransportResult.new(:request_timeout, options) if code == 408
         if code == 429
           options[:retry_after] = response["Retry-After"]
           return Ports::TransportResult.new(:rate_limited, options)
@@ -108,6 +114,18 @@ module Chronos
         return Ports::TransportResult.new(:server_error, options) if code >= 500
 
         Ports::TransportResult.new(:client_error, options)
+      end
+
+      def parse_remote_configuration(response)
+        return nil unless @config.remote_configuration
+
+        value = response[REMOTE_CONFIGURATION_HEADER]
+        return nil if value.nil? || value.bytesize > @config.remote_config_max_bytes
+
+        parsed = JSON.parse(value)
+        parsed.is_a?(Hash) ? parsed : nil
+      rescue JSON::ParserError, EncodingError
+        nil
       end
 
       def request_body(body)
