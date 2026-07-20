@@ -15,6 +15,7 @@ require "chronos/core/sensitive_value_filter"
 require "chronos/core/sanitizer"
 require "chronos/core/safe_serializer"
 require "chronos/core/payload_serializer"
+require "chronos/core/telemetry_event"
 require "chronos/ports/transport"
 require "chronos/ports/context_store"
 require "chronos/internal/safe_logger"
@@ -29,6 +30,7 @@ require "chronos/application/circuit_breaker"
 require "chronos/application/remote_configuration"
 require "chronos/application/delivery_pipeline"
 require "chronos/application/capture_exception"
+require "chronos/application/capture_telemetry"
 require "chronos/agent"
 require "chronos/integrations"
 require "chronos/integrations/rack"
@@ -38,7 +40,7 @@ require "chronos/integrations/rack/middleware"
 #
 # @responsibility Configure the agent and expose its small lifecycle API.
 # @motivation Give applications a stable entry point while internals evolve.
-# @limits Version 0.4 captures Rack failures but does not install middleware automatically.
+# @limits Rails integration remains optional and must be loaded through chronos/rails.
 # @collaborators Configuration and Agent.
 # @thread_safety Agent replacement and lookup are protected by a mutex.
 # @compatibility Ruby 2.2.10 through Ruby 2.6.
@@ -95,6 +97,27 @@ module Chronos
       false
     end
 
+    def record_event(event_type, payload = {}, context = {})
+      agent = current_agent
+      agent ? agent.record_event(event_type, payload, context) : false
+    rescue StandardError
+      false
+    end
+
+    def notify_once(exception, context = {})
+      agent = current_agent
+      agent ? agent.notify_once(exception, context) : false
+    rescue StandardError
+      false
+    end
+
+    def rails_integration_options(environment = nil, console = false)
+      agent = current_agent
+      agent ? agent.rails_integration_options(environment, console) : {:enabled => false}
+    rescue StandardError
+      {:enabled => false}
+    end
+
     def configured?
       !current_agent.nil?
     end
@@ -124,3 +147,5 @@ module Chronos
     end
   end
 end
+
+require "chronos/rails" if defined?(::Rails::Railtie)

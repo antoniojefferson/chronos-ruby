@@ -47,7 +47,11 @@ module Chronos
         end
 
         def notify_safely(error, context)
-          @notifier.notify(error, context)
+          if @notifier.respond_to?(:notify_once)
+            @notifier.notify_once(error, context)
+          else
+            @notifier.notify(error, context)
+          end
         rescue StandardError
           false
         end

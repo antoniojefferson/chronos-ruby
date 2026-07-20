@@ -1,4 +1,5 @@
 require "uri"
+require "chronos/configuration/validation"
 
 module Chronos
   # Mutable configuration used only while the Chronos agent is being set up.
@@ -19,6 +20,7 @@ module Chronos
   #   config.host = 'https://chronos.example.com'
   #   snapshot = config.snapshot
   class Configuration
+    include Internal::ConfigurationValidation
     DEFAULT_BLOCKLIST_KEYS = %w(
       password password_confirmation passwd secret api_key apikey authorization
       token access_token refresh_token private_key client_secret cookie set-cookie
@@ -37,7 +39,8 @@ module Chronos
       :backlog_size, :circuit_failure_threshold, :circuit_reset_timeout,
       :remote_configuration, :remote_config_max_bytes, :sampling_rate,
       :enabled_event_types, :max_remote_send_interval, :context_store,
-      :breadcrumb_capacity, :breadcrumb_max_bytes
+      :breadcrumb_capacity, :breadcrumb_max_bytes, :rails_enabled,
+      :rails_capture_in_console, :rails_capture_in_test, :rails_capture_user_agent
     ].freeze
 
     attr_accessor(*ATTRIBUTES)
@@ -46,6 +49,7 @@ module Chronos
       initialize_core_defaults
       initialize_privacy_defaults
       initialize_resilience_defaults
+      initialize_rails_defaults
     end
 
     def snapshot
@@ -105,6 +109,13 @@ module Chronos
       @breadcrumb_max_bytes = 2048
     end
 
+    def initialize_rails_defaults
+      @rails_enabled = true
+      @rails_capture_in_console = false
+      @rails_capture_in_test = false
+      @rails_capture_user_agent = false
+    end
+
     def initialize_privacy_defaults
       @blocklist_keys = DEFAULT_BLOCKLIST_KEYS.dup
       @allowlist_keys = []
@@ -124,53 +135,8 @@ module Chronos
       @remote_configuration = true
       @remote_config_max_bytes = 4096
       @sampling_rate = 1.0
-      @enabled_event_types = ["exception"]
+      @enabled_event_types = ["exception", "request", "query", "job", "cache"]
       @max_remote_send_interval = 60.0
-    end
-
-    def resilience_errors
-      errors = []
-      errors.concat(retry_errors)
-      errors.concat(backlog_and_circuit_errors)
-      errors.concat(remote_policy_errors)
-      errors
-    end
-
-    def retry_errors
-      errors = []
-      errors << "max_retries must be a non-negative integer" unless non_negative_integer?(max_retries)
-      errors << "retry_base_interval must be greater than zero" unless positive_number?(retry_base_interval)
-      errors << "retry_max_interval must be greater than zero" unless positive_number?(retry_max_interval)
-      if positive_number?(retry_base_interval) && positive_number?(retry_max_interval) &&
-         retry_max_interval < retry_base_interval
-        errors << "retry_max_interval must be greater than or equal to retry_base_interval"
-      end
-      errors << "retry_jitter must be between zero and one" unless rate?(retry_jitter)
-      errors
-    end
-
-    def backlog_and_circuit_errors
-      errors = []
-      errors << "backlog_size must be a non-negative integer" unless non_negative_integer?(backlog_size)
-      unless positive_integer?(circuit_failure_threshold)
-        errors << "circuit_failure_threshold must be a positive integer"
-      end
-      errors << "circuit_reset_timeout must be greater than zero" unless positive_number?(circuit_reset_timeout)
-      errors
-    end
-
-    def remote_policy_errors
-      errors = []
-      unless [true, false].include?(remote_configuration)
-        errors << "remote_configuration must be true or false"
-      end
-      errors << "remote_config_max_bytes must be a positive integer" unless positive_integer?(remote_config_max_bytes)
-      errors << "sampling_rate must be between zero and one" unless rate?(sampling_rate)
-      unless enabled_event_types.is_a?(Array) && enabled_event_types.all? { |value| value.is_a?(String) }
-        errors << "enabled_event_types must contain only String values"
-      end
-      errors << "max_remote_send_interval must be greater than zero" unless positive_number?(max_remote_send_interval)
-      errors
     end
 
     def to_hash
@@ -178,53 +144,6 @@ module Chronos
         value = public_send(attribute)
         values[attribute] = deep_copy(value)
       end
-    end
-
-    def privacy_errors
-      errors = []
-      errors << "blocklist_keys must be an array" unless blocklist_keys.is_a?(Array)
-      errors << "allowlist_keys must be an array" unless allowlist_keys.is_a?(Array)
-      errors << "hash_keys must be an array" unless hash_keys.is_a?(Array)
-      errors.concat(matcher_errors("blocklist_keys", blocklist_keys))
-      errors.concat(matcher_errors("allowlist_keys", allowlist_keys))
-      errors.concat(matcher_errors("hash_keys", hash_keys))
-      errors.concat(filter_errors)
-      errors.concat(anonymization_errors)
-      errors
-    end
-
-    def context_errors
-      errors = []
-      unless context_store == :thread_local || CONTEXT_STORE_METHODS.all? do |method_name|
-        context_store.respond_to?(method_name)
-      end
-        errors << "context_store must be :thread_local or implement get, set, clear, and with_context"
-      end
-      errors << "breadcrumb_capacity must be a positive integer" unless positive_integer?(breadcrumb_capacity)
-      unless breadcrumb_max_bytes.is_a?(Integer) && breadcrumb_max_bytes >= 128
-        errors << "breadcrumb_max_bytes must be an integer greater than or equal to 128"
-      end
-      errors
-    end
-
-    def filter_errors
-      return ["filters must be an array"] unless filters.is_a?(Array)
-      return [] if filters.all? { |filter| filter.respond_to?(:call) }
-
-      ["filters must contain only callable objects"]
-    end
-
-    def anonymization_errors
-      return [] if anonymize_ip == true || anonymize_ip == false
-
-      ["anonymize_ip must be true or false"]
-    end
-
-    def matcher_errors(name, values)
-      return [] unless values.is_a?(Array)
-      return [] if values.all? { |value| value.is_a?(String) || value.is_a?(Symbol) || value.is_a?(Regexp) }
-
-      ["#{name} must contain only String, Symbol, or Regexp values"]
     end
 
     def deep_copy(value)
@@ -238,18 +157,6 @@ module Chronos
       else
         value
       end
-    end
-
-    def host_errors
-      return ["host is required"] if blank?(host)
-
-      uri = URI.parse(host.to_s)
-      return ["host must be an absolute HTTP or HTTPS URL"] unless uri.host && %w(http https).include?(uri.scheme)
-      return ["host must use HTTPS unless ssl_verify is explicitly disabled"] if uri.scheme != "https" && ssl_verify
-
-      []
-    rescue URI::InvalidURIError
-      ["host must be a valid URL"]
     end
 
     def blank?(value)
@@ -271,52 +178,7 @@ module Chronos
     def rate?(value)
       value.is_a?(Numeric) && value >= 0.0 && value <= 1.0
     end
-
-    # Immutable configuration shared by all runtime components.
-    #
-    # @responsibility Expose validated settings without mutable containers.
-    # @motivation Keep capture behavior stable while multiple threads run.
-    # @limits It cannot be edited after creation.
-    # @thread_safety Safe to share between threads after construction.
-    # @compatibility Ruby 2.2.10 through Ruby 2.6.
-    class Snapshot
-      attr_reader(*ATTRIBUTES)
-
-      def initialize(values)
-        ATTRIBUTES.each do |attribute|
-          value = values[attribute]
-          deep_freeze(value)
-          instance_variable_set("@#{attribute}", value)
-        end
-        freeze
-      end
-
-      def enabled_for_environment?
-        enabled && !ignored_environments.map(&:to_s).include?(environment.to_s)
-      end
-
-      private
-
-      def deep_freeze(value)
-        return value if value.respond_to?(:call) || context_store?(value)
-
-        case value
-        when Hash
-          value.each do |key, child|
-            deep_freeze(key)
-            deep_freeze(child)
-          end
-        when Array
-          value.each { |child| deep_freeze(child) }
-        end
-        value.freeze
-      end
-
-      def context_store?(value)
-        CONTEXT_STORE_METHODS.all? { |method_name| value.respond_to?(method_name) }
-      rescue StandardError
-        false
-      end
-    end
   end
 end
+
+require "chronos/configuration/snapshot"

@@ -1,6 +1,6 @@
 # Performance
 
-Performance is a functional requirement, but version 0.4 makes no unverified speed claim.
+Performance is a functional requirement, but version 0.5 makes no unverified speed claim.
 
 Current controls:
 
@@ -15,11 +15,24 @@ Current controls:
 - retry count, delay, jitter, and `Retry-After` are capped;
 - the circuit breaker suppresses requests during sustained failure;
 - retry backlog capacity is fixed and may be disabled;
-- shutdown and flush have caller-controlled timeouts.
+- shutdown and flush have caller-controlled timeouts;
 - request context and breadcrumbs have fixed structural and byte limits;
 - Rack middleware never consumes request or response bodies.
+- Rails subscribers copy only small allowlisted field sets and never copy raw SQL or job arguments.
 
-Run the scripts under `benchmarks/` and record Ruby version, operating system, CPU, warmup, iteration count, median, and dispersion before publishing results. `benchmarks/filtering.rb` measures privacy filtering, `benchmarks/retry_backlog.rb` measures fixed-memory outage behavior, and `benchmarks/request_overhead.rb` compares a successful direct Rack-protocol call with the middleware path.
+Run the scripts under `benchmarks/` and record Ruby version, operating system, CPU, warmup, iteration count, median, and dispersion before publishing results. `benchmarks/filtering.rb` measures privacy filtering, `benchmarks/retry_backlog.rb` measures fixed-memory outage behavior, `benchmarks/request_overhead.rb` compares Rack-protocol calls, and `benchmarks/rails_notifications.rb` isolates subscriber normalization overhead.
+
+## Version 0.5 Rails subscriber benchmark
+
+Run:
+
+```bash
+ITERATIONS=100000 bundle _1.17.3_ exec ruby benchmarks/rails_notifications.rb
+```
+
+This synthetic benchmark invokes the SQL notification normalizer with a no-op notifier. It verifies that raw SQL and binds are not copied and measures local allowlist normalization only; it does not include Rails dispatch, serialization, queueing, or network delivery.
+
+A local diagnostic run on 2026-07-20 used Ruby 2.2.10 on macOS arm64 and 10,000 iterations. It completed in 0.041232 seconds, or approximately 4.123 microseconds per normalization. This single run has no warmup, median, or dispersion and is not a production performance claim.
 
 ## Version 0.2 development measurement
 

@@ -1,0 +1,203 @@
+module Chronos
+  module Rails
+    # Converts public ActiveSupport notifications into bounded Chronos telemetry.
+    #
+    # @responsibility Subscribe once and normalize controller, view, SQL, mailer, job, and cache events.
+    # @motivation Support Rails 4.2 and 5.2 through feature detection and public notification APIs.
+    # @limits It never sends SQL text, bind values, cache keys, mail bodies, or job arguments.
+    # @collaborators ActiveSupport::Notifications and the Chronos facade.
+    # @thread_safety Subscription registry is mutex-protected; callbacks own their state.
+    # @compatibility ActiveSupport notification argument shapes from Rails 4.2 through 5.2.
+    # @example
+    #   Chronos::Rails::NotificationsSubscriber.new.install
+    # @errors Subscriber failures are contained and never escape into Rails.
+    # @performance Each notification builds a small allowlisted hash and queues asynchronously.
+    class NotificationsSubscriber
+      EVENTS = %w(
+        process_action.action_controller render_template.action_view sql.active_record
+        deliver.action_mailer perform.active_job cache_read.active_support
+        cache_write.active_support cache_fetch_hit.active_support
+      ).freeze
+
+      @mutex = Mutex.new
+      @installed_buses = {}
+
+      class << self
+        attr_reader :mutex, :installed_buses
+      end
+
+      def initialize(notifier = Chronos, notifications = nil)
+        @notifier = notifier
+        @notifications = notifications || active_support_notifications
+      end
+
+      def install
+        return false unless @notifications && @notifications.respond_to?(:subscribe)
+
+        self.class.mutex.synchronize do
+          return false if self.class.installed_buses[@notifications.object_id]
+
+          event_names.each { |name| subscribe(name) }
+          self.class.installed_buses[@notifications.object_id] = true
+        end
+        true
+      rescue StandardError
+        false
+      end
+
+      def handle(name, arguments)
+        event = notification_event(name, arguments)
+        dispatch(name, event[:payload], event[:duration_ms])
+      rescue StandardError
+        false
+      end
+
+      private
+
+      def active_support_notifications
+        return nil unless defined?(::ActiveSupport::Notifications)
+
+        ::ActiveSupport::Notifications
+      end
+
+      def subscribe(name)
+        @notifications.subscribe(name) { |*arguments| handle(name, arguments) }
+      end
+
+      def event_names
+        return EVENTS if defined?(::ActiveJob)
+
+        EVENTS.reject { |name| name == "perform.active_job" }
+      end
+
+      def notification_event(name, arguments)
+        candidate = arguments.first
+        if arguments.length == 1 && candidate.respond_to?(:payload)
+          return {:payload => hash(candidate.payload), :duration_ms => candidate.duration.to_f}
+        end
+
+        started_at = arguments[1]
+        finished_at = arguments[2]
+        {
+          :payload => hash(arguments[4]),
+          :duration_ms => duration_ms(started_at, finished_at),
+          :name => name
+        }
+      end
+
+      def dispatch(name, payload, duration)
+        case name
+        when "process_action.action_controller" then process_action(payload, duration)
+        when "render_template.action_view" then render_template(payload, duration)
+        when "sql.active_record" then sql(payload, duration)
+        when "deliver.action_mailer" then mailer(payload, duration)
+        when "perform.active_job" then active_job(payload, duration)
+        else cache(name, payload, duration)
+        end
+      end
+
+      def process_action(payload, duration)
+        capture_controller_exception(payload)
+        data = {
+          "kind" => "controller", "controller" => value(payload, :controller),
+          "action" => value(payload, :action), "status" => value(payload, :status).to_i,
+          "method" => value(payload, :method), "path" => query_free_path(value(payload, :path)),
+          "route" => route(payload),
+          "duration_ms" => duration, "parameters" => hash(value(payload, :params))
+        }
+        @notifier.record_event("request", data)
+      end
+
+      def render_template(payload, duration)
+        data = {
+          "kind" => "view", "template" => safe_basename(value(payload, :identifier)),
+          "duration_ms" => duration
+        }
+        @notifier.record_event("request", data)
+      end
+
+      def sql(payload, duration)
+        data = {
+          "name" => value(payload, :name).to_s, "cached" => value(payload, :cached) == true,
+          "duration_ms" => duration
+        }
+        @notifier.record_event("query", data)
+      end
+
+      def mailer(payload, duration)
+        data = {
+          "kind" => "mailer", "mailer" => value(payload, :mailer).to_s,
+          "action" => value(payload, :action).to_s, "duration_ms" => duration
+        }
+        @notifier.record_event("job", data)
+      end
+
+      def active_job(payload, duration)
+        job = value(payload, :job)
+        data = {
+          "kind" => "active_job", "class" => safe_class_name(job),
+          "queue" => safe_job_value(job, :queue_name), "duration_ms" => duration
+        }
+        @notifier.record_event("job", data)
+      end
+
+      def cache(name, payload, duration)
+        data = {
+          "operation" => name.split(".").first, "store" => value(payload, :store).to_s,
+          "hit" => value(payload, :hit), "duration_ms" => duration
+        }
+        @notifier.record_event("cache", data)
+      end
+
+      def capture_controller_exception(payload)
+        exception = value(payload, :exception_object)
+        details = value(payload, :exception)
+        exception ||= RuntimeError.new(Array(details).last.to_s) if details
+        @notifier.notify_once(exception, :parameters => hash(value(payload, :params))) if exception
+      end
+
+      def value(payload, key)
+        payload.key?(key) ? payload[key] : payload[key.to_s]
+      end
+
+      def hash(value)
+        value.is_a?(Hash) ? value : {}
+      end
+
+      def duration_ms(started_at, finished_at)
+        return 0.0 unless started_at && finished_at
+
+        ((finished_at.to_f - started_at.to_f) * 1000.0).round(3)
+      end
+
+      def query_free_path(path)
+        path.to_s.split("?", 2).first
+      end
+
+      def route(payload)
+        explicit = value(payload, :route)
+        return explicit.to_s unless explicit.to_s.empty?
+
+        [value(payload, :controller), value(payload, :action)].compact.join("#")
+      end
+
+      def safe_basename(identifier)
+        File.basename(identifier.to_s)
+      rescue StandardError
+        "<template>"
+      end
+
+      def safe_class_name(object)
+        object ? object.class.name.to_s : ""
+      rescue StandardError
+        "Object"
+      end
+
+      def safe_job_value(job, method_name)
+        job.respond_to?(method_name) ? job.public_send(method_name).to_s : ""
+      rescue StandardError
+        ""
+      end
+    end
+  end
+end

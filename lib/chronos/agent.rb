@@ -36,7 +36,7 @@ module Chronos
         @logger,
         pipeline_options
       )
-      @capture = options[:capture] || Application::CaptureException.new(config, @delivery_pipeline, @logger)
+      initialize_capture(options)
     end
 
     def notify(exception, context = {})
@@ -63,6 +63,31 @@ module Chronos
       false
     end
 
+    def record_event(event_type, payload = {}, context = {})
+      @telemetry.call(event_type, payload, telemetry_context(context))
+    end
+
+    def notify_once(exception, context = {})
+      execution = @context_store.get
+      captured = execution[:__chronos_captured_exceptions] || {}
+      keys = [[:object, exception.object_id], [:message, exception.message.to_s]]
+      return false if keys.any? { |key| captured[key] }
+
+      keys.each { |key| captured[key] = true }
+      @context_store.set(execution.merge(:__chronos_captured_exceptions => captured))
+      notify(exception, context)
+    rescue StandardError
+      false
+    end
+
+    def rails_integration_options(environment = nil, console = false)
+      current_environment = (environment || @config.environment).to_s
+      enabled = @config.rails_enabled
+      enabled = false if console && !@config.rails_capture_in_console
+      enabled = false if current_environment == "test" && !@config.rails_capture_in_test
+      {:enabled => enabled, :include_user_agent => @config.rails_capture_user_agent}
+    end
+
     def flush(timeout = DEFAULT_FLUSH_TIMEOUT)
       @delivery_pipeline.flush(timeout)
     rescue StandardError => error
@@ -84,6 +109,11 @@ module Chronos
 
     private
 
+    def initialize_capture(options)
+      @capture = options[:capture] || Application::CaptureException.new(@config, @delivery_pipeline, @logger)
+      @telemetry = options[:telemetry] || Application::CaptureTelemetry.new(@config, @delivery_pipeline, @logger)
+    end
+
     def build_context_store(strategy)
       return Adapters::ThreadLocalContextStore.new if strategy == :thread_local
 
@@ -92,6 +122,8 @@ module Chronos
 
     def context_for_capture(additional)
       merged = deep_merge(context_hash(@context_store.get), context_hash(additional))
+      merged.delete(:__chronos_captured_exceptions)
+      merged.delete("__chronos_captured_exceptions")
       buffer = merged.delete(:__chronos_breadcrumbs) || merged.delete("__chronos_breadcrumbs")
       if buffer.respond_to?(:to_a)
         merged[:context] = context_hash(merged[:context]).merge("breadcrumbs" => buffer.to_a)
@@ -99,6 +131,16 @@ module Chronos
       merged
     rescue StandardError
       context_hash(additional)
+    end
+
+    def telemetry_context(additional)
+      merged = context_for_capture(additional)
+      context = context_hash(merged.delete(:context) || merged.delete("context"))
+      parameters = merged.delete(:parameters) || merged.delete("parameters")
+      user = merged.delete(:user) || merged.delete("user")
+      context["parameters"] = parameters if parameters.is_a?(Hash) && !parameters.empty?
+      context["user"] = user if user.is_a?(Hash) && !user.empty?
+      context.merge(merged)
     end
 
     def deep_merge(left, right)

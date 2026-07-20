@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+require File.expand_path("../config/environment", __dir__)
+require "rack/mock"
+
+client = Rack::MockRequest.new(Rails.application)
+normal = client.get("/ok?password=synthetic-secret")
+raise "normal request failed" unless normal.status == 200
+
+begin
+  failure = client.get("/fail?token=synthetic-secret")
+  raise "failure route did not fail" unless failure.status >= 500
+rescue RuntimeError => error
+  raise unless error.message == "synthetic controller failure"
+end
+
+raise "Chronos flush timed out" unless Chronos.flush(1.0)
+puts "Rails 5.2 smoke passed"
