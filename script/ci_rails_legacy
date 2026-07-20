@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+set -eu
+
+: "${EXAMPLE_PATH:?EXAMPLE_PATH is required}"
+export BUNDLE_GEMFILE="$EXAMPLE_PATH/Gemfile"
+
+gem list --installed bundler -v 1.17.3 >/dev/null || gem install bundler -v 1.17.3
+
+run_bundle() {
+  ruby -e 'load Gem.bin_path("bundler", "bundle", "1.17.3")' -- "$@"
+}
+
+run_bundle install
+run_bundle exec ruby "$EXAMPLE_PATH/script/smoke"

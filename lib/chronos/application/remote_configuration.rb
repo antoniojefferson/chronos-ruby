@@ -13,7 +13,7 @@ module Chronos
     # @errors Invalid documents are ignored and return false.
     # @performance Validation is bounded by configured document and list limits.
     class RemoteConfiguration
-      SUPPORTED_EVENT_TYPES = ["exception"].freeze
+      SUPPORTED_EVENT_TYPES = ["exception", "request", "query", "job", "cache"].freeze
       MAX_IGNORED_FINGERPRINTS = 100
       MAX_FINGERPRINT_BYTES = 256
       MIN_PAYLOAD_SIZE = 256
