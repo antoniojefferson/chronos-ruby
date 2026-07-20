@@ -30,6 +30,8 @@ required_documents = %w(
   docs/modules/serialization.md
   docs/modules/transport.md
   docs/modules/async-queue.md
+  docs/modules/retry-backlog.md
+  docs/modules/remote-configuration.md
 )
 
 missing = required_documents.reject { |path| File.file?(File.join(root, path)) }
@@ -51,7 +53,7 @@ abort "Contract schema must be version 1.0" unless schema["properties"]["schema_
 
 readme = read_utf8(File.join(root, "README.md"))
 abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\]/
-abort "README does not document version 0.2 privacy" unless readme.include?("Version 0.2")
+abort "README does not document version 0.3 resilience" unless readme.include?("Version 0.3")
 
 privacy = read_utf8(File.join(root, "docs/privacy-lgpd.md"))
 

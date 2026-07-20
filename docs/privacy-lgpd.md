@@ -1,6 +1,6 @@
 # Privacy and LGPD
 
-Version 0.2 sanitizes every exception event before JSON serialization, queueing, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
+Version 0.3 sanitizes every exception event before JSON serialization, queueing, retry backlog, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
 
 ## Default policy
 
@@ -13,7 +13,9 @@ Version 0.2 sanitizes every exception event before JSON serialization, queueing,
 | Payment-card candidates that pass the Luhn check | Replaced with `[FILTERED_CARD]` |
 | IPv4 addresses | Last octet replaced with `0` |
 | Unknown Ruby objects | Represented by class name without calling application serialization |
-| Request/response bodies, cookies, HTTP headers, SQL binds, environment variables | Never collected automatically in version 0.2 |
+| Request/response bodies, cookies, HTTP headers, SQL binds, environment variables | Never collected automatically in version 0.3 |
+
+The retry backlog exists only in process memory, accepts only `SerializedEvent`, has a fixed capacity, and disappears on process exit. Version 0.3 does not persist telemetry to disk.
 
 Blocklist matching accepts `String`, `Symbol`, and `Regexp`. String and Symbol matching is case-insensitive after punctuation normalization and also protects namespaced keys such as `user_password`.
 

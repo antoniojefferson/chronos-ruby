@@ -17,4 +17,10 @@ For a network-free privacy audit, run:
 bundle _1.17.3_ exec ruby examples/plain-ruby/privacy_audit.rb
 ```
 
+For a network-free outage and bounded-backlog example, run:
+
+```bash
+bundle _1.17.3_ exec ruby examples/plain-ruby/resilient_delivery.rb
+```
+
 The example builds the final event locally and demonstrates key redaction, e-mail and Bearer-token detection, application-specific blocklisting, and identifier hashing.

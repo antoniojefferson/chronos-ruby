@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for version 0.2; no backlog exists yet.
+Accepted and implemented in version 0.3.
 
 ## Context
 
@@ -10,7 +10,7 @@ Persisting unsanitized events would increase privacy and credential exposure ris
 
 ## Decision
 
-`PayloadSerializer` must run `Sanitizer` before `SafeSerializer`, queueing, transport, or any future retry and persistent backlog. Raw notices remain transient in process memory and never enter delivery storage.
+`PayloadSerializer` must run `Sanitizer` before `SafeSerializer`, queueing, transport, retry, or backlog. `MemoryBacklog` accepts only `SerializedEvent`. Raw notices remain transient in process memory and never enter delivery storage.
 
 ## Alternatives
 

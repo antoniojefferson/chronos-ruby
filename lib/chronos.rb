@@ -18,8 +18,13 @@ require "chronos/core/payload_serializer"
 require "chronos/ports/transport"
 require "chronos/internal/safe_logger"
 require "chronos/internal/bounded_queue"
+require "chronos/internal/memory_backlog"
 require "chronos/internal/worker_pool"
 require "chronos/adapters/net_http_transport"
+require "chronos/application/retry_policy"
+require "chronos/application/circuit_breaker"
+require "chronos/application/remote_configuration"
+require "chronos/application/delivery_pipeline"
 require "chronos/application/capture_exception"
 require "chronos/agent"
 
@@ -27,7 +32,7 @@ require "chronos/agent"
 #
 # @responsibility Configure the agent and expose its small lifecycle API.
 # @motivation Give applications a stable entry point while internals evolve.
-# @limits Version 0.2 captures Ruby exceptions manually; integrations arrive later.
+# @limits Version 0.3 captures Ruby exceptions manually; integrations arrive later.
 # @collaborators Configuration and Agent.
 # @thread_safety Agent replacement and lookup are protected by a mutex.
 # @compatibility Ruby 2.2.10 through Ruby 2.6.
