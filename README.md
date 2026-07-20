@@ -26,10 +26,10 @@ See [Compatibility](docs/compatibility.md).
 
 ## Plain Ruby installation
 
-After publication, add the gem to the application's `Gemfile`:
+The first public build is a pre-release. Add its exact version to the application's `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "~> 0.1"
+gem "chronos-ruby", "0.1.0.pre.1"
 ```
 
 Install with a Bundler version compatible with the application. For the oldest supported runtime:
@@ -42,7 +42,7 @@ bundle _1.17.3_ install
 Without Bundler:
 
 ```bash
-gem install chronos-ruby
+gem install chronos-ruby --pre
 ```
 
 ## Rails installation
