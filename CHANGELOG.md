@@ -4,6 +4,13 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [0.1.0.pre.2] - 2026-07-19
+
+### Changed
+
+- prepared the second public pre-release;
+- aligned the release tag with the RubyGems version format.
+
 ## [0.1.0.pre.1] - 2026-07-19
 
 ### Added
