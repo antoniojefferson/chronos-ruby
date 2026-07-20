@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+set -eu
+
+gem list --installed bundler -v 1.17.3 >/dev/null || gem install bundler -v 1.17.3
+
+run_bundle() {
+  ruby -e 'load Gem.bin_path("bundler", "bundle", "1.17.3")' -- "$@"
+}
+
+run_bundle --version
+run_bundle install
+run_bundle exec rake

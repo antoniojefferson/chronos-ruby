@@ -4,6 +4,12 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+### Fixed
+
+- Updated the legacy development toolchain to non-vulnerable Rake and RuboCop versions.
+- legacy CI now resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector.
+- documentation verification now reads source and Markdown files explicitly as UTF-8 on legacy container locales.
+
 ## [0.2.0.pre.1] - 2026-07-19
 
 ### Added
