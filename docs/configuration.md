@@ -39,8 +39,11 @@
 | `remote_configuration` | Optional | `true` | Accepts only the documented bounded remote policy fields |
 | `remote_config_max_bytes` | Optional | `4096` | Maximum remote policy response-header bytes |
 | `sampling_rate` | Optional | `1.0` | Local upper bound for exception sampling |
-| `enabled_event_types` | Optional | `["exception"]` | Local event-type allowlist; only exception exists in version 0.3 |
+| `enabled_event_types` | Optional | `["exception"]` | Local event-type allowlist; only exception exists in version 0.4 |
 | `max_remote_send_interval` | Optional | `60.0` | Local upper bound for remotely requested send spacing |
+| `context_store` | Optional | `:thread_local` | `:thread_local` or an object implementing `get`, `set`, `clear`, and `with_context` |
+| `breadcrumb_capacity` | Optional | `20` | Positive count of newest breadcrumbs retained per execution |
+| `breadcrumb_max_bytes` | Optional | `2048` | Maximum bytes per normalized breadcrumb; minimum `128` |
 
 ```ruby
 Chronos.configure do |config|
@@ -56,6 +59,8 @@ Chronos.configure do |config|
   config.max_retries = 3
   config.backlog_size = 100
   config.circuit_failure_threshold = 5
+  config.context_store = :thread_local
+  config.breadcrumb_capacity = 20
 end
 ```
 

@@ -1,6 +1,6 @@
 # Privacy and LGPD
 
-Version 0.3 sanitizes every exception event before JSON serialization, queueing, retry backlog, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
+Version 0.4 sanitizes every exception event before JSON serialization, queueing, retry backlog, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
 
 ## Default policy
 
@@ -13,9 +13,15 @@ Version 0.3 sanitizes every exception event before JSON serialization, queueing,
 | Payment-card candidates that pass the Luhn check | Replaced with `[FILTERED_CARD]` |
 | IPv4 addresses | Last octet replaced with `0` |
 | Unknown Ruby objects | Represented by class name without calling application serialization |
-| Request/response bodies, cookies, HTTP headers, SQL binds, environment variables | Never collected automatically in version 0.3 |
+| Request/response bodies, raw query strings, cookies, authorization headers, SQL binds, environment variables | Never collected automatically in version 0.4 |
 
-The retry backlog exists only in process memory, accepts only `SerializedEvent`, has a fixed capacity, and disappears on process exit. Version 0.3 does not persist telemetry to disk.
+The retry backlog exists only in process memory, accepts only `SerializedEvent`, has a fixed capacity, and disappears on process exit. Version 0.4 does not persist telemetry to disk.
+
+## Rack context and breadcrumbs
+
+The Rack middleware copies only bounded operational fields and parameter hashes that another component already parsed. It does not read `rack.input` or copy `QUERY_STRING`. User context is opt-in through `chronos.user`, and user agent collection is disabled unless the middleware option enables it.
+
+Breadcrumbs contain category, bounded message, bounded metadata, and timestamp. No raw request, response, SQL, cache, job, log, or external HTTP payload is added automatically. Rack context and breadcrumbs pass through the same sanitizer as manual context before queueing.
 
 Blocklist matching accepts `String`, `Symbol`, and `Regexp`. String and Symbol matching is case-insensitive after punctuation normalization and also protects namespaced keys such as `user_password`.
 

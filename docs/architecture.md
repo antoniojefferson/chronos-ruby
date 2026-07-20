@@ -1,6 +1,6 @@
 # Architecture
 
-Chronos Ruby 0.3 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
+Chronos Ruby 0.4 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
 
 ```mermaid
 flowchart TB
@@ -11,17 +11,25 @@ flowchart TB
   Application --> Delivery[Application / DeliveryPipeline]
   Delivery --> Internal[Internal / BoundedQueue, WorkerPool, and MemoryBacklog]
   Internal --> Ports
+  Rack[Integrations / Rack middleware] --> Facade
+  Facade --> Context[Ports / ContextStore]
+  Context --> ThreadLocal[Adapters / ThreadLocalContextStore]
 ```
 
 ## Boundaries
 
 - Domain/Core owns immutable event values and Ruby normalization.
 - Application owns use-case ordering and failure containment.
-- Ports define behavior expected from infrastructure.
-- Adapters contain Net::HTTP and TLS behavior.
+- Ports define behavior expected from transport and execution-context infrastructure.
+- Adapters contain Net::HTTP, TLS, and thread-local context behavior.
 - Internal contains private concurrency and diagnostic mechanisms.
+- Integrations contain optional framework entry points and never enter the domain boundary.
 
 The `Chronos` module is a thin facade. Rails, Rack, ActiveSupport, Sidekiq, and job libraries must not be required by the core.
+
+## Rack capture flow
+
+The Rack middleware establishes a context-store scope, adds a bounded request breadcrumb, and calls the downstream application. An unhandled exception is enriched with request duration and status, captured through the normal notice pipeline, then re-raised unchanged. The context-store adapter restores or clears its value in `ensure`. The middleware implements the Rack protocol without requiring the Rack library.
 
 ## Capture flow
 

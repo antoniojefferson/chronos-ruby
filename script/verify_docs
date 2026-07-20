@@ -32,6 +32,7 @@ required_documents = %w(
   docs/modules/async-queue.md
   docs/modules/retry-backlog.md
   docs/modules/remote-configuration.md
+  docs/modules/rack-context.md
 )
 
 missing = required_documents.reject { |path| File.file?(File.join(root, path)) }
@@ -51,9 +52,13 @@ schema_path = File.join(root, "contracts/event-v1.schema.json")
 schema = JSON.parse(read_utf8(schema_path))
 abort "Contract schema must be version 1.0" unless schema["properties"]["schema_version"]["const"] == "1.0"
 
+rack_schema_path = File.join(root, "contracts/rack-context-v1.schema.json")
+rack_schema = JSON.parse(read_utf8(rack_schema_path))
+abort "Rack context contract must require trace isolation" unless rack_schema["required"].include?("trace_id")
+
 readme = read_utf8(File.join(root, "README.md"))
 abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\]/
-abort "README does not document version 0.3 resilience" unless readme.include?("Version 0.3")
+abort "README does not document version 0.4 Rack capture" unless readme.include?("Version 0.4")
 
 privacy = read_utf8(File.join(root, "docs/privacy-lgpd.md"))
 

@@ -16,23 +16,29 @@ require "chronos/core/sanitizer"
 require "chronos/core/safe_serializer"
 require "chronos/core/payload_serializer"
 require "chronos/ports/transport"
+require "chronos/ports/context_store"
 require "chronos/internal/safe_logger"
 require "chronos/internal/bounded_queue"
 require "chronos/internal/memory_backlog"
 require "chronos/internal/worker_pool"
 require "chronos/adapters/net_http_transport"
+require "chronos/adapters/thread_local_context_store"
+require "chronos/core/breadcrumb"
 require "chronos/application/retry_policy"
 require "chronos/application/circuit_breaker"
 require "chronos/application/remote_configuration"
 require "chronos/application/delivery_pipeline"
 require "chronos/application/capture_exception"
 require "chronos/agent"
+require "chronos/integrations"
+require "chronos/integrations/rack"
+require "chronos/integrations/rack/middleware"
 
 # Framework-independent public facade for the Chronos Ruby agent.
 #
 # @responsibility Configure the agent and expose its small lifecycle API.
 # @motivation Give applications a stable entry point while internals evolve.
-# @limits Version 0.3 captures Ruby exceptions manually; integrations arrive later.
+# @limits Version 0.4 captures Rack failures but does not install middleware automatically.
 # @collaborators Configuration and Agent.
 # @thread_safety Agent replacement and lookup are protected by a mutex.
 # @compatibility Ruby 2.2.10 through Ruby 2.6.
@@ -71,6 +77,20 @@ module Chronos
     def notify_sync(exception, context = {})
       agent = current_agent
       agent ? agent.notify_sync(exception, context) : false
+    rescue StandardError
+      false
+    end
+
+    def with_context(context = {})
+      agent = current_agent
+      return yield unless agent
+
+      agent.with_context(context) { yield }
+    end
+
+    def add_breadcrumb(attributes = {})
+      agent = current_agent
+      agent ? agent.add_breadcrumb(attributes) : false
     rescue StandardError
       false
     end

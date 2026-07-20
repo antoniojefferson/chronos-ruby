@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://chronos.example/schemas/rack-context-v1.schema.json",
+  "title": "Chronos Rack exception context v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["request", "trace_id", "breadcrumbs"],
+  "properties": {
+    "trace_id": {"type": "string", "minLength": 1},
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "route", "status", "duration_ms", "request_id", "host", "path"],
+      "properties": {
+        "method": {"type": "string"},
+        "route": {"type": "string"},
+        "status": {"type": "integer"},
+        "duration_ms": {"type": "number", "minimum": 0},
+        "request_id": {"type": ["string", "null"]},
+        "user_agent": {"type": ["string", "null"]},
+        "host": {"type": "string"},
+        "path": {"type": "string"},
+        "controller": {"type": ["string", "null"]},
+        "action": {"type": ["string", "null"]},
+        "response_size": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "breadcrumbs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category", "message", "metadata", "timestamp"],
+        "properties": {
+          "category": {"enum": ["custom", "log", "request", "query", "external_http", "cache", "job"]},
+          "message": {"type": "string"},
+          "metadata": {"type": "object"},
+          "timestamp": {"type": "string"}
+        }
+      }
+    }
+  }
+}

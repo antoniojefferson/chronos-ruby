@@ -1,6 +1,6 @@
 # Data collected
 
-Version 0.3 emits only manually submitted exception events. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
+Version 0.4 emits exception events submitted manually or captured by the optional Rack middleware. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
 
 | Data | Default | Source |
 |---|---|---|
@@ -15,8 +15,14 @@ Version 0.3 emits only manually submitted exception events. All fields pass thro
 | Context, parameters, session, user | Optional and sanitized | Explicit capture arguments |
 | Tags and fingerprint | Optional and sanitized | Explicit capture arguments |
 | IPv4 address in supplied text | Anonymized | Explicit capture arguments |
+| Rack method, normalized route, status, duration, request ID, host, query-free path, trace ID | Collected with Rack middleware | Rack environment and local clock |
+| Rack user agent | Disabled by default | `HTTP_USER_AGENT` when middleware option is enabled |
+| Rack controller/action | Collected when already supplied | Explicit Chronos or Action Dispatch environment values |
+| Rack parameters | Collected only when already parsed | Explicit, Rack, or Action Dispatch parameter hashes |
+| Response size | `Content-Length` when present | Rack response headers |
+| Breadcrumbs | Explicit and bounded | Application and Chronos integration |
 
-The gem never collects request bodies, response bodies, cookies, HTTP authorization headers, environment variables in bulk, source code, SQL bind values, database rows, or installed gems in version 0.3.
+The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, source code, SQL bind values, database rows, or installed gems in version 0.4.
 
 The secret `project_key` is an authentication header and is excluded from the JSON payload and logger diagnostics. The envelope field named `project_key` contains the public `project_id` required by the current v1 server contract.
 
