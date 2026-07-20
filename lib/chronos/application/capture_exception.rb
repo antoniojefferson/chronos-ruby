@@ -2,9 +2,9 @@ module Chronos
   module Application
     # Orchestrates exception normalization, serialization, queueing, and delivery.
     #
-    # @responsibility Execute the version 0.1 exception capture pipeline.
+    # @responsibility Execute the version 0.2 exception capture pipeline.
     # @motivation Keep the public facade and transport adapters free of use-case logic.
-    # @limits It does not implement advanced sanitization, sampling, retry, or backlog.
+    # @limits It does not implement sampling, retry, backlog, or framework hooks.
     # @collaborators NoticeBuilder, PayloadSerializer, WorkerPool, and Transport.
     # @thread_safety Collaborators are immutable or synchronized; calls may run concurrently.
     # @compatibility Ruby 2.2.10 through Ruby 2.6; independent of Rails.

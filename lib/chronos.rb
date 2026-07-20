@@ -27,7 +27,7 @@ require "chronos/agent"
 #
 # @responsibility Configure the agent and expose its small lifecycle API.
 # @motivation Give applications a stable entry point while internals evolve.
-# @limits Version 0.1 captures Ruby exceptions only; integrations arrive later.
+# @limits Version 0.2 captures Ruby exceptions manually; integrations arrive later.
 # @collaborators Configuration and Agent.
 # @thread_safety Agent replacement and lookup are protected by a mutex.
 # @compatibility Ruby 2.2.10 through Ruby 2.6.

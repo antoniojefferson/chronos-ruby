@@ -4,7 +4,7 @@ module Chronos
     #
     # @responsibility Accept events up to a limit and count accepted and dropped items.
     # @motivation Prevent telemetry bursts from growing application memory indefinitely.
-    # @limits Version 0.1 drops the newest item when full and does not persist to disk.
+    # @limits Version 0.2 drops the newest item when full and does not persist to disk.
     # @collaborators WorkerPool.
     # @thread_safety Mutex and condition variable protect all mutable state.
     # @compatibility Ruby 2.2.10 through Ruby 2.6 and fork-aware callers.

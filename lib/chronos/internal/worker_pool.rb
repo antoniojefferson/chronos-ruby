@@ -4,7 +4,7 @@ module Chronos
     #
     # @responsibility Start workers on first use, deliver events, flush, and shut down predictably.
     # @motivation Keep serialization and network delivery outside the caller's critical path.
-    # @limits Version 0.1 does not retry failed deliveries or persist a backlog.
+    # @limits Version 0.2 does not retry failed deliveries or persist a backlog.
     # @collaborators BoundedQueue, Transport, and SafeLogger.
     # @thread_safety Internal state is synchronized and active delivery is counted.
     # @compatibility Ruby 2.2.10 through Ruby 2.6; workers are recreated after fork.

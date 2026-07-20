@@ -4,7 +4,7 @@ module Chronos
     #
     # @responsibility Describe delivery outcome and retry classification.
     # @motivation Keep HTTP implementation details outside the application layer.
-    # @limits It does not schedule retries; retry is outside version 0.1.
+    # @limits It does not schedule retries; retry is outside version 0.2.
     # @thread_safety Immutable after construction.
     # @compatibility Ruby 2.2.10 through Ruby 2.6.
     class TransportResult
