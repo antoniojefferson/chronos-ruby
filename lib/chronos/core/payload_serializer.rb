@@ -43,13 +43,15 @@ module Chronos
         @clock = clock || proc { Time.now }
         @sanitizer = options[:sanitizer] || Sanitizer.new(config)
         @safe_serializer = options[:safe_serializer] || SafeSerializer.new
+        @max_payload_size = options[:max_payload_size] || proc { @config.max_payload_size }
       end
 
       def call(notice)
         envelope = @safe_serializer.call(@sanitizer.call(build_envelope(notice)))
         body = JSON.generate(envelope)
-        body = JSON.generate(compact_envelope(envelope)) if body.bytesize > @config.max_payload_size
-        raise Error, "event exceeds max_payload_size" if body.bytesize > @config.max_payload_size
+        limit = @max_payload_size.call
+        body = JSON.generate(compact_envelope(envelope)) if body.bytesize > limit
+        raise Error, "event exceeds max_payload_size" if body.bytesize > limit
 
         SerializedEvent.new(notice.event_id, body)
       end

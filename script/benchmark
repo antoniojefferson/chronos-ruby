@@ -5,3 +5,4 @@ bundle _1.17.3_ exec ruby benchmarks/capture_exception.rb
 bundle _1.17.3_ exec ruby benchmarks/serialization.rb
 bundle _1.17.3_ exec ruby benchmarks/filtering.rb
 bundle _1.17.3_ exec ruby benchmarks/queue.rb
+bundle _1.17.3_ exec ruby benchmarks/retry_backlog.rb

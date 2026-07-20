@@ -11,6 +11,31 @@ All notable changes are documented here. The project follows Semantic Versioning
 - legacy CI now resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector.
 - documentation verification now reads source and Markdown files explicitly as UTF-8 on legacy container locales.
 
+## [0.3.0.pre.1] - 2026-07-20
+
+### Added
+
+- explicit delivery-state counters for accepted, queued, serialized, sent, retried, dropped, and rejected events;
+- finite exponential retry with bounded jitter and `Retry-After` support;
+- retry classification for network errors, HTTP 408, 429, and 5xx responses;
+- closed, open, and half-open circuit breaker states;
+- fixed-capacity in-memory backlog restricted to sanitized serialized events;
+- bounded remote configuration for sampling, event types, payload limits, exact fingerprint ignores, send interval, and kill switch;
+- resilience contracts, unit tests, module documentation, ADR, executable example, and outage benchmark.
+
+### Changed
+
+- asynchronous and synchronous delivery now pass through `DeliveryPipeline`;
+- `WorkerPool` delegates delivery policy instead of sending directly through a transport;
+- version advanced to `0.3.0.pre.1`.
+
+### Known limitations
+
+- backlog is not persisted and is lost when the process exits;
+- backlog draining requires later delivery activity;
+- no dedicated remote-configuration polling endpoint;
+- no automatic Rack, Rails, or job integration.
+
 ## [0.2.0.pre.1] - 2026-07-19
 
 ### Added

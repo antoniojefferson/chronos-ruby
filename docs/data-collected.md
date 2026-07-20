@@ -1,6 +1,6 @@
 # Data collected
 
-Version 0.2 emits only manually submitted exception events. All fields pass through the privacy sanitizer and bounded safe serializer before delivery.
+Version 0.3 emits only manually submitted exception events. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
 
 | Data | Default | Source |
 |---|---|---|
@@ -16,7 +16,7 @@ Version 0.2 emits only manually submitted exception events. All fields pass thro
 | Tags and fingerprint | Optional and sanitized | Explicit capture arguments |
 | IPv4 address in supplied text | Anonymized | Explicit capture arguments |
 
-The gem never collects request bodies, response bodies, cookies, HTTP authorization headers, environment variables in bulk, source code, SQL bind values, database rows, or installed gems in version 0.2.
+The gem never collects request bodies, response bodies, cookies, HTTP authorization headers, environment variables in bulk, source code, SQL bind values, database rows, or installed gems in version 0.3.
 
 The secret `project_key` is an authentication header and is excluded from the JSON payload and logger diagnostics. The envelope field named `project_key` contains the public `project_id` required by the current v1 server contract.
 
