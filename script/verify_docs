@@ -16,6 +16,8 @@ required_documents = %w(
   docs/troubleshooting.md
   docs/modules/configuration.md
   docs/modules/notice-pipeline.md
+  docs/modules/sanitization.md
+  docs/modules/serialization.md
   docs/modules/transport.md
   docs/modules/async-queue.md
 )
@@ -39,5 +41,11 @@ abort "Contract schema must be version 1.0" unless schema["properties"]["schema_
 
 readme = File.read(File.join(root, "README.md"))
 abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\]/
+abort "README does not document version 0.2 privacy" unless readme.include?("Version 0.2")
+
+privacy = File.read(File.join(root, "docs/privacy-lgpd.md"))
+%w(password token cookie CPF CNPJ health financial audit).each do |topic|
+  abort "Privacy documentation is missing #{topic}" unless privacy.downcase.include?(topic.downcase)
+end
 
 puts "Documentation verification passed"
