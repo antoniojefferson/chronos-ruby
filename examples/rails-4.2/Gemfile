@@ -3,3 +3,7 @@ source "https://rubygems.org"
 gem "chronos-ruby", :path => "../.."
 gem "rails", "4.2.11.3"
 gem "sqlite3", "~> 1.3.13"
+
+# Loofah 2.20+ uses Nokogiri::HTML4, which is unavailable in the newest
+# Nokogiri release compatible with Ruby 2.2.
+gem "loofah", "2.19.1"
