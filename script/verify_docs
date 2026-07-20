@@ -35,6 +35,7 @@ required_documents = %w(
   docs/modules/rack-context.md
   docs/modules/rails-legacy.md
   docs/modules/telemetry-events.md
+  docs/modules/sidekiq-legacy.md
 )
 
 missing = required_documents.reject { |path| File.file?(File.join(root, path)) }
@@ -65,6 +66,13 @@ abort "Rack context contract must require trace isolation" unless rack_schema["r
 readme = read_utf8(File.join(root, "README.md"))
 abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\]/
 abort "README does not document version 0.5 Rails integration" unless readme.include?("Version 0.5")
+abort "README does not document version 0.6 Sidekiq integration" unless readme.include?("Version 0.6")
+
+sidekiq_schema_path = File.join(root, "contracts/sidekiq-job-v1.schema.json")
+sidekiq_schema = JSON.parse(read_utf8(sidekiq_schema_path))
+unless sidekiq_schema["properties"]["arguments"]["maxItems"] == 20
+  abort "Sidekiq job contract must bound arguments"
+end
 
 privacy = read_utf8(File.join(root, "docs/privacy-lgpd.md"))
 

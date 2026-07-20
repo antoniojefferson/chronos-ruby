@@ -11,6 +11,27 @@ All notable changes are documented here. The project follows Semantic Versioning
 - legacy CI now resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector.
 - documentation verification now reads source and Markdown files explicitly as UTF-8 on legacy container locales.
 
+## [0.6.0.pre.1] - 2026-07-20
+
+### Added
+
+- optional Sidekiq 4/5 client and server middleware loaded through `chronos/sidekiq`;
+- versioned trace/request context propagation beside, never inside, public job arguments;
+- Sidekiq class, queue, JID, retry count, duration, calculable latency, bounded arguments, tags, status, and error telemetry;
+- shared per-job exception deduplication for nested Sidekiq and Active Job capture paths;
+- Sidekiq payload contract, unit/integration tests, executable example, benchmark, module documentation, and ADR-014.
+
+### Changed
+
+- version advanced to `0.6.0.pre.1`;
+- the public facade exposes bounded propagation context for optional process-boundary integrations.
+
+### Known limitations
+
+- Sidekiq 4/5 remains `Best effort` until dedicated real-gem matrix jobs pass;
+- Active Job context propagation, Resque, and Delayed Job remain subsequent version 0.6 increments;
+- Sidekiq argument capture is automatic, though strictly bounded and sanitized.
+
 ## [0.4.0.pre.1] - 2026-07-20
 
 ### Added

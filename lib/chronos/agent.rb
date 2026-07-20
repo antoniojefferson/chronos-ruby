@@ -67,6 +67,21 @@ module Chronos
       @telemetry.call(event_type, payload, telemetry_context(context))
     end
 
+    # Returns the correlation subset safe for an integration-owned process boundary.
+    def propagation_context
+      current = context_hash(@context_store.get)
+      nested = context_hash(current[:context] || current["context"])
+      request = context_hash(nested["request"] || nested[:request])
+      values = {
+        "trace_id" => nested["trace_id"] || nested[:trace_id],
+        "request_id" => nested["request_id"] || nested[:request_id] ||
+                        request["request_id"] || request[:request_id]
+      }
+      values.delete_if { |_key, value| value.to_s.empty? }
+    rescue StandardError
+      {}
+    end
+
     def notify_once(exception, context = {})
       execution = @context_store.get
       captured = execution[:__chronos_captured_exceptions] || {}

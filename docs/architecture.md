@@ -1,6 +1,6 @@
 # Architecture
 
-Chronos Ruby 0.5 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
+Chronos Ruby 0.6 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
 
 ```mermaid
 flowchart TB
@@ -16,6 +16,8 @@ flowchart TB
   Context --> ThreadLocal[Adapters / ThreadLocalContextStore]
   Rails[Chronos Rails / Railtie and subscribers] --> Facade
   Rails --> Notifications[ActiveSupport Notifications]
+  Sidekiq[Integrations / Sidekiq client and server middleware] --> Facade
+  Sidekiq --> Envelope[Versioned job-envelope context]
   Application --> Telemetry[Core / TelemetryEvent]
 ```
 
@@ -28,6 +30,7 @@ flowchart TB
 - Internal contains private concurrency and diagnostic mechanisms.
 - Integrations contain optional framework entry points and never enter the domain boundary.
 - `Chronos::Rails` contains the optional Railtie, installer, generator, and public-notification adapters.
+- `Chronos::Integrations::Sidekiq` contains optional Sidekiq 4/5 middleware and bounded job normalization.
 
 The `Chronos` module is a thin facade. Rails, Rack, ActiveSupport, Sidekiq, and job libraries must not be required by the core.
 
@@ -40,6 +43,8 @@ The Rack middleware establishes a context-store scope, adds a bounded request br
 An exception becomes an immutable notice. `Sanitizer` removes sensitive values before `SafeSerializer` creates a bounded JSON envelope. Asynchronous capture inserts only that sanitized serialized event into the queue. A fixed worker sends it through `DeliveryPipeline`, which applies finite retry, a circuit breaker, and a fixed memory backlog. Synchronous capture bypasses the queue but uses the same privacy and resilience boundaries.
 
 Rails timings become immutable `TelemetryEvent` values. `CaptureTelemetry` applies the remote/local event policy, `TelemetrySerializer` sanitizes the allowlisted payload, and the resulting `SerializedEvent` enters the same delivery pipeline. Rails classes are loaded only through `chronos/rails`; the core never requires Rails or ActiveSupport.
+
+Sidekiq client middleware writes a versioned, allowlisted trace/request context beside the job's public arguments. Server middleware restores a job scope, limits arguments and tags, emits one job telemetry event, and routes a failure through the existing notice pipeline before re-raising it. Sidekiq retains queue, retry, thread, and connection lifecycle ownership.
 
 ## Failure policy
 

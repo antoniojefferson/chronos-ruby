@@ -1,10 +1,10 @@
 # Chronos Ruby
 
-Chronos Ruby is the framework-independent client for sending Ruby application errors and bounded telemetry to Chronos. Version 0.5 adds legacy Rails 4.2 and 5.2 installation, controller exception deduplication, and allowlisted request, query, job, and cache events to the Rack, privacy, and resilience foundations from earlier releases.
+Chronos Ruby is the framework-independent client for sending Ruby application errors and bounded telemetry to Chronos. Version 0.6 starts legacy worker support with Sidekiq 4/5 middleware, cross-process trace context, bounded job telemetry, and exception deduplication on top of the Rails, Rack, privacy, and resilience foundations from earlier releases.
 
 ## What the gem collects
 
-For each exception, version 0.5 can collect:
+For each exception, version 0.6 can collect:
 
 - exception class, message, structured backtrace, and chained causes;
 - timestamp, severity, tags, and an optional fingerprint;
@@ -31,7 +31,7 @@ See [Compatibility](docs/compatibility.md).
 The current public build is a pre-release. Add its exact version to the application's `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "0.5.0.pre.1"
+gem "chronos-ruby", "0.6.0.pre.1"
 ```
 
 Install with a Bundler version compatible with the application. For the oldest supported runtime:
@@ -52,7 +52,7 @@ gem install chronos-ruby --pre
 Version 0.5 exposes Rails support explicitly, keeping Rails and ActiveSupport out of plain Ruby applications:
 
 ```ruby
-gem "chronos-ruby", "0.5.0.pre.1", :require => "chronos/rails"
+gem "chronos-ruby", "0.6.0.pre.1", :require => "chronos/rails"
 ```
 
 Generate the initializer with:
@@ -172,7 +172,16 @@ Version 0.5 emits bounded `request`, `query`, `job`, and `cache` events from pub
 
 ## Sidekiq and Active Job
 
-Version 0.5 records bounded Active Job execution telemetry when Active Job is available. It includes the job class, queue, and duration, but excludes job IDs and arguments. Sidekiq-specific integration is not implemented.
+Version `0.6.0.pre.1` adds optional Sidekiq 4/5 middleware:
+
+```ruby
+gem "sidekiq", "~> 5.0"
+gem "chronos-ruby", "0.6.0.pre.1", :require => "chronos/sidekiq"
+```
+
+The client middleware propagates only trace/request identifiers in a versioned Sidekiq-envelope field and never changes worker arguments. The server records class, queue, JID, retry count, duration, calculable queue latency, bounded arguments/tags, status, and error class. Values pass through the shared sanitizer before delivery. Failed jobs are notified once and the original exception is re-raised. See [Sidekiq 4/5 legacy integration](docs/modules/sidekiq-legacy.md).
+
+The Rails subscriber continues to record basic Active Job class, queue, and duration. Full Active Job context propagation plus optional Resque and Delayed Job adapters are subsequent version 0.6 increments.
 
 ## Deploy tracking
 
@@ -257,7 +266,7 @@ Configuration errors are raised during `Chronos.configure`. Capture and delivery
 
 ## Benchmark
 
-Run the version 0.5 benchmarks with:
+Run the version 0.6 benchmarks with:
 
 ```bash
 bundle _1.17.3_ exec ruby benchmarks/capture_exception.rb
@@ -267,13 +276,14 @@ bundle _1.17.3_ exec ruby benchmarks/queue.rb
 bundle _1.17.3_ exec ruby benchmarks/retry_backlog.rb
 bundle _1.17.3_ exec ruby benchmarks/request_overhead.rb
 bundle _1.17.3_ exec ruby benchmarks/rails_notifications.rb
+bundle _1.17.3_ exec ruby benchmarks/sidekiq_middleware.rb
 ```
 
 Results depend on runtime, hardware, and payload. No performance comparison is claimed until repeatable measurements are published.
 
 ## Migration from Airbrake
 
-An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.5 does not claim API compatibility or automatic replacement.
+An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.6 does not claim API compatibility or automatic replacement.
 
 ## Local development
 
