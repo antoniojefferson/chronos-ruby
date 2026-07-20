@@ -19,6 +19,8 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "2.6"
+      - name: Update RubyGems
+        run: gem update --system 3.4.22 --no-document
       - name: Verify tag and gem version
         run: |
           ruby -Ilib -rchronos/version -e '
