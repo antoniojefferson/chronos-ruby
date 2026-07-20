@@ -6,6 +6,7 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ### Fixed
 
+- release publishing now updates RubyGems to a Ruby 2.6-compatible version that supports `GEM_HOST_API_KEY`.
 - Updated the legacy development toolchain to non-vulnerable Rake and RuboCop versions.
 - legacy CI now resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector.
 - documentation verification now reads source and Markdown files explicitly as UTF-8 on legacy container locales.
