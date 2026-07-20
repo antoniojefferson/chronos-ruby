@@ -19,6 +19,12 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "2.6"
+      - name: Verify tag and gem version
+        run: |
+          ruby -Ilib -rchronos/version -e '
+            expected = "v#{Chronos::VERSION.sub(".pre.", "-pre.")}"
+            abort "Tag must be #{expected}" unless ENV["GITHUB_REF_NAME"] == expected
+          '
       - run: gem install bundler -v 1.17.3
       - run: bundle _1.17.3_ install
       - run: bundle _1.17.3_ exec rake
