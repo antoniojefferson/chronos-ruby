@@ -18,4 +18,21 @@ RSpec.describe Chronos::Configuration, "execution context options" do
     expect(result.context_store).to equal(store)
     expect(store).not_to be_frozen
   end
+
+  it "uses safe Rails integration defaults" do
+    result = snapshot
+
+    expect(result.rails_enabled).to eq(true)
+    expect(result.rails_capture_in_console).to eq(false)
+    expect(result.rails_capture_in_test).to eq(false)
+    expect(result.rails_capture_user_agent).to eq(false)
+  end
+
+  it "rejects non-Boolean Rails integration switches" do
+    config = configuration(:rails_enabled => "yes", :rails_capture_in_test => nil)
+
+    expect(config.validation_errors).to include(
+      "rails_enabled must be true or false", "rails_capture_in_test must be true or false"
+    )
+  end
 end

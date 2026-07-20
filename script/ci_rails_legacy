@@ -1,0 +1,35 @@
+#!/usr/bin/env sh
+set -eu
+
+: "${EXAMPLE_PATH:?EXAMPLE_PATH is required}"
+export BUNDLE_GEMFILE="$EXAMPLE_PATH/Gemfile"
+export BUNDLE_RETRY="${BUNDLE_RETRY:-3}"
+
+gem list --installed bundler -v 1.17.3 >/dev/null || gem install bundler -v 1.17.3
+
+run_bundle() {
+  ruby -e 'load Gem.bin_path("bundler", "bundle", "1.17.3")' -- "$@"
+}
+
+install_bundle() {
+  attempt=1
+  max_attempts=3
+
+  while [ "$attempt" -le "$max_attempts" ]; do
+    if run_bundle install; then
+      return 0
+    fi
+
+    if [ "$attempt" -eq "$max_attempts" ]; then
+      echo "Bundle installation failed after $max_attempts attempts" >&2
+      return 1
+    fi
+
+    echo "Bundle installation attempt $attempt failed; retrying" >&2
+    sleep "$attempt"
+    attempt=$((attempt + 1))
+  done
+}
+
+install_bundle
+run_bundle exec ruby "$EXAMPLE_PATH/script/smoke"

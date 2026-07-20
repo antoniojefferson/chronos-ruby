@@ -38,4 +38,18 @@ RSpec.describe Chronos::Agent do
     expect(payload["payload"]["user"]).to eq("id" => "user-1")
     agent.close(1.0)
   end
+
+  it "deduplicates the same exception across Rails and Rack capture hooks" do
+    transport = FakeTransport.new
+    agent = described_class.new(snapshot, :transport => transport)
+    error = RuntimeError.new("controller failed")
+
+    agent.with_context do
+      expect(agent.notify_once(error)).to eq(true)
+      expect(agent.notify_once(RuntimeError.new("controller failed"))).to eq(false)
+    end
+    expect(agent.flush(1.0)).to eq(true)
+    expect(transport.events.size).to eq(1)
+    agent.close(1.0)
+  end
 end

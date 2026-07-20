@@ -1,6 +1,6 @@
 # Data collected
 
-Version 0.4 emits exception events submitted manually or captured by the optional Rack middleware. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
+Version 0.5 emits exception, request, query, job, and cache events. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
 
 | Data | Default | Source |
 |---|---|---|
@@ -21,8 +21,15 @@ Version 0.4 emits exception events submitted manually or captured by the optiona
 | Rack parameters | Collected only when already parsed | Explicit, Rack, or Action Dispatch parameter hashes |
 | Response size | `Content-Length` when present | Rack response headers |
 | Breadcrumbs | Explicit and bounded | Application and Chronos integration |
+| Rails controller/action, status, method, query-free path, normalized route, duration | Collected with Rails integration | `process_action.action_controller` |
+| Sanitized Rails parameters | Collected with Rails integration | Public controller notification payload |
+| View template basename and duration | Collected with Rails integration | `render_template.action_view` |
+| SQL operation name, cached flag, duration | Collected; SQL text omitted | `sql.active_record` |
+| Mailer/action and duration | Collected; message content omitted | `deliver.action_mailer` |
+| Active Job class, queue, duration | Collected when available; arguments omitted | `perform.active_job` |
+| Cache operation, store, hit flag, duration | Collected; key/value omitted | ActiveSupport cache notifications |
 
-The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, source code, SQL bind values, database rows, or installed gems in version 0.4.
+The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, source code, raw SQL, SQL bind values, database rows, cache keys/values, mail bodies/recipients, job IDs/arguments, or installed gems in version 0.5.
 
 The secret `project_key` is an authentication header and is excluded from the JSON payload and logger diagnostics. The envelope field named `project_key` contains the public `project_id` required by the current v1 server contract.
 

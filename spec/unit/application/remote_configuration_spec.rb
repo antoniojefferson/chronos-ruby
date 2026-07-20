@@ -17,7 +17,7 @@ RSpec.describe Chronos::Application::RemoteConfiguration do
     expect(applied).to eq(true)
     expect(remote.sampling_rate).to eq(0.25)
     expect(remote.enabled_event?("exception")).to eq(true)
-    expect(remote.enabled_event?("query")).to eq(false)
+    expect(remote.enabled_event?("query")).to eq(true)
     expect(remote.max_payload_size).to eq(2048)
     expect(remote.ignored_fingerprint?("expected-error")).to eq(true)
     expect(remote.send_interval).to eq(2.0)

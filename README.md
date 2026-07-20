@@ -1,10 +1,10 @@
 # Chronos Ruby
 
-Chronos Ruby is the framework-independent client for sending Ruby application errors to Chronos. Version 0.4 adds automatic Rack exception capture, isolated request context, and bounded breadcrumbs to the privacy and resilience foundations from earlier releases.
+Chronos Ruby is the framework-independent client for sending Ruby application errors and bounded telemetry to Chronos. Version 0.5 adds legacy Rails 4.2 and 5.2 installation, controller exception deduplication, and allowlisted request, query, job, and cache events to the Rack, privacy, and resilience foundations from earlier releases.
 
 ## What the gem collects
 
-For each exception, version 0.4 can collect:
+For each exception, version 0.5 can collect:
 
 - exception class, message, structured backtrace, and chained causes;
 - timestamp, severity, tags, and an optional fingerprint;
@@ -22,7 +22,7 @@ Chronos Ruby does not inspect environment variables, request bodies, cookies, HT
 
 ## Supported Ruby and Rails versions
 
-Version 0.x targets Ruby 2.2.10 through Ruby 2.6. Version 0.4 implements the Rack protocol but does not yet declare Rails support. All supported combinations must pass dedicated CI before being listed as supported.
+Version 0.x targets Ruby 2.2.10 through Ruby 2.6. Version 0.5 provides best-effort Rails 4.2 through 5.2 integration through public framework APIs and feature detection. All supported combinations must pass dedicated CI before being listed as supported.
 
 See [Compatibility](docs/compatibility.md).
 
@@ -31,7 +31,7 @@ See [Compatibility](docs/compatibility.md).
 The current public build is a pre-release. Add its exact version to the application's `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "0.4.0.pre.1"
+gem "chronos-ruby", "0.5.0.pre.1"
 ```
 
 Install with a Bundler version compatible with the application. For the oldest supported runtime:
@@ -49,7 +49,19 @@ gem install chronos-ruby --pre
 
 ## Rails installation
 
-Rails automatic installation is not part of version 0.4. A Rails application may install the Rack middleware manually, but this does not constitute declared Rails support. Railtie and generator support are planned for version 0.5.
+Version 0.5 exposes Rails support explicitly, keeping Rails and ActiveSupport out of plain Ruby applications:
+
+```ruby
+gem "chronos-ruby", "0.5.0.pre.1", :require => "chronos/rails"
+```
+
+Generate the initializer with:
+
+```bash
+rails generate chronos:install
+```
+
+The Railtie installs the Rack middleware and notification subscribers idempotently. Automatic integration is disabled in test and console by default and can be controlled with `rails_enabled`, `rails_capture_in_test`, `rails_capture_in_console`, and `rails_capture_user_agent`. See [Rails 4.2 and 5.2 integration](docs/modules/rails-legacy.md).
 
 ## Minimum configuration
 
@@ -156,11 +168,11 @@ Local exception-specific ignore callbacks are not available in version 0.4. The 
 
 ## Performance monitoring
 
-Request timing events, SQL, cache, job, and external HTTP monitoring are not implemented in version 0.4. Rack exception context is bounded, and HTTP delivery runs outside the caller thread when `Chronos.notify` is used.
+Version 0.5 emits bounded `request`, `query`, `job`, and `cache` events from public Rails notifications. SQL text and binds, cache keys and values, job arguments, mail content and recipients, and request or response bodies are never copied. Aggregation, percentiles, query fingerprints, and external HTTP monitoring are not implemented in this version.
 
 ## Sidekiq and Active Job
 
-Sidekiq and Active Job integrations are not implemented in version 0.4. Calling the manual API from a job is possible, but automatic capture and deduplication are not yet guaranteed.
+Version 0.5 records bounded Active Job execution telemetry when Active Job is available. It includes the job class, queue, and duration, but excludes job IDs and arguments. Sidekiq-specific integration is not implemented.
 
 ## Deploy tracking
 
@@ -203,6 +215,7 @@ The code follows hexagonal boundaries:
 - `Chronos::Ports` defines delivery behavior;
 - `Chronos::Adapters` implements Net::HTTP delivery and thread-local context;
 - `Chronos::Integrations::Rack` implements optional automatic Rack capture;
+- `Chronos::Rails` implements the optional Railtie, installer, generator, and public-notification adapters;
 - `Chronos::Internal` owns bounded queueing, workers, and defensive logging.
 
 The core has no dependency on Rails, Rack, Sidekiq, or ActiveSupport. See [Architecture](docs/architecture.md).
@@ -244,7 +257,7 @@ Configuration errors are raised during `Chronos.configure`. Capture and delivery
 
 ## Benchmark
 
-Run the version 0.4 benchmarks with:
+Run the version 0.5 benchmarks with:
 
 ```bash
 bundle _1.17.3_ exec ruby benchmarks/capture_exception.rb
@@ -253,13 +266,14 @@ bundle _1.17.3_ exec ruby benchmarks/filtering.rb
 bundle _1.17.3_ exec ruby benchmarks/queue.rb
 bundle _1.17.3_ exec ruby benchmarks/retry_backlog.rb
 bundle _1.17.3_ exec ruby benchmarks/request_overhead.rb
+bundle _1.17.3_ exec ruby benchmarks/rails_notifications.rb
 ```
 
 Results depend on runtime, hardware, and payload. No performance comparison is claimed until repeatable measurements are published.
 
 ## Migration from Airbrake
 
-An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.4 does not claim API compatibility or automatic replacement.
+An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.5 does not claim API compatibility or automatic replacement.
 
 ## Local development
 

@@ -14,7 +14,15 @@ Check DNS, TLS certificates, credentials, HTTP status, proxy configuration, and 
 
 ## Rack exception is not captured
 
-Confirm that `Chronos.configure` runs before the middleware handles requests and that the middleware wraps the application component that raises. Version 0.4 captures exceptions raised by the initial downstream Rack call; an exception raised later while a server enumerates a streaming response body is outside this release. The original exception is always re-raised, so the server log should still show it.
+Confirm that `Chronos.configure` runs before the middleware handles requests and that the middleware wraps the application component that raises. Version 0.5 captures exceptions raised by the initial downstream Rack call; an exception raised later while a server enumerates a streaming response body is outside this release. The original exception is always re-raised, so the server log should still show it.
+
+## Rails middleware or telemetry is missing
+
+Require `chronos/rails` from the generated initializer and confirm it runs before requests. Automatic integration is disabled by default in Rails test and console; set `rails_capture_in_test` or `rails_capture_in_console` explicitly when validating those environments. `rails_enabled = false` disables all automatic Rails hooks. Active Job is subscribed only when its constant is available during installation.
+
+## Rails telemetry contains no SQL or cache key
+
+This is intentional. Version 0.5 records SQL operation name/duration and cache operation/store/hit status without raw statements, binds, keys, or values. These omissions are privacy and cardinality boundaries, not capture failures.
 
 ## Context appears missing
 
