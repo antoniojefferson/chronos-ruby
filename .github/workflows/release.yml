@@ -22,7 +22,7 @@ jobs:
       - name: Verify tag and gem version
         run: |
           ruby -Ilib -rchronos/version -e '
-            expected = "v#{Chronos::VERSION.sub(".pre.", "-pre.")}"
+            expected = "v#{Chronos::VERSION}"
             abort "Tag must be #{expected}" unless ENV["GITHUB_REF_NAME"] == expected
           '
       - run: gem install bundler -v 1.17.3

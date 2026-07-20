@@ -26,10 +26,10 @@ See [Compatibility](docs/compatibility.md).
 
 ## Plain Ruby installation
 
-The first public build is a pre-release. Add its exact version to the application's `Gemfile`:
+The current public build is a pre-release. Add its exact version to the application's `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "0.1.0.pre.1"
+gem "chronos-ruby", "0.1.0.pre.2"
 ```
 
 Install with a Bundler version compatible with the application. For the oldest supported runtime:
