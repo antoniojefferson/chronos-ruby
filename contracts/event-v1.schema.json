@@ -20,7 +20,7 @@
   "properties": {
     "schema_version": {"const": "1.0"},
     "event_id": {"type": "string", "minLength": 1},
-    "event_type": {"enum": ["exception"]},
+    "event_type": {"enum": ["exception", "request", "query", "job", "cache"]},
     "occurred_at": {"type": "string"},
     "sent_at": {"type": "string"},
     "project_key": {"type": "string", "minLength": 1},
@@ -36,16 +36,30 @@
     },
     "runtime": {"type": "object"},
     "context": {"type": "object"},
-    "payload": {
-      "type": "object",
-      "required": ["exception", "severity"],
-      "properties": {
-        "exception": {
-          "type": "object",
-          "required": ["class", "message", "backtrace", "causes"]
-        },
-        "severity": {"type": "string"}
+    "payload": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["event_type"],
+        "properties": {
+          "event_type": {"const": "exception"}
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["exception", "severity"],
+            "properties": {
+              "exception": {
+                "type": "object",
+                "required": ["class", "message", "backtrace", "causes"]
+              },
+              "severity": {"type": "string"}
+            }
+          }
+        }
       }
     }
-  }
+  ]
 }
