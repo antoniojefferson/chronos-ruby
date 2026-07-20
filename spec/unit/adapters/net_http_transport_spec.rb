@@ -65,6 +65,15 @@ RSpec.describe Chronos::Adapters::NetHttpTransport do
     expect(result).not_to be_retryable
   end
 
+  it "classifies request timeout as retryable" do
+    server = FakeHttpServer.new("408 Request Timeout")
+    result = transport_for(server).send_event(event)
+    server.stop
+
+    expect(result.status).to eq(:request_timeout)
+    expect(result).to be_retryable
+  end
+
   it "contains read timeouts" do
     server = FakeHttpServer.new("202 Accepted", :delay => 0.2)
     result = transport_for(server, :timeout => 0.05).send_event(event)

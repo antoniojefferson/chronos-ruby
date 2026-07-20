@@ -6,7 +6,9 @@ RSpec.describe Chronos::Agent do
     expect(agent.notify(RuntimeError.new("failed"))).to eq(true)
     expect(agent.flush(1.0)).to eq(true)
     expect(transport.events.size).to eq(1)
+    expect(agent.diagnostics[:queue][:accepted]).to eq(1)
     expect(agent.diagnostics[:accepted]).to eq(1)
+    expect(agent.diagnostics[:states][:sent]).to eq(1)
     agent.close(1.0)
   end
 

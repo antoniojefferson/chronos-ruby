@@ -7,10 +7,40 @@ RSpec.describe Chronos::Configuration do
     expect(result.ssl_verify).to eq(true)
     expect(result.gzip).to eq(false)
     expect(result.anonymize_ip).to eq(true)
+    expect(result.max_retries).to eq(3)
+    expect(result.backlog_size).to eq(100)
+    expect(result.circuit_failure_threshold).to eq(5)
+    expect(result.remote_configuration).to eq(true)
+    expect(result.sampling_rate).to eq(1.0)
     expect(result.blocklist_keys).to include("password", "authorization", "cpf", "cnpj")
     expect(result).to be_frozen
     expect(result.ignored_environments).to be_frozen
     expect(result.blocklist_keys).to be_frozen
+  end
+
+  it "rejects unbounded resilience and remote configuration settings" do
+    config = configuration(
+      :max_retries => -1,
+      :retry_base_interval => 5.0,
+      :retry_max_interval => 1.0,
+      :retry_jitter => 2.0,
+      :backlog_size => -1,
+      :circuit_failure_threshold => 0,
+      :remote_configuration => "yes",
+      :sampling_rate => 1.5,
+      :enabled_event_types => [:exception]
+    )
+
+    expect(config.validation_errors).to include("max_retries must be a non-negative integer")
+    expect(config.validation_errors).to include(
+      "retry_max_interval must be greater than or equal to retry_base_interval"
+    )
+    expect(config.validation_errors).to include("retry_jitter must be between zero and one")
+    expect(config.validation_errors).to include("backlog_size must be a non-negative integer")
+    expect(config.validation_errors).to include("circuit_failure_threshold must be a positive integer")
+    expect(config.validation_errors).to include("remote_configuration must be true or false")
+    expect(config.validation_errors).to include("sampling_rate must be between zero and one")
+    expect(config.validation_errors).to include("enabled_event_types must contain only String values")
   end
 
   it "requires credentials and an HTTPS host when enabled" do

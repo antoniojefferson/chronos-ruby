@@ -30,4 +30,18 @@ RSpec.describe "privacy contract" do
 
     SENSITIVE_VALUES.each { |secret| expect(body).not_to include(secret) }
   end
+
+  it "stores only the sanitized payload in the retry backlog" do
+    notice = Chronos::Core::NoticeBuilder.new(snapshot).call(
+      RuntimeError.new("failed with Bearer production-token"),
+      :parameters => {"password" => "plain-password"}
+    )
+    event = Chronos::Core::PayloadSerializer.new(snapshot).call(notice)
+    backlog = Chronos::Internal::MemoryBacklog.new(1)
+
+    expect(backlog.push(event)).to eq(true)
+    stored = backlog.shift.body
+    expect(stored).not_to include("production-token")
+    expect(stored).not_to include("plain-password")
+  end
 end
