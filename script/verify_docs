@@ -54,6 +54,7 @@ abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\
 abort "README does not document version 0.2 privacy" unless readme.include?("Version 0.2")
 
 privacy = read_utf8(File.join(root, "docs/privacy-lgpd.md"))
+
 %w(password token cookie CPF CNPJ health financial audit).each do |topic|
   abort "Privacy documentation is missing #{topic}" unless privacy.downcase.include?(topic.downcase)
 end
