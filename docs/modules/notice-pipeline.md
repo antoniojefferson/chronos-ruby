@@ -9,12 +9,14 @@ flowchart LR
   NoticeBuilder --> CauseCollector
   NoticeBuilder --> RuntimeInfo
   NoticeBuilder --> Notice
-  Notice --> PayloadSerializer
+  Notice --> Sanitizer
+  Sanitizer --> SafeSerializer
+  SafeSerializer --> PayloadSerializer
   PayloadSerializer --> SerializedEvent
 ```
 
-`Notice` is immutable. Parsers are stateless. The serializer accepts only JSON primitives, bounds nested structures, tolerates invalid encoding, and represents unknown objects without arbitrary `to_json` calls.
+`Notice` is immutable. Parsers are stateless. Raw notice values exist only in process memory. The sanitizer removes sensitive keys and recognized personal data before the safe serializer accepts JSON primitives, bounds nested structures, tolerates invalid encoding, and represents unknown objects without arbitrary application serialization.
 
-Version 0.1 deliberately excludes the advanced sanitizer, sampler, and fingerprint policy. These can be inserted before serialization without changing transport or queue code.
+Version 0.2 deliberately excludes sampling, retry, and fingerprint policy. These can be inserted after sanitization without changing transport or queue code.
 
 Unit and contract tests verify missing backtraces, cyclic causes, invalid encoding, unsafe objects, payload limits, and the v1 envelope.

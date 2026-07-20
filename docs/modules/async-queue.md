@@ -14,4 +14,4 @@ stateDiagram-v2
   Accepted --> Dropped: queue full
 ```
 
-Version 0.1 has no disk persistence and no retry. Queue statistics expose current size, capacity, accepted events, and dropped events. Tests cover full queues, waiter wakeup, lazy startup, contained failures, timed shutdown, double close, flush, and fork behavior.
+Version 0.2 has no disk persistence and no retry. Only sanitized serialized events enter the queue. Queue statistics expose current size, capacity, accepted events, and dropped events. Tests cover full queues, waiter wakeup, lazy startup, contained failures, timed shutdown, double close, flush, and fork behavior.

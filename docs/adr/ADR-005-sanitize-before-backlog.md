@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed for versions 0.2 and 0.3; no backlog exists in 0.1.
+Accepted for version 0.2; no backlog exists yet.
 
 ## Context
 
@@ -10,7 +10,7 @@ Persisting unsanitized events would increase privacy and credential exposure ris
 
 ## Decision
 
-Any future retry or persistent backlog must receive only data that has already passed sanitization and structural limits.
+`PayloadSerializer` must run `Sanitizer` before `SafeSerializer`, queueing, transport, or any future retry and persistent backlog. Raw notices remain transient in process memory and never enter delivery storage.
 
 ## Alternatives
 
