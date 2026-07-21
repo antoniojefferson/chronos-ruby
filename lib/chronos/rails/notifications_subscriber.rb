@@ -29,6 +29,7 @@ module Chronos
       def initialize(notifier = Chronos, notifications = nil)
         @notifier = notifier
         @notifications = notifications || active_support_notifications
+        @sql_normalizer = Core::SqlNormalizer.new
       end
 
       def install
@@ -105,7 +106,7 @@ module Chronos
           "route" => route(payload),
           "duration_ms" => duration, "parameters" => hash(value(payload, :params))
         }
-        @notifier.record_event("request", data)
+        record_once("request", "request", data)
       end
 
       def render_template(payload, duration)
@@ -117,10 +118,15 @@ module Chronos
       end
 
       def sql(payload, duration)
-        data = {
-          "name" => value(payload, :name).to_s, "cached" => value(payload, :cached) == true,
-          "duration_ms" => duration
+        metadata = {
+          :name => value(payload, :name), :cached => value(payload, :cached),
+          :adapter => value(payload, :adapter), :connection => value(payload, :connection),
+          :role => value(payload, :connection_role) || value(payload, :role),
+          :shard => value(payload, :connection_shard) || value(payload, :shard),
+          :exception_object => value(payload, :exception_object), :exception => value(payload, :exception)
         }
+        metadata[:source] = sampled_query_source if duration >= slow_query_threshold
+        data = @sql_normalizer.call(value(payload, :sql), metadata).merge("duration_ms" => duration)
         @notifier.record_event("query", data)
       end
 
@@ -195,6 +201,32 @@ module Chronos
 
       def safe_job_value(job, method_name)
         job.respond_to?(method_name) ? job.public_send(method_name).to_s : ""
+      rescue StandardError
+        ""
+      end
+
+      def record_once(key, event_type, payload)
+        if @notifier.respond_to?(:record_event_once)
+          @notifier.record_event_once(key, event_type, payload)
+        else
+          @notifier.record_event(event_type, payload)
+        end
+      end
+
+      def slow_query_threshold
+        options = @notifier.respond_to?(:apm_integration_options) ? @notifier.apm_integration_options : {}
+        (options[:slow_query_threshold_ms] || 500.0).to_f
+      rescue StandardError
+        500.0
+      end
+
+      def sampled_query_source
+        options = @notifier.respond_to?(:apm_integration_options) ? @notifier.apm_integration_options : {}
+        root = options[:root_directory].to_s
+        frame = caller.find do |line|
+          (root.empty? || line.start_with?(root)) && line !~ %r{/lib/chronos/}
+        end
+        frame.to_s.sub(/:in .*/, "")[0, 256]
       rescue StandardError
         ""
       end

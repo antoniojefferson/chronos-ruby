@@ -75,14 +75,19 @@ RSpec.describe Chronos::Rails::NotificationsSubscriber do
     notifier = RecordingNotifier.new
     described_class.new(notifier, notifications).install
 
-    notifications.publish("sql.active_record", :name => "Account Load", :sql => "SELECT secret", :binds => ["x"])
+    notifications.publish(
+      "sql.active_record",
+      :name => "Account Load", :sql => "SELECT * FROM accounts WHERE token = 'raw-secret'",
+      :binds => ["private-bind"]
+    )
     notifications.publish("render_template.action_view", :identifier => "/app/views/accounts/show.html.erb")
     notifications.publish("deliver.action_mailer", :mailer => "ReceiptMailer", :action => "paid", :mail => "raw")
     notifications.publish("cache_write.active_support", :key => "customer-secret", :store => "Redis")
 
     serialized = notifier.events.to_s
-    expect(serialized).not_to include("SELECT secret", "customer-secret", "raw")
+    expect(serialized).not_to include("raw-secret", "private-bind", "customer-secret", "raw")
     expect(notifier.events.map(&:first)).to eq(%w(query request job cache))
+    expect(notifier.events.first[1]["normalized_query"]).to eq("SELECT * FROM accounts WHERE token = ?")
     expect(notifier.events[1][1]["template"]).to eq("show.html.erb")
   end
 end

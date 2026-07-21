@@ -9,3 +9,4 @@ bundle _1.17.3_ exec ruby benchmarks/retry_backlog.rb
 bundle _1.17.3_ exec ruby benchmarks/request_overhead.rb
 bundle _1.17.3_ exec ruby benchmarks/rails_notifications.rb
 bundle _1.17.3_ exec ruby benchmarks/sidekiq_middleware.rb
+bundle _1.17.3_ exec ruby benchmarks/apm_aggregation.rb

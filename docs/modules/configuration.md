@@ -7,3 +7,5 @@ This module is separate from capture because configuration errors should be foun
 Risks include accidentally logging credentials and changing settings while events run. The snapshot prevents mutation, while logger and transport code never interpolate `project_key`.
 
 Tests in `spec/unit/configuration_spec.rb` verify required fields, HTTPS defaults, immutable containers, disabled operation, and bounded numeric settings.
+
+Version 0.7 adds bounded APM capacities, thresholds, and histogram boundaries. Invalid zero/negative capacities, batches above 50, N+1 thresholds below two, and non-increasing histogram boundaries are rejected before agent construction. See [Essential APM aggregation](apm-aggregation.md).

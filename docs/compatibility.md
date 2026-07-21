@@ -19,6 +19,8 @@ Version 0.5 includes Rails 4.2 and 5.2 applications plus a dedicated matrix, but
 
 Version `0.6.0.pre.1` uses the public Sidekiq 4/5 middleware signatures and remains `Best effort` until dedicated jobs exercise both real gem versions across their valid Ruby combinations.
 
+Version `0.7.0.pre.1` keeps the same Ruby/Rails matrix and implements APM aggregation without modern concurrency or SQL-parser dependencies. Its compatibility remains `Best effort` until request/SQL/job aggregate payloads pass the dedicated fake-server gates for every listed runtime.
+
 Status meanings:
 
 - Supported: the complete required compatibility gate passes.

@@ -23,6 +23,6 @@ RSpec.describe "Chronos event contract v1" do
   it "declares the Rails telemetry event types" do
     types = schema["properties"]["event_type"]["enum"]
 
-    expect(types).to include("exception", "request", "query", "job", "cache")
+    expect(types).to include("exception", "request", "query", "job", "cache", "metric_batch")
   end
 end

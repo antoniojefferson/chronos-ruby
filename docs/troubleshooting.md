@@ -32,6 +32,18 @@ Require `chronos/sidekiq` after Sidekiq is available and configure Chronos befor
 
 The bundled middleware does not install a global error handler and uses `notify_once` inside a shared job scope. Check for application-installed Chronos calls or third-party global handlers outside that scope. Keep a single bundled server middleware entry in the Sidekiq chain.
 
+## Request, query, or job events are not sent immediately
+
+This is expected with version 0.7 APM aggregation. Groups drain after `apm_flush_count` observations or during `Chronos.flush`/`Chronos.close`. Inspect `agent.diagnostics[:apm]` when using an explicit agent. Set `apm_enabled = false` only for temporary individual-event diagnostics.
+
+## Query metrics contain no literal values or binds
+
+This is intentional. The normalizer removes common literal forms and never reads binds. Queries differing only by values should share a fingerprint. If an unsupported database dialect leaves a sensitive literal form, stop delivery, add a synthetic privacy fixture, and report the dialect through the security/support process.
+
+## Possible N+1 or deadlock signal is inaccurate
+
+Local detectors emit bounded heuristics, not confirmed diagnoses. Repetition can be legitimate and exception class names can be adapter-specific. Confirm the trace in the SaaS and application logs before changing application behavior.
+
 ## Context appears missing
 
 The legacy context store is thread-local. A new application-created thread does not inherit context. Establish a new `Chronos.with_context` scope inside that thread, and issue manual notification before the scope exits. For Rack capture, supply user and explicit parameters through the documented environment keys.

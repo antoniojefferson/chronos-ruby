@@ -16,7 +16,7 @@ module Chronos
     # @errors Unsupported types raise ArgumentError during construction.
     # @performance Construction is linear in supplied context and payload size.
     class TelemetryEvent
-      TYPES = %w(request query job cache).freeze
+      TYPES = %w(request query job cache metric_batch).freeze
 
       attr_reader :event_id, :event_type, :timestamp, :context, :payload
 

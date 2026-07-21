@@ -1,6 +1,6 @@
 # Data collected
 
-Version 0.6 emits exception, request, query, job, and cache events. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
+Version 0.7 emits exceptions, individual cache telemetry, and aggregated request/query/job metric batches. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
 
 | Data | Default | Source |
 |---|---|---|
@@ -32,9 +32,18 @@ Version 0.6 emits exception, request, query, job, and cache events. All fields p
 | Sidekiq arguments | Collected, sanitized, and bounded | First 20 job arguments; collections/depth/strings limited |
 | Sidekiq tags | Collected and bounded | Job payload or public worker options |
 | Sidekiq trace/request IDs | Propagated when present; trace generated otherwise | Chronos job-envelope metadata |
+| APM counts, error counts/rates, duration total/min/max/average | Aggregated by default | Request, query, and job observations |
+| Fixed duration histogram and status counts | Aggregated by default | Local bounded counters |
+| Component breakdown | database/view/cache/queue/application when observable | Trace-local bounded totals |
+| Normalized SQL and SHA-256 fingerprint | Collected without comments, literals, or binds | `sql.active_record` payload |
+| SQL adapter, operation, inferred table, AR name, cache flag, role/shard | Collected when exposed | Public notification payload and connection feature detection |
+| Slow SQL source frame | Collected only for threshold-selected slow queries | Bounded application call frame |
+| APM diagnostic signals | Heuristic counters | Local threshold and repetition detection |
 | Cache operation, store, hit flag, duration | Collected; key/value omitted | ActiveSupport cache notifications |
 
 The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, source code, raw SQL, SQL bind values, database rows, cache keys/values, mail bodies/recipients, or installed gems. Sidekiq JIDs and bounded arguments are the explicit version 0.6 exception to the earlier job-ID/argument exclusion.
+
+APM dimensions never include user ID, job ID, raw URL, exception message, bind value, or cache key. Normalized routes replace common numeric/UUID segments. Normalized SQL can retain schema, table, and column identifiers; review those identifiers as part of the privacy audit.
 
 The secret `project_key` is an authentication header and is excluded from the JSON payload and logger diagnostics. The envelope field named `project_key` contains the public `project_id` required by the current v1 server contract.
 

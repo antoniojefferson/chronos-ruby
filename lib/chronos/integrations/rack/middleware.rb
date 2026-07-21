@@ -38,11 +38,14 @@ module Chronos
           response = @app.call(env)
           status = response[0]
           headers = response[1]
-          add_request_breadcrumb("request completed", dynamic_request_context(base, status, headers, started_at))
+          context = dynamic_request_context(base, status, headers, started_at)
+          add_request_breadcrumb("request completed", context)
+          record_request_metric(context)
           response
         rescue Exception => error # rubocop:disable Lint/RescueException
           context = dynamic_request_context(base, 500, nil, started_at)
           notify_safely(error, context)
+          record_request_metric(context)
           raise
         end
 
@@ -139,6 +142,21 @@ module Chronos
             :category => "request", :message => message,
             :metadata => {"method" => request["method"], "route" => request["route"], "status" => request["status"]}
           )
+        end
+
+        def record_request_metric(context)
+          request = context[:context]["request"]
+          payload = {
+            "kind" => "rack", "route" => request["route"], "method" => request["method"],
+            "status" => request["status"], "duration_ms" => request["duration_ms"]
+          }
+          if @notifier.respond_to?(:record_event_once)
+            @notifier.record_event_once("request", "request", payload)
+          elsif @notifier.respond_to?(:record_event)
+            @notifier.record_event("request", payload)
+          end
+        rescue StandardError
+          false
         end
 
         def hash_value(value)

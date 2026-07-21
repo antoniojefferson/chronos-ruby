@@ -20,7 +20,7 @@
   "properties": {
     "schema_version": {"const": "1.0"},
     "event_id": {"type": "string", "minLength": 1},
-    "event_type": {"enum": ["exception", "request", "query", "job", "cache"]},
+    "event_type": {"enum": ["exception", "request", "query", "job", "cache", "metric_batch"]},
     "occurred_at": {"type": "string"},
     "sent_at": {"type": "string"},
     "project_key": {"type": "string", "minLength": 1},

@@ -64,4 +64,18 @@ RSpec.describe Chronos::Agent do
     expect(context).to eq("trace_id" => "trace-1", "request_id" => "request-1")
     agent.close(1.0)
   end
+
+  it "deduplicates one request metric across nested Rails and Rack hooks" do
+    transport = FakeTransport.new
+    agent = described_class.new(snapshot, :transport => transport)
+
+    agent.with_context do
+      expect(agent.record_event_once("request", "request", "route" => "/users", "duration_ms" => 10)).to eq(true)
+      expect(agent.record_event_once("request", "request", "route" => "/users", "duration_ms" => 10)).to eq(false)
+    end
+    agent.flush(1.0)
+    payload = JSON.parse(transport.events.first.body)
+    expect(payload["payload"]["metrics"].first["count"]).to eq(1)
+    agent.close(1.0)
+  end
 end

@@ -67,6 +67,13 @@ module Chronos
         false
       end
 
+      def event_enabled?(event_type)
+        @remote_configuration.delivery_enabled?(event_type)
+      rescue StandardError => error
+        diagnose(error)
+        false
+      end
+
       def max_payload_size
         @remote_configuration.max_payload_size
       end

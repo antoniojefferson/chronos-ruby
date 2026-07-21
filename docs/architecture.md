@@ -1,6 +1,6 @@
 # Architecture
 
-Chronos Ruby 0.6 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
+Chronos Ruby 0.7 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
 
 ```mermaid
 flowchart TB
@@ -19,6 +19,8 @@ flowchart TB
   Sidekiq[Integrations / Sidekiq client and server middleware] --> Facade
   Sidekiq --> Envelope[Versioned job-envelope context]
   Application --> Telemetry[Core / TelemetryEvent]
+  Telemetry --> APM[Application / ApmAggregator]
+  APM --> Metrics[Core / MetricAggregate and SqlNormalizer]
 ```
 
 ## Boundaries
@@ -44,7 +46,9 @@ An exception becomes an immutable notice. `Sanitizer` removes sensitive values b
 
 Rails timings become immutable `TelemetryEvent` values. `CaptureTelemetry` applies the remote/local event policy, `TelemetrySerializer` sanitizes the allowlisted payload, and the resulting `SerializedEvent` enters the same delivery pipeline. Rails classes are loaded only through `chronos/rails`; the core never requires Rails or ActiveSupport.
 
-Sidekiq client middleware writes a versioned, allowlisted trace/request context beside the job's public arguments. Server middleware restores a job scope, limits arguments and tags, emits one job telemetry event, and routes a failure through the existing notice pipeline before re-raising it. Sidekiq retains queue, retry, thread, and connection lifecycle ownership.
+Sidekiq client middleware writes a versioned, allowlisted trace/request context beside the job's public arguments. Server middleware restores a job scope, limits arguments and tags, emits a job observation, and routes a failure through the existing notice pipeline before re-raising it. Sidekiq retains queue, retry, thread, and connection lifecycle ownership.
+
+Version 0.7 routes request, query, and job observations through `ApmAggregator`. `SqlNormalizer` removes values before grouping, while `MetricAggregate` owns fixed numerical statistics. Aggregates and per-trace query trackers are bounded and mutex-protected. Threshold or lifecycle drains create `metric_batch` telemetry that passes through the existing sanitizer and delivery pipeline. No APM-specific thread is created.
 
 ## Failure policy
 

@@ -12,6 +12,30 @@ All notable changes are documented here. The project follows Semantic Versioning
 - legacy CI now resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector.
 - documentation verification now reads source and Markdown files explicitly as UTF-8 on legacy container locales.
 
+## [0.7.0.pre.1] - 2026-07-20
+
+### Added
+
+- bounded local request, SQL, and job aggregation with count, error rate, duration statistics, histograms, status codes, and component breakdown;
+- `metric_batch` v1 payloads containing at most 50 sanitized metric groups;
+- bounded SQL normalization, fingerprinting, adapter/operation/table/name/cache/role/shard dimensions, and sampled slow-query source;
+- heuristic slow-query, repeated-query, possible N+1, long-transaction, connection-error, and deadlock signals;
+- generic Rack request metrics with Rails/Rack deduplication;
+- APM configuration, diagnostics, contracts, tests, example, benchmark, module documentation, and ADR-015.
+
+### Changed
+
+- request, query, and job observations aggregate by default instead of producing one delivery event each;
+- `Chronos.flush` and `Chronos.close` drain APM aggregates before delivery shutdown;
+- version advanced to `0.7.0.pre.1`.
+
+### Known limitations
+
+- local signals are heuristic and require server-side confirmation;
+- incomplete trace trackers are cleared when aggregates drain;
+- normalized SQL is defensive rather than a complete dialect parser;
+- external HTTP breakdown remains version 0.8 scope.
+
 ## [0.6.0.pre.1] - 2026-07-20
 
 ### Added

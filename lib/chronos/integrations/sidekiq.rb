@@ -176,6 +176,8 @@ module Chronos
           propagated = {} unless propagated.is_a?(Hash)
           {
             :context => propagated.merge("job" => job_context(payload)),
+            :parameters => {"arguments" => payload["arguments"]},
+            :tags => payload["tags"],
             :__chronos_captured_exceptions => {}
           }
         end

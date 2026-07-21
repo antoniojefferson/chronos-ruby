@@ -67,6 +67,26 @@ module Chronos
       @telemetry.call(event_type, payload, telemetry_context(context))
     end
 
+    def record_event_once(key, event_type, payload = {}, context = {})
+      execution = @context_store.get
+      captured = execution[:__chronos_captured_events] || {}
+      return false if captured[key.to_s]
+
+      captured[key.to_s] = true
+      @context_store.set(execution.merge(:__chronos_captured_events => captured))
+      record_event(event_type, payload, context)
+    rescue StandardError
+      false
+    end
+
+    def apm_integration_options
+      {
+        :enabled => @config.apm_enabled,
+        :slow_query_threshold_ms => @config.apm_slow_query_threshold_ms,
+        :root_directory => @config.root_directory
+      }
+    end
+
     # Returns the correlation subset safe for an integration-owned process boundary.
     def propagation_context
       current = context_hash(@context_store.get)
@@ -104,6 +124,7 @@ module Chronos
     end
 
     def flush(timeout = DEFAULT_FLUSH_TIMEOUT)
+      @telemetry.flush
       @delivery_pipeline.flush(timeout)
     rescue StandardError => error
       @logger.warn("Chronos flush failed: #{error.class}")
@@ -111,6 +132,7 @@ module Chronos
     end
 
     def close(timeout = DEFAULT_FLUSH_TIMEOUT)
+      @telemetry.flush
       @delivery_pipeline.close(timeout)
     rescue StandardError => error
       @logger.warn("Chronos close failed: #{error.class}")
@@ -119,6 +141,7 @@ module Chronos
 
     def diagnostics
       details = @delivery_pipeline.diagnostics
+      details[:apm] = @telemetry.diagnostics
       details[:queue].merge(details)
     end
 
@@ -139,6 +162,8 @@ module Chronos
       merged = deep_merge(context_hash(@context_store.get), context_hash(additional))
       merged.delete(:__chronos_captured_exceptions)
       merged.delete("__chronos_captured_exceptions")
+      merged.delete(:__chronos_captured_events)
+      merged.delete("__chronos_captured_events")
       buffer = merged.delete(:__chronos_breadcrumbs) || merged.delete("__chronos_breadcrumbs")
       if buffer.respond_to?(:to_a)
         merged[:context] = context_hash(merged[:context]).merge("breadcrumbs" => buffer.to_a)

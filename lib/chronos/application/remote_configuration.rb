@@ -13,7 +13,7 @@ module Chronos
     # @errors Invalid documents are ignored and return false.
     # @performance Validation is bounded by configured document and list limits.
     class RemoteConfiguration
-      SUPPORTED_EVENT_TYPES = ["exception", "request", "query", "job", "cache"].freeze
+      SUPPORTED_EVENT_TYPES = ["exception", "request", "query", "job", "cache", "metric_batch"].freeze
       MAX_IGNORED_FINGERPRINTS = 100
       MAX_FINGERPRINT_BYTES = 256
       MIN_PAYLOAD_SIZE = 256
@@ -61,6 +61,11 @@ module Chronos
 
       def enabled_event?(event_type)
         snapshot["enabled_event_types"].include?(event_type.to_s)
+      end
+
+      def delivery_enabled?(event_type)
+        values = snapshot
+        !values["kill_switch"] && values["enabled_event_types"].include?(event_type.to_s)
       end
 
       def ignored_fingerprint?(fingerprint)
