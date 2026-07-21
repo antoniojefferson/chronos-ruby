@@ -37,6 +37,9 @@ required_documents = %w(
   docs/modules/telemetry-events.md
   docs/modules/sidekiq-legacy.md
   docs/modules/apm-aggregation.md
+  docs/modules/external-http.md
+  docs/modules/cache-observability.md
+  docs/modules/dependencies.md
 )
 
 missing = required_documents.reject { |path| File.file?(File.join(root, path)) }
@@ -55,9 +58,9 @@ end
 schema_path = File.join(root, "contracts/event-v1.schema.json")
 schema = JSON.parse(read_utf8(schema_path))
 abort "Contract schema must be version 1.0" unless schema["properties"]["schema_version"]["const"] == "1.0"
-rails_types = %w(request query job cache)
-unless (rails_types - schema["properties"]["event_type"]["enum"]).empty?
-  abort "Contract schema is missing Rails telemetry event types"
+telemetry_types = %w(request query job cache external_http dependencies metric_batch)
+unless (telemetry_types - schema["properties"]["event_type"]["enum"]).empty?
+  abort "Contract schema is missing supported telemetry event types"
 end
 
 rack_schema_path = File.join(root, "contracts/rack-context-v1.schema.json")
@@ -69,6 +72,7 @@ abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\
 abort "README does not document version 0.5 Rails integration" unless readme.include?("Version 0.5")
 abort "README does not document version 0.6 Sidekiq integration" unless readme.include?("0.6.0.pre.1")
 abort "README does not document version 0.7 APM aggregation" unless readme.include?("Version 0.7")
+abort "README does not document version 0.8 observability" unless readme.include?("Version 0.8")
 
 apm_schema_path = File.join(root, "contracts/apm-batch-v1.schema.json")
 apm_schema = JSON.parse(read_utf8(apm_schema_path))
@@ -78,6 +82,12 @@ sidekiq_schema_path = File.join(root, "contracts/sidekiq-job-v1.schema.json")
 sidekiq_schema = JSON.parse(read_utf8(sidekiq_schema_path))
 unless sidekiq_schema["properties"]["arguments"]["maxItems"] == 20
   abort "Sidekiq job contract must bound arguments"
+end
+
+dependencies_path = File.join(root, "contracts/dependencies-v1.schema.json")
+dependencies_schema = JSON.parse(read_utf8(dependencies_path))
+unless dependencies_schema["properties"]["dependencies"]["maxItems"] == 200
+  abort "Dependency inventory contract must be bounded to 200 entries"
 end
 
 privacy = read_utf8(File.join(root, "docs/privacy-lgpd.md"))

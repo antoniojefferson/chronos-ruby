@@ -18,10 +18,29 @@ RSpec.describe Chronos::Configuration do # rubocop:disable Metrics/BlockLength
     expect(result.apm_max_groups).to eq(200)
     expect(result.apm_flush_count).to eq(100)
     expect(result.apm_max_queries_per_request).to eq(100)
+    expect(result.external_http_enabled).to eq(false)
+    expect(result.cache_key_mode).to eq(:none)
+    expect(described_class.new.dependency_reporting).to eq(true)
+    expect(result.dependency_reporting).to eq(false)
+    expect(result.dependency_max_items).to eq(100)
     expect(result.blocklist_keys).to include("password", "authorization", "cpf", "cnpj")
     expect(result).to be_frozen
     expect(result.ignored_environments).to be_frozen
     expect(result.blocklist_keys).to be_frozen
+  end
+
+  it "validates HTTP, cache, and dependency collection settings" do
+    config = configuration(
+      :external_http_enabled => "yes", :cache_key_mode => :raw,
+      :dependency_reporting => "yes", :dependency_max_items => 0
+    )
+
+    expect(config.validation_errors).to include(
+      "external_http_enabled must be true or false",
+      "cache_key_mode must be :none or :sha256",
+      "dependency_reporting must be true or false",
+      "dependency_max_items must be between 1 and 200"
+    )
   end
 
   it "rejects unbounded APM aggregation and detector settings" do

@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://chronos.example/schemas/dependencies-v1.schema.json",
+  "title": "Chronos dependency inventory payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dependencies", "ruby"],
+  "properties": {
+    "dependencies": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "version"],
+        "properties": {
+          "name": {"type": "string", "maxLength": 128},
+          "version": {"type": "string", "maxLength": 64}
+        }
+      }
+    },
+    "ruby": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "engine", "platform"],
+      "properties": {
+        "version": {"type": "string", "maxLength": 64},
+        "engine": {"type": "string", "maxLength": 64},
+        "platform": {"type": "string", "maxLength": 128}
+      }
+    },
+    "rails": {"type": ["string", "null"], "maxLength": 128},
+    "web_server": {"type": ["string", "null"], "maxLength": 128},
+    "database_adapter": {"type": ["string", "null"], "maxLength": 128},
+    "sidekiq": {"type": ["string", "null"], "maxLength": 128},
+    "release": {"type": ["string", "null"], "maxLength": 128}
+  }
+}

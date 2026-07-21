@@ -18,6 +18,7 @@ require "chronos/core/payload_serializer"
 require "chronos/core/telemetry_event"
 require "chronos/core/sql_normalizer"
 require "chronos/core/metric_aggregate"
+require "chronos/core/cache_normalizer"
 require "chronos/ports/transport"
 require "chronos/ports/context_store"
 require "chronos/internal/safe_logger"
@@ -32,9 +33,12 @@ require "chronos/application/circuit_breaker"
 require "chronos/application/remote_configuration"
 require "chronos/application/delivery_pipeline"
 require "chronos/application/capture_exception"
+require "chronos/application/apm_error_classifier"
 require "chronos/application/apm_aggregator"
+require "chronos/application/dependency_reporter"
 require "chronos/application/capture_telemetry"
 require "chronos/agent"
+require "chronos/observability_facade"
 require "chronos/integrations"
 require "chronos/integrations/rack"
 require "chronos/integrations/rack/middleware"
@@ -55,6 +59,8 @@ require "chronos/integrations/rack/middleware"
 #   end
 #   Chronos.notify(RuntimeError.new("failed"))
 module Chronos
+  extend ObservabilityFacade
+
   @mutex = Mutex.new
   @agent = nil
 

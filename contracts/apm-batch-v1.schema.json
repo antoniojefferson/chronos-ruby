@@ -15,7 +15,7 @@
         "type": "object",
         "required": ["metric_type", "dimensions", "count", "error_count", "error_rate", "duration_ms", "histogram", "breakdown_ms", "signals", "status_codes"],
         "properties": {
-          "metric_type": {"enum": ["request", "query", "job"]},
+          "metric_type": {"enum": ["request", "query", "job", "external_http"]},
           "dimensions": {"type": "object"},
           "count": {"type": "integer", "minimum": 1},
           "error_count": {"type": "integer", "minimum": 0},

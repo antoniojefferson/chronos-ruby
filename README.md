@@ -1,10 +1,10 @@
 # Chronos Ruby
 
-Chronos Ruby is the framework-independent client for sending Ruby application errors and bounded telemetry to Chronos. Version 0.7 adds bounded essential APM aggregation for requests, SQL, and jobs, including histograms, error rates, component breakdown, normalized SQL fingerprints, and local diagnostic signals.
+Chronos Ruby is the framework-independent client for sending Ruby application errors and bounded telemetry to Chronos. Version 0.8 adds optional per-instance outbound `Net::HTTP` timing, privacy-safe cache identity, and one bounded dependency inventory per agent.
 
 ## What the gem collects
 
-For each exception, version 0.7 can collect:
+Version 0.8 can collect:
 
 - exception class, message, structured backtrace, and chained causes;
 - timestamp, severity, tags, and an optional fingerprint;
@@ -18,7 +18,7 @@ See [Data collected](docs/data-collected.md) for the complete field table.
 
 ## What is not collected by default
 
-Chronos Ruby does not inspect environment variables, request bodies, cookies, HTTP headers, source code, database contents, or installed gems. Application-supplied fields are recursively sanitized, but applications should still avoid sending unnecessary personal, health, financial, or authentication data.
+Chronos Ruby does not inspect environment variables, request/response bodies, cookies, Authorization headers, source code, database contents, lockfiles, or gem paths. Dependency reporting reads only already loaded gem names and versions once per agent. Application-supplied fields are recursively sanitized, but applications should still avoid sending unnecessary personal, health, financial, or authentication data.
 
 ## Supported Ruby and Rails versions
 
@@ -31,7 +31,7 @@ See [Compatibility](docs/compatibility.md).
 The current public build is a pre-release. Add its exact version to the application's `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "0.7.0.pre.1"
+gem "chronos-ruby", "0.8.0.pre.1"
 ```
 
 Install with a Bundler version compatible with the application. For the oldest supported runtime:
@@ -52,7 +52,7 @@ gem install chronos-ruby --pre
 Version 0.5 exposes Rails support explicitly, keeping Rails and ActiveSupport out of plain Ruby applications:
 
 ```ruby
-gem "chronos-ruby", "0.7.0.pre.1", :require => "chronos/rails"
+gem "chronos-ruby", "0.8.0.pre.1", :require => "chronos/rails"
 ```
 
 Generate the initializer with:
@@ -191,16 +191,36 @@ Version `0.6.0.pre.1` adds optional Sidekiq 4/5 middleware:
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "0.7.0.pre.1", :require => "chronos/sidekiq"
+gem "chronos-ruby", "0.8.0.pre.1", :require => "chronos/sidekiq"
 ```
 
 The client middleware propagates only trace/request identifiers in a versioned Sidekiq-envelope field and never changes worker arguments. The server records class, queue, JID, retry count, duration, calculable queue latency, bounded arguments/tags, status, and error class. Values pass through the shared sanitizer before delivery. Failed jobs are notified once and the original exception is re-raised. See [Sidekiq 4/5 legacy integration](docs/modules/sidekiq-legacy.md).
 
 The Rails subscriber continues to record basic Active Job class, queue, and duration. Full Active Job context propagation plus optional Resque and Delayed Job adapters are subsequent version 0.6 increments.
 
+## External HTTP, cache, and dependencies
+
+Version 0.8 instruments only explicitly selected `Net::HTTP` connection objects, avoiding a global monkey patch:
+
+```ruby
+Chronos.configure do |config|
+  # required connection settings omitted
+  config.external_http_enabled = true
+  config.external_http_trace_headers = true
+end
+
+http = Net::HTTP.new("payments.example.com", 443)
+http.use_ssl = true
+Chronos.instrument_net_http(http)
+```
+
+The wrapper records only sanitized host, method, status, duration, timeout, connection-error flag, and error class. It propagates `X-Chronos-Trace-ID` and `X-Chronos-Request-ID` when available and never reads URL path/query, Authorization, request body, response body, or error message.
+
+Rails cache telemetry omits raw keys by default. Set `cache_key_mode = :sha256` to emit a project-scoped hash; `:none` is the default. Dependency reporting is enabled by default, reads at most 100 already loaded gem specs, and emits one independent `dependencies` event per agent. Set `dependency_reporting = false` to disable it. See [External HTTP](docs/modules/external-http.md), [Cache observability](docs/modules/cache-observability.md), and [Dependency inventory](docs/modules/dependencies.md).
+
 ## Deploy tracking
 
-Deploy notifications are not implemented in version 0.4. `app_version` may be included in exception events for release correlation.
+Deploy notifications are not implemented in version 0.8. `app_version` is included in event service metadata and the once-per-agent dependency inventory for release correlation.
 
 ## Asynchronous queue
 
@@ -273,6 +293,9 @@ Chronos.configure do |config|
   config.apm_enabled = true
   config.apm_max_groups = 200
   config.apm_flush_count = 100
+  config.external_http_enabled = false
+  config.cache_key_mode = :none
+  config.dependency_reporting = true
 end
 ```
 
@@ -284,7 +307,7 @@ Configuration errors are raised during `Chronos.configure`. Capture and delivery
 
 ## Benchmark
 
-Run the version 0.7 benchmarks with:
+Run the version 0.8 benchmarks with:
 
 ```bash
 bundle _1.17.3_ exec ruby benchmarks/capture_exception.rb
@@ -296,13 +319,14 @@ bundle _1.17.3_ exec ruby benchmarks/request_overhead.rb
 bundle _1.17.3_ exec ruby benchmarks/rails_notifications.rb
 bundle _1.17.3_ exec ruby benchmarks/sidekiq_middleware.rb
 bundle _1.17.3_ exec ruby benchmarks/apm_aggregation.rb
+bundle _1.17.3_ exec ruby benchmarks/external_http.rb
 ```
 
 Results depend on runtime, hardware, and payload. No performance comparison is claimed until repeatable measurements are published.
 
 ## Migration from Airbrake
 
-An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.7 does not claim API compatibility or automatic replacement.
+An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.8 does not claim API compatibility or automatic replacement.
 
 ## Local development
 

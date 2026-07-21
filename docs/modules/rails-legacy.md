@@ -29,7 +29,7 @@ The public `ActiveSupport::Notifications.subscribe` API is used for:
 | `sql.active_record` | `query` | operation name, cached flag, and duration |
 | `deliver.action_mailer` | `job` with `kind=mailer` | mailer, action, and duration |
 | `perform.active_job` | `job` | job class, queue, and duration, when Active Job is available |
-| cache read/write/hit notifications | `cache` | operation, store, hit flag, and duration |
+| cache read/write/hit notifications | `cache` | operation, backend, namespace, hit/miss, duration, and optional scoped key hash |
 
 Raw SQL, binds, cache keys, mail recipients and bodies, job IDs and arguments, request/response bodies, cookies, and authorization headers are not copied. Template identifiers are reduced to their basename. Every event passes through `Sanitizer`, `SafeSerializer`, the bounded queue, retry policy, circuit breaker, and memory backlog.
 

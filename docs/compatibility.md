@@ -21,6 +21,8 @@ Version `0.6.0.pre.1` uses the public Sidekiq 4/5 middleware signatures and rema
 
 Version `0.7.0.pre.1` keeps the same Ruby/Rails matrix and implements APM aggregation without modern concurrency or SQL-parser dependencies. Its compatibility remains `Best effort` until request/SQL/job aggregate payloads pass the dedicated fake-server gates for every listed runtime.
 
+Version `0.8.0.pre.1` uses per-object `Module#prepend`, legacy `Net::HTTP`, standard-library SHA-256, and loaded-spec feature detection. It adds no runtime dependency and keeps the same matrix. Outbound HTTP, cache, and dependency gates must pass every listed runtime before support is promoted.
+
 Status meanings:
 
 - Supported: the complete required compatibility gate passes.

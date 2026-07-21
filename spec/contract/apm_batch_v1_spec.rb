@@ -11,5 +11,6 @@ RSpec.describe "Chronos APM batch contract v1" do
     expect(metrics.fetch("maxItems")).to eq(50)
     required = metrics.fetch("items").fetch("required")
     expect(required).to include("metric_type", "dimensions", "count", "duration_ms", "histogram")
+    expect(metrics.fetch("items").fetch("properties").fetch("metric_type").fetch("enum")).to include("external_http")
   end
 end

@@ -1,6 +1,6 @@
 # Data collected
 
-Version 0.7 emits exceptions, individual cache telemetry, and aggregated request/query/job metric batches. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
+Version 0.8 emits exceptions, cache telemetry, one dependency inventory, and aggregated request/query/job/external-HTTP metric batches. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
 
 | Data | Default | Source |
 |---|---|---|
@@ -34,14 +34,19 @@ Version 0.7 emits exceptions, individual cache telemetry, and aggregated request
 | Sidekiq trace/request IDs | Propagated when present; trace generated otherwise | Chronos job-envelope metadata |
 | APM counts, error counts/rates, duration total/min/max/average | Aggregated by default | Request, query, and job observations |
 | Fixed duration histogram and status counts | Aggregated by default | Local bounded counters |
-| Component breakdown | database/view/cache/queue/application when observable | Trace-local bounded totals |
+| Component breakdown | database/view/external_http/cache/queue/application when observable | Trace-local bounded totals |
 | Normalized SQL and SHA-256 fingerprint | Collected without comments, literals, or binds | `sql.active_record` payload |
 | SQL adapter, operation, inferred table, AR name, cache flag, role/shard | Collected when exposed | Public notification payload and connection feature detection |
 | Slow SQL source frame | Collected only for threshold-selected slow queries | Bounded application call frame |
 | APM diagnostic signals | Heuristic counters | Local threshold and repetition detection |
-| Cache operation, store, hit flag, duration | Collected; key/value omitted | ActiveSupport cache notifications |
+| External HTTP host, method, status, duration, timeout, connection-error flag, error class | Disabled by default; per-instance opt-in | Instrumented `Net::HTTP` object |
+| Chronos trace/request headers | Propagated when available | Current execution context |
+| Cache operation, backend, namespace, hit/miss, duration | Collected; key/value omitted | ActiveSupport cache notifications |
+| Cache key hash | Disabled by default | Project-scoped SHA-256 when `cache_key_mode = :sha256` |
+| Loaded gem names/versions and Ruby runtime | Once per agent by default; bounded | `Gem.loaded_specs` and Ruby constants |
+| Rails, web server, database adapter, Sidekiq, release | Included when safely detectable/configured | Loaded constants/specs and `app_version` |
 
-The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, source code, raw SQL, SQL bind values, database rows, cache keys/values, mail bodies/recipients, or installed gems. Sidekiq JIDs and bounded arguments are the explicit version 0.6 exception to the earlier job-ID/argument exclusion.
+The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, source code, raw SQL, SQL bind values, database rows, raw cache keys/values, mail bodies/recipients, gem paths, or lockfile contents. Sidekiq JIDs/arguments and bounded loaded gem names/versions are documented integration fields.
 
 APM dimensions never include user ID, job ID, raw URL, exception message, bind value, or cache key. Normalized routes replace common numeric/UUID segments. Normalized SQL can retain schema, table, and column identifiers; review those identifiers as part of the privacy audit.
 

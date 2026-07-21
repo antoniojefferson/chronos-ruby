@@ -1,6 +1,6 @@
 # Privacy and LGPD
 
-Version 0.7 sanitizes exception, framework telemetry, and APM metric batches before JSON serialization, queueing, retry backlog, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
+Version 0.8 sanitizes exception, framework telemetry, dependency inventory, and APM metric batches before JSON serialization, queueing, retry backlog, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
 
 ## Default policy
 
@@ -16,8 +16,17 @@ Version 0.7 sanitizes exception, framework telemetry, and APM metric batches bef
 | Request/response bodies, raw query strings, cookies, authorization headers, raw SQL/binds, cache values, mail bodies, environment variables | Never collected automatically |
 | Sidekiq arguments | Collected automatically, limited before sanitization, then redacted by the common policy |
 | SQL | Comments, quoted/numeric/boolean/null literals removed; binds never read; bounded identifiers remain |
+| External HTTP | Host/method/status/timing only; URL path/query, Authorization, bodies, headers, and error messages omitted |
+| Cache key | Omitted by default; optional project-scoped SHA-256 hash; cache value never read |
+| Dependencies | Bounded loaded gem names/versions and detected runtime labels; paths and lockfiles omitted |
 
-The retry backlog exists only in process memory, accepts only `SerializedEvent`, has a fixed capacity, and disappears on process exit. Version 0.7 does not persist telemetry to disk.
+The retry backlog exists only in process memory, accepts only `SerializedEvent`, has a fixed capacity, and disappears on process exit. Version 0.8 does not persist telemetry to disk.
+
+## External services, cache, and dependencies
+
+Outbound HTTP instrumentation is disabled by default and installed per connection. Trace headers reveal correlation identifiers to the selected destination; enable propagation only for destinations permitted to receive them. The wrapper does not inspect any other header or URL component.
+
+Raw cache keys can contain user or business data and are never delivered. Optional hashing is pseudonymization, not anonymization: predictable low-entropy keys can still be guessed. Dependency reporting is a separate once-per-agent event, never copied into exceptions, and can be disabled. It reads loaded gem name/version pairs only, with no filesystem path, source, configuration, or complete lockfile.
 
 ## Rails telemetry
 

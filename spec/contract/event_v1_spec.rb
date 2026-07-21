@@ -20,9 +20,11 @@ RSpec.describe "Chronos event contract v1" do
     expect(body).not_to include("project-key")
   end
 
-  it "declares the Rails telemetry event types" do
+  it "declares every supported telemetry event type" do
     types = schema["properties"]["event_type"]["enum"]
 
-    expect(types).to include("exception", "request", "query", "job", "cache", "metric_batch")
+    expect(types).to include(
+      "exception", "request", "query", "job", "cache", "external_http", "dependencies", "metric_batch"
+    )
   end
 end

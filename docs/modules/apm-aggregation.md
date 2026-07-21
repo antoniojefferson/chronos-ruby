@@ -1,6 +1,6 @@
 # Essential APM aggregation
 
-Version `0.7.0.pre.1` aggregates request, SQL, and job observations locally before delivery. The agent emits versioned `metric_batch` envelopes containing at most 50 metric groups instead of one event per observation. Aggregates drain when `apm_flush_count` observations are reached and whenever `Chronos.flush` or `Chronos.close` runs. No timer or additional APM thread is created.
+Version `0.8.0.pre.1` aggregates request, SQL, job, and explicitly instrumented external HTTP observations locally before delivery. The agent emits versioned `metric_batch` envelopes containing at most 50 metric groups instead of one event per observation. Aggregates drain when `apm_flush_count` observations are reached and whenever `Chronos.flush` or `Chronos.close` runs. No timer or additional APM thread is created.
 
 ## Request metrics
 
@@ -35,7 +35,7 @@ New groups beyond capacity are dropped and counted in `dropped_groups`. Existing
 
 ## Breakdown
 
-The contract supports `database`, `view`, `external_http`, `cache`, `queue`, `application`, and `unknown`. Version 0.7 fills database/view/cache within a traced request, queue/application for jobs, and residual application time for requests. External HTTP instrumentation begins in version 0.8.
+The contract supports `database`, `view`, `external_http`, `cache`, `queue`, `application`, and `unknown`. Version 0.8 fills external HTTP time for explicitly instrumented calls inside a traced request, in addition to database/view/cache, queue/application for jobs, and residual application request time.
 
 ## Configuration
 

@@ -8,6 +8,7 @@ RSpec.describe "exception delivery" do
       config.ssl_verify = false
       config.environment = "test"
       config.service_name = "plain-ruby-example"
+      config.dependency_reporting = false
       config.timeout = 0.5
       config.open_timeout = 0.5
     end

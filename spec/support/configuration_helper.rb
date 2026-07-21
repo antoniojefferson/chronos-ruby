@@ -4,6 +4,7 @@ module ConfigurationHelper
     config.project_id = "project-id"
     config.project_key = "project-key"
     config.host = "https://chronos.example.test"
+    config.dependency_reporting = false
     overrides.each { |key, value| config.public_send("#{key}=", value) }
     config
   end

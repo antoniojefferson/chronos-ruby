@@ -4,7 +4,7 @@ module Chronos
     #
     # @responsibility Aggregate APM observations or serialize and enqueue integration events.
     # @motivation Keep framework policy and local batching outside transport and domain objects.
-    # @limits It handles request, query, job, cache, and metric-batch events only.
+    # @limits It handles only the event types declared by TelemetryEvent.
     # @collaborators ApmAggregator, TelemetryEvent, TelemetrySerializer, and DeliveryPipeline.
     # @thread_safety Calls own event state and may execute concurrently.
     # @compatibility Ruby 2.2.10 through Ruby 2.6; independent of Rails.

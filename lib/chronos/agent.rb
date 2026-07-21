@@ -37,13 +37,16 @@ module Chronos
         pipeline_options
       )
       initialize_capture(options)
+      @dependency_reporter = options[:dependency_reporter] || Application::DependencyReporter.new(config)
     end
 
     def notify(exception, context = {})
+      report_dependencies
       @capture.call(exception, context_for_capture(context))
     end
 
     def notify_sync(exception, context = {})
+      report_dependencies
       @capture.call_sync(exception, context_for_capture(context))
     end
 
@@ -64,7 +67,18 @@ module Chronos
     end
 
     def record_event(event_type, payload = {}, context = {})
+      report_dependencies unless event_type.to_s == "dependencies"
       @telemetry.call(event_type, payload, telemetry_context(context))
+    end
+
+    def report_dependencies
+      payload = @dependency_reporter.call
+      return false unless payload
+
+      @telemetry.call("dependencies", payload, {})
+    rescue StandardError => error
+      @logger.warn("Chronos dependency reporting failed: #{error.class}")
+      false
     end
 
     def record_event_once(key, event_type, payload = {}, context = {})
@@ -85,6 +99,14 @@ module Chronos
         :slow_query_threshold_ms => @config.apm_slow_query_threshold_ms,
         :root_directory => @config.root_directory
       }
+    end
+
+    def external_http_integration_options
+      {:enabled => @config.external_http_enabled, :trace_headers => @config.external_http_trace_headers}
+    end
+
+    def cache_integration_options
+      {:project_id => @config.project_id, :key_mode => @config.cache_key_mode}
     end
 
     # Returns the correlation subset safe for an integration-owned process boundary.
@@ -124,6 +146,7 @@ module Chronos
     end
 
     def flush(timeout = DEFAULT_FLUSH_TIMEOUT)
+      report_dependencies
       @telemetry.flush
       @delivery_pipeline.flush(timeout)
     rescue StandardError => error
@@ -132,6 +155,7 @@ module Chronos
     end
 
     def close(timeout = DEFAULT_FLUSH_TIMEOUT)
+      report_dependencies
       @telemetry.flush
       @delivery_pipeline.close(timeout)
     rescue StandardError => error

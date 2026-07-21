@@ -4,7 +4,7 @@ module Chronos
     #
     # @responsibility Subscribe once and normalize controller, view, SQL, mailer, job, and cache events.
     # @motivation Support Rails 4.2 and 5.2 through feature detection and public notification APIs.
-    # @limits It never sends SQL text, bind values, cache keys, mail bodies, or job arguments.
+    # @limits It never sends SQL text, binds, raw cache keys/values, mail bodies, or job arguments.
     # @collaborators ActiveSupport::Notifications and the Chronos facade.
     # @thread_safety Subscription registry is mutex-protected; callbacks own their state.
     # @compatibility ActiveSupport notification argument shapes from Rails 4.2 through 5.2.
@@ -30,6 +30,10 @@ module Chronos
         @notifier = notifier
         @notifications = notifications || active_support_notifications
         @sql_normalizer = Core::SqlNormalizer.new
+        cache_options = notifier.respond_to?(:cache_integration_options) ? notifier.cache_integration_options : {}
+        @cache_normalizer = Core::CacheNormalizer.new(
+          cache_options[:project_id].to_s, cache_options[:key_mode] || :none
+        )
       end
 
       def install
@@ -148,10 +152,7 @@ module Chronos
       end
 
       def cache(name, payload, duration)
-        data = {
-          "operation" => name.split(".").first, "store" => value(payload, :store).to_s,
-          "hit" => value(payload, :hit), "duration_ms" => duration
-        }
+        data = @cache_normalizer.call(name, payload).merge("duration_ms" => duration)
         @notifier.record_event("cache", data)
       end
 
