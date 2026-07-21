@@ -1,6 +1,6 @@
 # Performance
 
-Performance is a functional requirement, but version 0.8 makes no unverified speed claim.
+Performance is a functional requirement, but version 0.9 makes no unverified speed claim.
 
 Current controls:
 
@@ -24,6 +24,8 @@ Current controls:
 - outbound HTTP instrumentation uses two clock reads and bounded metadata without body/header traversal;
 - cache normalization is bounded and SHA-256 runs only when explicitly enabled;
 - dependency inventory runs at most once per agent and is capped at 200 loaded specs.
+- event correlation copies exactly seven strings with a 128-byte bound each;
+- deploy notification uses the existing synchronous delivery path and creates no timer or worker type.
 
 Run the scripts under `benchmarks/` and record Ruby version, operating system, CPU, warmup, iteration count, median, and dispersion before publishing results. `benchmarks/filtering.rb` measures privacy filtering, `benchmarks/retry_backlog.rb` measures fixed-memory outage behavior, `benchmarks/request_overhead.rb` compares Rack-protocol calls, and `benchmarks/rails_notifications.rb` isolates subscriber normalization overhead.
 
@@ -115,3 +117,15 @@ ITERATIONS=100000 bundle _1.17.3_ exec ruby benchmarks/external_http.rb
 The fixture compares a no-op Net::HTTP-compatible object with the per-instance wrapper. It includes trace-header injection, bounded outcome capture, and clock reads, but excludes DNS, sockets, TLS, serialization, queueing, and network delivery. Record a controlled result before making a performance claim.
 
 A local diagnostic run on 2026-07-20 used Ruby 2.2.10 on macOS arm64 and 10,000 calls. It measured approximately 15.155 microseconds of wrapper overhead per call. This single run has no controlled warmup, median, or dispersion and is not a production performance claim.
+
+## Version 0.9 correlation benchmark
+
+Run:
+
+```bash
+ITERATIONS=100000 bundle _1.17.3_ exec ruby benchmarks/correlation.rb
+```
+
+The fixture builds the seven-field frozen correlation hash from an immutable configuration. It excludes notice/event construction, sanitization, JSON, queueing, retry, and network delivery. Record a controlled result before making a performance claim.
+
+A local diagnostic run on 2026-07-21 used Ruby 2.2.10 on macOS arm64 and 10,000 correlations. It measured approximately 20.490 microseconds per correlation. This single run has no controlled warmup, median, or dispersion and is not a production performance claim.

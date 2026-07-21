@@ -44,6 +44,7 @@ module Chronos
         @sanitizer = options[:sanitizer] || Sanitizer.new(config)
         @safe_serializer = options[:safe_serializer] || SafeSerializer.new
         @max_payload_size = options[:max_payload_size] || proc { @config.max_payload_size }
+        @correlation = options[:correlation] || CorrelationContext.new(config)
       end
 
       def call(notice)
@@ -70,8 +71,10 @@ module Chronos
           "service" => {
             "name" => @config.service_name,
             "version" => @config.app_version,
-            "instance_id" => notice.host
+            "instance_id" => @config.instance_id || notice.host
           },
+          "correlation" => @correlation.call("environment" => notice.environment,
+                                             "instance" => @config.instance_id || notice.host),
           "runtime" => notice.runtime,
           "context" => notice.context,
           "payload" => payload(notice)

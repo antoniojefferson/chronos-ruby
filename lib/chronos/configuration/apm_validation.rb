@@ -65,7 +65,18 @@ module Chronos
         unless dependency_max_items.is_a?(Integer) && dependency_max_items >= 1 && dependency_max_items <= 200
           errors << "dependency_max_items must be between 1 and 200"
         end
+        correlation_attributes.each do |name, value|
+          errors << "#{name} must be a String with at most 128 bytes" unless bounded_optional_string?(value, 128)
+        end
         errors
+      end
+
+      def correlation_attributes
+        {:revision => revision, :deploy_id => deploy_id, :region => region, :instance_id => instance_id}
+      end
+
+      def bounded_optional_string?(value, limit)
+        value.nil? || (value.is_a?(String) && value.bytesize <= limit)
       end
 
       def boolean?(value)

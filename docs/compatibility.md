@@ -23,6 +23,8 @@ Version `0.7.0.pre.1` keeps the same Ruby/Rails matrix and implements APM aggreg
 
 Version `0.8.0.pre.1` uses per-object `Module#prepend`, legacy `Net::HTTP`, standard-library SHA-256, and loaded-spec feature detection. It adds no runtime dependency and keeps the same matrix. Outbound HTTP, cache, and dependency gates must pass every listed runtime before support is promoted.
 
+Version `0.9.0.pre.1` adds only standard-library URI/SecureRandom processing, bounded hashes, and the existing synchronous delivery path. Capistrano is optional and feature-detected; Kamal and GitHub Actions integrations are commands/examples. The Ruby/Rails matrix remains unchanged and `Best effort` until deploy/correlation payload gates pass every listed runtime.
+
 Status meanings:
 
 - Supported: the complete required compatibility gate passes.

@@ -16,7 +16,7 @@ module Chronos
     # @errors Unsupported types raise ArgumentError during construction.
     # @performance Construction is linear in supplied context and payload size.
     class TelemetryEvent
-      TYPES = %w(request query job cache external_http dependencies metric_batch).freeze
+      TYPES = %w(request query job cache external_http dependencies deploy metric_batch).freeze
 
       attr_reader :event_id, :event_type, :timestamp, :context, :payload
 
@@ -68,6 +68,7 @@ module Chronos
         @safe_serializer = options[:safe_serializer] || SafeSerializer.new
         @max_payload_size = options[:max_payload_size] || proc { @config.max_payload_size }
         @runtime_info = RuntimeInfo.new
+        @correlation = options[:correlation] || CorrelationContext.new(config)
       end
 
       def call(event)
@@ -89,11 +90,37 @@ module Chronos
           "schema_version" => "1.0", "event_id" => event.event_id,
           "event_type" => event.event_type, "occurred_at" => event.timestamp,
           "sent_at" => @clock.call.utc.iso8601(6), "project_key" => @config.project_id,
-          "environment" => @config.environment,
-          "service" => {"name" => @config.service_name, "version" => @config.app_version,
-                        "instance_id" => runtime[:host]},
+          "environment" => event_environment(event),
+          "service" => event_service(event, runtime),
+          "correlation" => event_correlation(event, runtime),
           "runtime" => runtime[:runtime], "context" => event.context, "payload" => event.payload
         }
+      end
+
+      def event_environment(event)
+        event.event_type == "deploy" ? event.payload["environment"] : @config.environment
+      end
+
+      def event_service(event, runtime)
+        deploy = event.event_type == "deploy" ? event.payload : {}
+        {
+          "name" => deploy["service"] || @config.service_name,
+          "version" => deploy["version"] || @config.app_version,
+          "instance_id" => deploy["instance"] || @config.instance_id || runtime[:host]
+        }
+      end
+
+      def event_correlation(event, runtime)
+        overrides = {"instance" => @config.instance_id || runtime[:host]}
+        if event.event_type == "deploy"
+          overrides.merge!(
+            "release" => event.payload["version"], "revision" => event.payload["revision"],
+            "deploy_id" => event.payload["deploy_id"], "environment" => event.payload["environment"],
+            "service" => event.payload["service"], "region" => event.payload["region"],
+            "instance" => event.payload["instance"]
+          )
+        end
+        @correlation.call(overrides)
       end
 
       def compact_envelope(envelope)

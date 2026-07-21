@@ -40,6 +40,7 @@ required_documents = %w(
   docs/modules/external-http.md
   docs/modules/cache-observability.md
   docs/modules/dependencies.md
+  docs/modules/deploy-tracking.md
 )
 
 missing = required_documents.reject { |path| File.file?(File.join(root, path)) }
@@ -58,7 +59,7 @@ end
 schema_path = File.join(root, "contracts/event-v1.schema.json")
 schema = JSON.parse(read_utf8(schema_path))
 abort "Contract schema must be version 1.0" unless schema["properties"]["schema_version"]["const"] == "1.0"
-telemetry_types = %w(request query job cache external_http dependencies metric_batch)
+telemetry_types = %w(request query job cache external_http dependencies deploy metric_batch)
 unless (telemetry_types - schema["properties"]["event_type"]["enum"]).empty?
   abort "Contract schema is missing supported telemetry event types"
 end
@@ -73,6 +74,7 @@ abort "README does not document version 0.5 Rails integration" unless readme.inc
 abort "README does not document version 0.6 Sidekiq integration" unless readme.include?("0.6.0.pre.1")
 abort "README does not document version 0.7 APM aggregation" unless readme.include?("Version 0.7")
 abort "README does not document version 0.8 observability" unless readme.include?("Version 0.8")
+abort "README does not document version 0.9 deploy tracking" unless readme.include?("Version 0.9")
 
 apm_schema_path = File.join(root, "contracts/apm-batch-v1.schema.json")
 apm_schema = JSON.parse(read_utf8(apm_schema_path))
@@ -88,6 +90,16 @@ dependencies_path = File.join(root, "contracts/dependencies-v1.schema.json")
 dependencies_schema = JSON.parse(read_utf8(dependencies_path))
 unless dependencies_schema["properties"]["dependencies"]["maxItems"] == 200
   abort "Dependency inventory contract must be bounded to 200 entries"
+end
+
+deploy_path = File.join(root, "contracts/deploy-v1.schema.json")
+deploy_schema = JSON.parse(read_utf8(deploy_path))
+unless deploy_schema["properties"]["repository"]["maxLength"] == 512
+  abort "Deploy repository field must be bounded"
+end
+correlation = schema["properties"]["correlation"]
+unless correlation && correlation["required"] == %w(release revision deploy_id environment service region instance)
+  abort "Event correlation contract is incomplete"
 end
 
 privacy = read_utf8(File.join(root, "docs/privacy-lgpd.md"))

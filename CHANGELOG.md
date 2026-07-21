@@ -12,6 +12,31 @@ All notable changes are documented here. The project follows Semantic Versioning
 - legacy CI now resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector.
 - documentation verification now reads source and Markdown files explicitly as UTF-8 on legacy container locales.
 
+## [0.9.0.pre.1] - 2026-07-21
+
+### Added
+
+- synchronous `Chronos.notify_deploy` API with bounded environment, revision, version, repository, actor, deploy ID, service, region, and instance fields;
+- fixed bounded release/deploy correlation on every new exception and telemetry envelope;
+- explicit configuration for `revision`, `deploy_id`, `region`, and `instance_id`;
+- automatic deploy IDs and credential removal from common HTTP/SCP repository references;
+- optional idempotent Capistrano post-publish task loaded through `chronos/capistrano`;
+- manual, Kamal-command, and GitHub Actions deployment examples;
+- deploy/correlation contracts, tests, benchmark, module documentation, and ADR-017.
+
+### Changed
+
+- dependency inventory can be refreshed once after a successful deploy notification with the new release;
+- deploy events use their normalized environment/service/release values in the common envelope;
+- version advanced to `0.9.0.pre.1`.
+
+### Known limitations
+
+- `notify_deploy` does not mutate the immutable correlation of an already running agent;
+- Kamal support is command/documentation based rather than a plugin;
+- Capistrano must load its task DSL before the optional Chronos entry point;
+- deployment policy must decide whether a `false` notification result blocks publication.
+
 ## [0.8.0.pre.1] - 2026-07-20
 
 ### Added

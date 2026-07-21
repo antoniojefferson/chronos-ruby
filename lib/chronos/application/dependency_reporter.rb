@@ -19,6 +19,17 @@ module Chronos
         @constants = options[:constants] || {}
         @mutex = Mutex.new
         @reported = false
+        @release_override = nil
+      end
+
+      def reset(release = nil)
+        @mutex.synchronize do
+          @release_override = bounded(release, 128)
+          @reported = false
+        end
+        true
+      rescue StandardError
+        false
       end
 
       def call
@@ -45,7 +56,7 @@ module Chronos
           "web_server" => detected("web_server") { web_server },
           "database_adapter" => detected("database_adapter") { database_adapter },
           "sidekiq" => detected("sidekiq") { sidekiq_version },
-          "release" => bounded(@config.app_version.to_s, 128)
+          "release" => @release_override || bounded(@config.app_version.to_s, 128)
         }
         payload.delete_if do |key, value|
           !["dependencies", "ruby"].include?(key) && value.to_s.empty?

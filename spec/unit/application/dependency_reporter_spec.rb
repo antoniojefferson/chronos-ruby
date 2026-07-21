@@ -21,6 +21,8 @@ RSpec.describe Chronos::Application::DependencyReporter do
     )
     expect(result.to_s).not_to include(Dir.pwd)
     expect(reporter.call).to be_nil
+    expect(reporter.reset("release-2")).to eq(true)
+    expect(reporter.call["release"]).to eq("release-2")
   end
 
   it "returns nil when reporting is disabled" do

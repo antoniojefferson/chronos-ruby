@@ -12,7 +12,7 @@ RSpec.describe Chronos do
   end
 
   it "has a version number" do
-    expect(Chronos::VERSION).to eq("0.8.0.pre.1")
+    expect(Chronos::VERSION).to eq("0.9.0.pre.1")
   end
 
   it "defines a base error" do
@@ -22,6 +22,7 @@ RSpec.describe Chronos do
   it "returns false before configuration" do
     expect(Chronos.notify(RuntimeError.new("failed"))).to eq(false)
     expect(Chronos.add_breadcrumb(:message => "ignored")).to eq(false)
+    expect(Chronos.notify_deploy(:revision => "abc123")).to eq(false)
     expect(Chronos.with_context(:request_id => "request") { :result }).to eq(:result)
   end
 

@@ -29,4 +29,10 @@ For network-free per-instance outbound HTTP instrumentation, run:
 bundle _1.17.3_ exec ruby examples/plain-ruby/external_http.rb
 ```
 
-The examples demonstrate final event construction, key redaction, e-mail and Bearer-token detection, application-specific blocklisting, identifier hashing, and the bounded external HTTP payload without opening a socket.
+For a network-free deploy event with complete release correlation, run:
+
+```bash
+bundle _1.17.3_ exec ruby examples/plain-ruby/deploy_tracking.rb
+```
+
+The examples demonstrate final event construction, privacy filtering, bounded external HTTP fields, and deploy correlation without opening a socket.

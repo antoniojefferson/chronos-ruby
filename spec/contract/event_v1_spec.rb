@@ -9,8 +9,12 @@ RSpec.describe "Chronos event contract v1" do
     payload = JSON.parse(event.body)
 
     expect(payload.keys).to include(*schema["required"])
+    expect(schema["required"]).not_to include("correlation")
     expect(payload["schema_version"]).to eq("1.0")
     expect(payload["payload"]["exception"].keys).to include("class", "message", "backtrace", "causes")
+    expect(payload["correlation"].keys).to include(
+      "release", "revision", "deploy_id", "environment", "service", "region", "instance"
+    )
   end
 
   it "does not place the secret project key in the payload" do
@@ -24,7 +28,7 @@ RSpec.describe "Chronos event contract v1" do
     types = schema["properties"]["event_type"]["enum"]
 
     expect(types).to include(
-      "exception", "request", "query", "job", "cache", "external_http", "dependencies", "metric_batch"
+      "exception", "request", "query", "job", "cache", "external_http", "dependencies", "deploy", "metric_batch"
     )
   end
 end

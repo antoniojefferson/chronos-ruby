@@ -1,7 +1,7 @@
 module Chronos
-  # Public entry points for optional version 0.8 observability integrations.
+  # Public entry points for optional observability and deployment integrations.
   #
-  # @responsibility Delegate dependency, cache, and outbound HTTP integration calls to the agent.
+  # @responsibility Delegate dependency, cache, outbound HTTP, and deploy calls to the agent.
   # @motivation Keep the main public facade small while preserving one stable Chronos namespace.
   # @limits It installs only explicitly supplied Net::HTTP connections and never enables features.
   # @collaborators Chronos::Agent and Chronos::Integrations::NetHttp.
@@ -15,6 +15,13 @@ module Chronos
     def report_dependencies
       agent = current_agent
       agent ? agent.report_dependencies : false
+    rescue StandardError
+      false
+    end
+
+    def notify_deploy(attributes = {}, timeout = Agent::DEFAULT_FLUSH_TIMEOUT)
+      agent = current_agent
+      agent ? agent.notify_deploy(attributes, timeout) : false
     rescue StandardError
       false
     end

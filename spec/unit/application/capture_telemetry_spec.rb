@@ -19,6 +19,7 @@ RSpec.describe Chronos::Application::CaptureTelemetry do
     transport = FakeTransport.new
     agent = Chronos::Agent.new(snapshot, :transport => transport)
 
+    expect(agent.record_event("unsupported", "revision" => "abc")).to eq(false)
     expect(agent.record_event("deploy", "revision" => "abc")).to eq(false)
     expect(transport.events).to be_empty
     agent.close(1.0)

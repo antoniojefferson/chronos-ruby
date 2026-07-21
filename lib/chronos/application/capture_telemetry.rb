@@ -40,6 +40,17 @@ module Chronos
         false
       end
 
+      def call_sync(event_type, payload = {}, context = {})
+        return false unless @config.enabled_for_environment?
+        return false unless synchronous_capture_allowed?(event_type)
+
+        event = Core::TelemetryEvent.new(event_type, payload, context)
+        @delivery_pipeline.deliver_sync(@serializer.call(event))
+      rescue StandardError => error
+        @logger.warn("Chronos synchronous telemetry capture failed: #{error.class}")
+        false
+      end
+
       def flush
         enqueue_batches(@aggregator.flush)
       rescue StandardError => error
@@ -54,6 +65,12 @@ module Chronos
       end
 
       private
+
+      def synchronous_capture_allowed?(event_type)
+        return @delivery_pipeline.event_enabled?(event_type) if event_type.to_s == "deploy"
+
+        @delivery_pipeline.capture_allowed?(event_type)
+      end
 
       def aggregate_type?(event_type)
         ApmAggregator::METRIC_TYPES.include?(event_type.to_s)
