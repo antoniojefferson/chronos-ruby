@@ -28,6 +28,10 @@ All notable changes are documented here. The project follows Semantic Versioning
 - version advanced to `0.9.0.pre.2` instead of `1.0.0` because the full external legacy matrix has not yet supplied zero-failure evidence;
 - Active Job identifiers are now documented collected fields and propagated context is bounded to trace/request IDs.
 
+### Fixed
+
+- the Sidekiq 5 compatibility smoke now resolves the shared Sidekiq 4/5 fixture inside `examples/` instead of the nonexistent `/app/sidekiq-4` path.
+
 ### Security
 
 - local ignore rules are bounded to 100, contain callback failures, and cannot be installed remotely;
