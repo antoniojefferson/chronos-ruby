@@ -16,6 +16,8 @@ require "chronos/core/sanitizer"
 require "chronos/core/safe_serializer"
 require "chronos/core/payload_serializer"
 require "chronos/core/telemetry_event"
+require "chronos/core/sql_normalizer"
+require "chronos/core/metric_aggregate"
 require "chronos/ports/transport"
 require "chronos/ports/context_store"
 require "chronos/internal/safe_logger"
@@ -30,6 +32,7 @@ require "chronos/application/circuit_breaker"
 require "chronos/application/remote_configuration"
 require "chronos/application/delivery_pipeline"
 require "chronos/application/capture_exception"
+require "chronos/application/apm_aggregator"
 require "chronos/application/capture_telemetry"
 require "chronos/agent"
 require "chronos/integrations"
@@ -102,6 +105,20 @@ module Chronos
       agent ? agent.record_event(event_type, payload, context) : false
     rescue StandardError
       false
+    end
+
+    def record_event_once(key, event_type, payload = {}, context = {})
+      agent = current_agent
+      agent ? agent.record_event_once(key, event_type, payload, context) : false
+    rescue StandardError
+      false
+    end
+
+    def apm_integration_options
+      agent = current_agent
+      agent ? agent.apm_integration_options : {:enabled => false}
+    rescue StandardError
+      {:enabled => false}
     end
 
     # Returns only trace/request identifiers for optional process-boundary adapters.

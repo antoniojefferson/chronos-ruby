@@ -16,16 +16,22 @@ RSpec.describe "Rails telemetry delivery" do
     subscriber.handle(
       "sql.active_record",
       ["sql.active_record", 1.0, 1.001, "id", {
-        :name => "Account Load", :sql => "SELECT private FROM accounts", :binds => ["secret-bind"]
+        :name => "Account Load", :sql => "SELECT * FROM accounts WHERE token = 'raw-secret'",
+        :binds => ["secret-bind"]
       }]
     )
 
     expect(agent.flush(1.0)).to eq(true)
     bodies = transport.events.map(&:body)
-    expect(bodies.size).to eq(2)
-    expect(bodies.join).not_to include("secret", "SELECT private", "secret-bind", "?token=raw")
-    request = JSON.parse(bodies.find { |body| JSON.parse(body)["event_type"] == "request" })
-    expect(request["payload"]["parameters"]["password"]).to eq("[FILTERED]")
+    expect(bodies.size).to eq(1)
+    expect(bodies.join).not_to include("secret", "raw-secret", "secret-bind", "?token=raw")
+    batch = JSON.parse(bodies.first)
+    expect(batch["event_type"]).to eq("metric_batch")
+    metrics = batch["payload"]["metrics"]
+    request = metrics.find { |metric| metric["metric_type"] == "request" }
+    query = metrics.find { |metric| metric["metric_type"] == "query" }
+    expect(request).to include("count" => 1, "error_count" => 0)
+    expect(query["dimensions"]["normalized_query"]).to eq("SELECT * FROM accounts WHERE token = ?")
     agent.close(1.0)
   end
 end

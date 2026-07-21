@@ -39,7 +39,7 @@
 | `remote_configuration` | Optional | `true` | Accepts only the documented bounded remote policy fields |
 | `remote_config_max_bytes` | Optional | `4096` | Maximum remote policy response-header bytes |
 | `sampling_rate` | Optional | `1.0` | Local upper bound for event sampling |
-| `enabled_event_types` | Optional | exception, request, query, job, cache | Local allowlist for supported event envelopes |
+| `enabled_event_types` | Optional | exception, request, query, job, cache, metric_batch | Local allowlist for supported event envelopes |
 | `max_remote_send_interval` | Optional | `60.0` | Local upper bound for remotely requested send spacing |
 | `context_store` | Optional | `:thread_local` | `:thread_local` or an object implementing `get`, `set`, `clear`, and `with_context` |
 | `breadcrumb_capacity` | Optional | `20` | Positive count of newest breadcrumbs retained per execution |
@@ -48,6 +48,15 @@
 | `rails_capture_in_console` | Optional | `false` | Enables automatic integration while Rails console is loaded |
 | `rails_capture_in_test` | Optional | `false` | Enables automatic integration in the Rails test environment |
 | `rails_capture_user_agent` | Optional | `false` | Adds the Rack user agent to request context |
+| `apm_enabled` | Optional | `true` | Aggregates request, query, and job observations into bounded metric batches |
+| `apm_max_groups` | Optional | `200` | Maximum metric groups and active trace trackers retained locally |
+| `apm_flush_count` | Optional | `100` | Aggregate observations accepted before a threshold drain |
+| `apm_batch_size` | Optional | `50` | Metric groups per batch; hard maximum 50 |
+| `apm_max_queries_per_request` | Optional | `100` | Query fingerprints tracked per trace for repetition signals |
+| `apm_slow_query_threshold_ms` | Optional | `500.0` | Query duration that produces a slow-query signal and sampled source |
+| `apm_long_transaction_threshold_ms` | Optional | `1000.0` | Transaction-labelled SQL duration that produces a signal |
+| `apm_n_plus_one_threshold` | Optional | `5` | Repeated fingerprint count producing one possible-N+1 signal; minimum 2 |
+| `apm_histogram_buckets` | Optional | Fixed millisecond boundaries | Increasing positive duration boundaries; at most 19 plus `+Inf` |
 
 ```ruby
 Chronos.configure do |config|
@@ -67,6 +76,14 @@ Chronos.configure do |config|
   config.breadcrumb_capacity = 20
   config.rails_capture_in_test = false
   config.rails_capture_in_console = false
+  config.apm_enabled = true
+  config.apm_max_groups = 200
+  config.apm_flush_count = 100
+  config.apm_batch_size = 50
+  config.apm_max_queries_per_request = 100
+  config.apm_slow_query_threshold_ms = 500.0
+  config.apm_long_transaction_threshold_ms = 1000.0
+  config.apm_n_plus_one_threshold = 5
 end
 ```
 

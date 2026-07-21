@@ -27,11 +27,16 @@ RSpec.describe "Sidekiq job delivery" do
     expect(agent.flush(1.0)).to eq(true)
     bodies = transport.events.map { |event| JSON.parse(event.body) }
     expect(bodies.count { |body| body["event_type"] == "exception" }).to eq(1)
-    job_event = bodies.find { |body| body["event_type"] == "job" }
-    expect(job_event["payload"]["arguments"].first).to eq(
+    exception = bodies.find { |body| body["event_type"] == "exception" }
+    expect(exception["payload"]["parameters"]["arguments"].first).to eq(
       "password" => "[FILTERED]", "token" => "[FILTERED]"
     )
-    expect(job_event["context"]["trace_id"]).not_to be_empty
+    batch = bodies.find { |body| body["event_type"] == "metric_batch" }
+    job_metric = batch["payload"]["metrics"].find { |metric| metric["metric_type"] == "job" }
+    expect(job_metric).to include("count" => 1, "error_count" => 1)
+    expect(job_metric["dimensions"]).to include(
+      "class" => "IntegrationSidekiqWorker", "queue" => "critical", "status" => "failed"
+    )
     agent.close(1.0)
   end
 end

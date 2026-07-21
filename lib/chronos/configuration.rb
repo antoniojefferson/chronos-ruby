@@ -1,5 +1,6 @@
 require "uri"
 require "chronos/configuration/validation"
+require "chronos/configuration/apm_validation"
 
 module Chronos
   # Mutable configuration used only while the Chronos agent is being set up.
@@ -21,6 +22,7 @@ module Chronos
   #   snapshot = config.snapshot
   class Configuration
     include Internal::ConfigurationValidation
+    include Internal::ApmConfigurationValidation
     DEFAULT_BLOCKLIST_KEYS = %w(
       password password_confirmation passwd secret api_key apikey authorization
       token access_token refresh_token private_key client_secret cookie set-cookie
@@ -40,7 +42,11 @@ module Chronos
       :remote_configuration, :remote_config_max_bytes, :sampling_rate,
       :enabled_event_types, :max_remote_send_interval, :context_store,
       :breadcrumb_capacity, :breadcrumb_max_bytes, :rails_enabled,
-      :rails_capture_in_console, :rails_capture_in_test, :rails_capture_user_agent
+      :rails_capture_in_console, :rails_capture_in_test, :rails_capture_user_agent,
+      :apm_enabled, :apm_max_groups, :apm_flush_count, :apm_batch_size,
+      :apm_max_queries_per_request, :apm_slow_query_threshold_ms,
+      :apm_long_transaction_threshold_ms, :apm_n_plus_one_threshold,
+      :apm_histogram_buckets
     ].freeze
 
     attr_accessor(*ATTRIBUTES)
@@ -50,6 +56,7 @@ module Chronos
       initialize_privacy_defaults
       initialize_resilience_defaults
       initialize_rails_defaults
+      initialize_apm_defaults
     end
 
     def snapshot
@@ -78,6 +85,7 @@ module Chronos
       errors.concat(resilience_errors)
       errors.concat(privacy_errors)
       errors.concat(context_errors)
+      errors.concat(apm_errors)
       errors
     end
 
@@ -116,6 +124,18 @@ module Chronos
       @rails_capture_user_agent = false
     end
 
+    def initialize_apm_defaults
+      @apm_enabled = true
+      @apm_max_groups = 200
+      @apm_flush_count = 100
+      @apm_batch_size = 50
+      @apm_max_queries_per_request = 100
+      @apm_slow_query_threshold_ms = 500.0
+      @apm_long_transaction_threshold_ms = 1000.0
+      @apm_n_plus_one_threshold = 5
+      @apm_histogram_buckets = [5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0]
+    end
+
     def initialize_privacy_defaults
       @blocklist_keys = DEFAULT_BLOCKLIST_KEYS.dup
       @allowlist_keys = []
@@ -135,7 +155,7 @@ module Chronos
       @remote_configuration = true
       @remote_config_max_bytes = 4096
       @sampling_rate = 1.0
-      @enabled_event_types = ["exception", "request", "query", "job", "cache"]
+      @enabled_event_types = ["exception", "request", "query", "job", "cache", "metric_batch"]
       @max_remote_send_interval = 60.0
     end
 

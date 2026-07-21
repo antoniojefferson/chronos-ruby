@@ -36,6 +36,7 @@ required_documents = %w(
   docs/modules/rails-legacy.md
   docs/modules/telemetry-events.md
   docs/modules/sidekiq-legacy.md
+  docs/modules/apm-aggregation.md
 )
 
 missing = required_documents.reject { |path| File.file?(File.join(root, path)) }
@@ -66,7 +67,12 @@ abort "Rack context contract must require trace isolation" unless rack_schema["r
 readme = read_utf8(File.join(root, "README.md"))
 abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\]/
 abort "README does not document version 0.5 Rails integration" unless readme.include?("Version 0.5")
-abort "README does not document version 0.6 Sidekiq integration" unless readme.include?("Version 0.6")
+abort "README does not document version 0.6 Sidekiq integration" unless readme.include?("0.6.0.pre.1")
+abort "README does not document version 0.7 APM aggregation" unless readme.include?("Version 0.7")
+
+apm_schema_path = File.join(root, "contracts/apm-batch-v1.schema.json")
+apm_schema = JSON.parse(read_utf8(apm_schema_path))
+abort "APM batches must be bounded to 50 metrics" unless apm_schema["properties"]["metrics"]["maxItems"] == 50
 
 sidekiq_schema_path = File.join(root, "contracts/sidekiq-job-v1.schema.json")
 sidekiq_schema = JSON.parse(read_utf8(sidekiq_schema_path))

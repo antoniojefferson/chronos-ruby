@@ -1,6 +1,6 @@
 # Privacy and LGPD
 
-Version 0.6 sanitizes exception and framework telemetry before JSON serialization, queueing, retry backlog, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
+Version 0.7 sanitizes exception, framework telemetry, and APM metric batches before JSON serialization, queueing, retry backlog, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
 
 ## Default policy
 
@@ -15,8 +15,9 @@ Version 0.6 sanitizes exception and framework telemetry before JSON serializatio
 | Unknown Ruby objects | Represented by class name without calling application serialization |
 | Request/response bodies, raw query strings, cookies, authorization headers, raw SQL/binds, cache values, mail bodies, environment variables | Never collected automatically |
 | Sidekiq arguments | Collected automatically, limited before sanitization, then redacted by the common policy |
+| SQL | Comments, quoted/numeric/boolean/null literals removed; binds never read; bounded identifiers remain |
 
-The retry backlog exists only in process memory, accepts only `SerializedEvent`, has a fixed capacity, and disappears on process exit. Version 0.6 does not persist telemetry to disk.
+The retry backlog exists only in process memory, accepts only `SerializedEvent`, has a fixed capacity, and disappears on process exit. Version 0.7 does not persist telemetry to disk.
 
 ## Rails telemetry
 
@@ -25,6 +26,10 @@ Rails subscribers use per-notification allowlists. SQL events retain only the op
 ## Sidekiq jobs
 
 The optional Sidekiq middleware is the only version 0.6 integration that automatically reads job arguments. It traverses at most 20 top-level arguments, 20 items per nested collection, four levels, and 512 bytes per string. These structural limits run before the common key and content sanitizer. Trace propagation contains only trace and request identifiers. Do not place credentials or unnecessary personal, health, or financial data in job arguments; configure application-specific blocklist keys and audit representative synthetic payloads before enabling production delivery.
+
+## APM dimensions
+
+Metric groups deliberately exclude user IDs, JIDs, raw URLs, request parameters, bind values, exception messages, and cache keys. SQL normalization removes common literal forms and comments before fingerprinting, but retains bounded database identifiers and cannot parse every dialect. Do not encode personal or secret values in schema, table, column, SQL keyword, or operation names. Slow-query source contains a bounded file/line frame under the configured application root, not source-code contents.
 
 ## Rack context and breadcrumbs
 

@@ -1,4 +1,4 @@
-RSpec.describe Chronos::Integrations::Rack::Middleware do
+RSpec.describe Chronos::Integrations::Rack::Middleware do # rubocop:disable Metrics/BlockLength
   def rack_env(overrides = {})
     {
       "REQUEST_METHOD" => "GET",
@@ -61,6 +61,21 @@ RSpec.describe Chronos::Integrations::Rack::Middleware do
     middleware = described_class.new(app, :notifier => agent)
 
     expect(middleware.call(rack_env("rack.input" => input))).to eq([200, {"Content-Length" => "12"}, body])
+    agent.close(1.0)
+  end
+
+  it "aggregates a successful generic Rack request" do
+    transport = FakeTransport.new
+    agent = Chronos::Agent.new(snapshot, :transport => transport)
+    middleware = described_class.new(proc { |_env| [201, {}, []] }, :notifier => agent)
+
+    expect(middleware.call(rack_env)).to eq([201, {}, []])
+    expect(agent.flush(1.0)).to eq(true)
+    batch = JSON.parse(transport.events.first.body)
+    metric = batch["payload"]["metrics"].first
+    expect(metric["metric_type"]).to eq("request")
+    expect(metric["dimensions"]).to include("route" => "/accounts/:id", "method" => "GET")
+    expect(metric["status_codes"]).to eq("201" => 1)
     agent.close(1.0)
   end
 

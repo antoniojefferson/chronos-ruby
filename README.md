@@ -1,10 +1,10 @@
 # Chronos Ruby
 
-Chronos Ruby is the framework-independent client for sending Ruby application errors and bounded telemetry to Chronos. Version 0.6 starts legacy worker support with Sidekiq 4/5 middleware, cross-process trace context, bounded job telemetry, and exception deduplication on top of the Rails, Rack, privacy, and resilience foundations from earlier releases.
+Chronos Ruby is the framework-independent client for sending Ruby application errors and bounded telemetry to Chronos. Version 0.7 adds bounded essential APM aggregation for requests, SQL, and jobs, including histograms, error rates, component breakdown, normalized SQL fingerprints, and local diagnostic signals.
 
 ## What the gem collects
 
-For each exception, version 0.6 can collect:
+For each exception, version 0.7 can collect:
 
 - exception class, message, structured backtrace, and chained causes;
 - timestamp, severity, tags, and an optional fingerprint;
@@ -31,7 +31,7 @@ See [Compatibility](docs/compatibility.md).
 The current public build is a pre-release. Add its exact version to the application's `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "0.6.0.pre.1"
+gem "chronos-ruby", "0.7.0.pre.1"
 ```
 
 Install with a Bundler version compatible with the application. For the oldest supported runtime:
@@ -52,7 +52,7 @@ gem install chronos-ruby --pre
 Version 0.5 exposes Rails support explicitly, keeping Rails and ActiveSupport out of plain Ruby applications:
 
 ```ruby
-gem "chronos-ruby", "0.6.0.pre.1", :require => "chronos/rails"
+gem "chronos-ruby", "0.7.0.pre.1", :require => "chronos/rails"
 ```
 
 Generate the initializer with:
@@ -168,7 +168,22 @@ Local exception-specific ignore callbacks are not available in version 0.4. The 
 
 ## Performance monitoring
 
-Version 0.5 emits bounded `request`, `query`, `job`, and `cache` events from public Rails notifications. SQL text and binds, cache keys and values, job arguments, mail content and recipients, and request or response bodies are never copied. Aggregation, percentiles, query fingerprints, and external HTTP monitoring are not implemented in this version.
+Version 0.7 aggregates request, query, and job observations into bounded `metric_batch` events. Groups include count, error count/rate, total/min/max/average duration, fixed histogram buckets, status counts, and component breakdown. Percentiles are calculated in the SaaS without retaining every local duration.
+
+SQL comments and literal values are removed before a bounded normalized query and SHA-256 fingerprint are produced. Binds are never read. Slow, repeated, possible N+1, long-transaction, connection-error, and deadlock signals are heuristic and require server-side confirmation. Group count, active trace count, fingerprints per trace, histogram buckets, and batch size all have fixed limits. See [Essential APM aggregation](docs/modules/apm-aggregation.md).
+
+```ruby
+Chronos.configure do |config|
+  # required connection settings omitted
+  config.apm_enabled = true
+  config.apm_max_groups = 200
+  config.apm_flush_count = 100
+  config.apm_batch_size = 50
+  config.apm_max_queries_per_request = 100
+  config.apm_slow_query_threshold_ms = 500.0
+  config.apm_n_plus_one_threshold = 5
+end
+```
 
 ## Sidekiq and Active Job
 
@@ -176,7 +191,7 @@ Version `0.6.0.pre.1` adds optional Sidekiq 4/5 middleware:
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "0.6.0.pre.1", :require => "chronos/sidekiq"
+gem "chronos-ruby", "0.7.0.pre.1", :require => "chronos/sidekiq"
 ```
 
 The client middleware propagates only trace/request identifiers in a versioned Sidekiq-envelope field and never changes worker arguments. The server records class, queue, JID, retry count, duration, calculable queue latency, bounded arguments/tags, status, and error class. Values pass through the shared sanitizer before delivery. Failed jobs are notified once and the original exception is re-raised. See [Sidekiq 4/5 legacy integration](docs/modules/sidekiq-legacy.md).
@@ -255,6 +270,9 @@ Chronos.configure do |config|
   config.context_store = :thread_local
   config.breadcrumb_capacity = 20
   config.breadcrumb_max_bytes = 2048
+  config.apm_enabled = true
+  config.apm_max_groups = 200
+  config.apm_flush_count = 100
 end
 ```
 
@@ -266,7 +284,7 @@ Configuration errors are raised during `Chronos.configure`. Capture and delivery
 
 ## Benchmark
 
-Run the version 0.6 benchmarks with:
+Run the version 0.7 benchmarks with:
 
 ```bash
 bundle _1.17.3_ exec ruby benchmarks/capture_exception.rb
@@ -277,13 +295,14 @@ bundle _1.17.3_ exec ruby benchmarks/retry_backlog.rb
 bundle _1.17.3_ exec ruby benchmarks/request_overhead.rb
 bundle _1.17.3_ exec ruby benchmarks/rails_notifications.rb
 bundle _1.17.3_ exec ruby benchmarks/sidekiq_middleware.rb
+bundle _1.17.3_ exec ruby benchmarks/apm_aggregation.rb
 ```
 
 Results depend on runtime, hardware, and payload. No performance comparison is claimed until repeatable measurements are published.
 
 ## Migration from Airbrake
 
-An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.6 does not claim API compatibility or automatic replacement.
+An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.7 does not claim API compatibility or automatic replacement.
 
 ## Local development
 

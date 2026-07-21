@@ -37,8 +37,8 @@ RSpec.describe Chronos::Integrations::Rack::Middleware, "concurrency" do
     threads.each(&:join)
     expect(agent.flush(1.0)).to eq(true)
 
-    contexts = transport.events.map do |event|
-      payload = JSON.parse(event.body)
+    payloads = transport.events.map { |event| JSON.parse(event.body) }
+    contexts = payloads.select { |payload| payload["event_type"] == "exception" }.map do |payload|
       [payload["context"]["trace_id"], payload["payload"]["user"]["id"],
        payload["payload"]["parameters"]["owner"], payload["context"]["breadcrumbs"].size]
     end.sort

@@ -1,4 +1,4 @@
-RSpec.describe Chronos::Configuration do
+RSpec.describe Chronos::Configuration do # rubocop:disable Metrics/BlockLength
   it "builds an immutable snapshot with legacy-safe defaults" do
     result = snapshot
 
@@ -14,10 +14,32 @@ RSpec.describe Chronos::Configuration do
     expect(result.sampling_rate).to eq(1.0)
     expect(result.context_store).to eq(:thread_local)
     expect(result.breadcrumb_capacity).to eq(20)
+    expect(result.apm_enabled).to eq(true)
+    expect(result.apm_max_groups).to eq(200)
+    expect(result.apm_flush_count).to eq(100)
+    expect(result.apm_max_queries_per_request).to eq(100)
     expect(result.blocklist_keys).to include("password", "authorization", "cpf", "cnpj")
     expect(result).to be_frozen
     expect(result.ignored_environments).to be_frozen
     expect(result.blocklist_keys).to be_frozen
+  end
+
+  it "rejects unbounded APM aggregation and detector settings" do
+    config = configuration(
+      :apm_enabled => "yes", :apm_max_groups => 0, :apm_flush_count => 0,
+      :apm_batch_size => 0, :apm_max_queries_per_request => 0,
+      :apm_slow_query_threshold_ms => 0, :apm_n_plus_one_threshold => 1,
+      :apm_histogram_buckets => [10.0, 5.0]
+    )
+
+    expect(config.validation_errors).to include(
+      "apm_enabled must be true or false", "apm_max_groups must be a positive integer",
+      "apm_flush_count must be a positive integer", "apm_batch_size must be between 1 and 50",
+      "apm_max_queries_per_request must be a positive integer",
+      "apm_slow_query_threshold_ms must be greater than zero",
+      "apm_n_plus_one_threshold must be an integer greater than or equal to 2",
+      "apm_histogram_buckets must contain increasing positive numbers"
+    )
   end
 
   it "rejects unbounded resilience and remote configuration settings" do
