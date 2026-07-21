@@ -104,6 +104,14 @@ module Chronos
       false
     end
 
+    # Returns only trace/request identifiers for optional process-boundary adapters.
+    def propagation_context
+      agent = current_agent
+      agent ? agent.propagation_context : {}
+    rescue StandardError
+      {}
+    end
+
     def notify_once(exception, context = {})
       agent = current_agent
       agent ? agent.notify_once(exception, context) : false

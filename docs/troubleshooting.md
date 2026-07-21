@@ -24,6 +24,14 @@ Require `chronos/rails` from the generated initializer and confirm it runs befor
 
 This is intentional. Version 0.5 records SQL operation name/duration and cache operation/store/hit status without raw statements, binds, keys, or values. These omissions are privacy and cardinality boundaries, not capture failures.
 
+## Sidekiq telemetry is missing
+
+Require `chronos/sidekiq` after Sidekiq is available and configure Chronos before jobs run. The entry point uses Sidekiq's public client/server middleware configuration and remains optional. Requiring only `chronos` or `chronos/rails` does not load Sidekiq. A job already enqueued before client middleware installation may lack propagated trace context, but server timing and failure capture can still run.
+
+## A failed Sidekiq job appears twice
+
+The bundled middleware does not install a global error handler and uses `notify_once` inside a shared job scope. Check for application-installed Chronos calls or third-party global handlers outside that scope. Keep a single bundled server middleware entry in the Sidekiq chain.
+
 ## Context appears missing
 
 The legacy context store is thread-local. A new application-created thread does not inherit context. Establish a new `Chronos.with_context` scope inside that thread, and issue manual notification before the scope exits. For Rack capture, supply user and explicit parameters through the documented environment keys.

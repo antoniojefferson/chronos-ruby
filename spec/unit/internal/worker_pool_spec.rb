@@ -1,6 +1,32 @@
 require "English"
 
-RSpec.describe Chronos::Internal::WorkerPool do
+RSpec.describe Chronos::Internal::WorkerPool do # rubocop:disable Metrics/BlockLength
+  # Test queue that exposes the scheduling gap immediately after pop.
+  class PopGapQueue < Chronos::Internal::BoundedQueue
+    def initialize(capacity)
+      super
+      @popped = Queue.new
+      @release = Queue.new
+    end
+
+    def pop(timeout = nil)
+      event = super
+      if event
+        @popped << true
+        @release.pop
+      end
+      event
+    end
+
+    def wait_until_popped
+      @popped.pop
+    end
+
+    def release
+      @release << true
+    end
+  end
+
   def event(id)
     Chronos::Core::SerializedEvent.new(id, "{}")
   end
@@ -25,6 +51,23 @@ RSpec.describe Chronos::Internal::WorkerPool do
 
     expect(pool.flush(1.0)).to eq(true)
     expect(pool.close(1.0)).to eq(true)
+  end
+
+  it "does not flush while a popped event is waiting to become active" do
+    queue = PopGapQueue.new(1)
+    transport = FakeTransport.new
+    pool = described_class.new(queue, transport, 1)
+    pool.enqueue(event("one"))
+    queue.wait_until_popped
+
+    begin
+      expect(pool.flush(0.01)).to eq(false)
+    ensure
+      queue.release
+    end
+    expect(pool.flush(1.0)).to eq(true)
+    expect(transport.events.map(&:event_id)).to eq(["one"])
+    pool.close(1.0)
   end
 
   it "can be closed twice" do

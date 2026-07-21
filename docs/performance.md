@@ -1,6 +1,6 @@
 # Performance
 
-Performance is a functional requirement, but version 0.5 makes no unverified speed claim.
+Performance is a functional requirement, but version 0.6 makes no unverified speed claim.
 
 Current controls:
 
@@ -19,6 +19,7 @@ Current controls:
 - request context and breadcrumbs have fixed structural and byte limits;
 - Rack middleware never consumes request or response bodies.
 - Rails subscribers copy only small allowlisted field sets and never copy raw SQL or job arguments.
+- Sidekiq middleware creates no per-job thread or connection and bounds arguments, collections, nesting, strings, and tags before telemetry capture.
 
 Run the scripts under `benchmarks/` and record Ruby version, operating system, CPU, warmup, iteration count, median, and dispersion before publishing results. `benchmarks/filtering.rb` measures privacy filtering, `benchmarks/retry_backlog.rb` measures fixed-memory outage behavior, `benchmarks/request_overhead.rb` compares Rack-protocol calls, and `benchmarks/rails_notifications.rb` isolates subscriber normalization overhead.
 
@@ -76,3 +77,13 @@ ITERATIONS=100000 bundle _1.17.3_ exec ruby benchmarks/request_overhead.rb
 ```
 
 A local diagnostic run on 2026-07-20 used Ruby 2.2.10 on macOS arm64 and 10,000 successful Rack-protocol calls. The direct application calls took 0.013272 seconds and middleware calls took 0.539758 seconds, for an estimated 52.649 microseconds of middleware work per request. The fixture uses no network, error capture, or response-body enumeration. This is a single development measurement, not a production latency claim; controlled warmup, median, and dispersion remain required before publishing a performance claim.
+
+## Version 0.6 Sidekiq middleware benchmark
+
+Run:
+
+```bash
+ITERATIONS=100000 bundle _1.17.3_ exec ruby benchmarks/sidekiq_middleware.rb
+```
+
+The benchmark executes client context injection and successful server normalization with a no-op notifier. It includes bounded argument handling and clock reads, but excludes Sidekiq/Redis, serialization, queueing, and network delivery. Record a controlled result before making a performance claim.

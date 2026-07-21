@@ -52,4 +52,16 @@ RSpec.describe Chronos::Agent do
     expect(transport.events.size).to eq(1)
     agent.close(1.0)
   end
+
+  it "exposes only trace and request identifiers for process propagation" do
+    agent = described_class.new(snapshot, :transport => FakeTransport.new)
+
+    context = agent.with_context(
+      :context => {"trace_id" => "trace-1", "secret" => "excluded",
+                   "request" => {"request_id" => "request-1", "path" => "/private"}}
+    ) { agent.propagation_context }
+
+    expect(context).to eq("trace_id" => "trace-1", "request_id" => "request-1")
+    agent.close(1.0)
+  end
 end

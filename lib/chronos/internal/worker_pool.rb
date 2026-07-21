@@ -24,6 +24,7 @@ module Chronos
         @mutex = Mutex.new
         @threads = []
         @active = 0
+        @pending = 0
         @closed = false
         @pid = Process.pid
       end
@@ -32,7 +33,9 @@ module Chronos
         prepare_after_fork
         return false if closed?
 
+        increment_pending
         accepted = @queue.push(event)
+        decrement_pending unless accepted
         ensure_started if accepted
         accepted
       end
@@ -42,7 +45,7 @@ module Chronos
         ensure_started unless @queue.empty?
         deadline = monotonic_time + timeout.to_f
         loop do
-          return true if @queue.empty? && active_count.zero?
+          return true if delivery_complete?
           return false if monotonic_time >= deadline
           sleep(POLL_INTERVAL)
         end
@@ -91,6 +94,7 @@ module Chronos
             @logger.warn("Chronos worker contained #{error.class}")
           ensure
             decrement_active
+            decrement_pending
           end
         end
       rescue StandardError => error
@@ -104,13 +108,14 @@ module Chronos
           @pid = Process.pid
           @threads = []
           @active = 0
+          @pending = @queue.size
         end
       end
 
       def flush_without_reopening(timeout)
         deadline = monotonic_time + timeout.to_f
         loop do
-          return true if @queue.empty? && active_count.zero?
+          return true if delivery_complete?
           return false if monotonic_time >= deadline
           sleep(POLL_INTERVAL)
         end
@@ -136,6 +141,18 @@ module Chronos
 
       def active_count
         @mutex.synchronize { @active }
+      end
+
+      def increment_pending
+        @mutex.synchronize { @pending += 1 }
+      end
+
+      def decrement_pending
+        @mutex.synchronize { @pending -= 1 }
+      end
+
+      def delivery_complete?
+        @mutex.synchronize { @pending.zero? && @active.zero? }
       end
 
       def closed?

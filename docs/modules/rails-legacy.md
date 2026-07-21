@@ -57,4 +57,4 @@ The repository contains independent applications under `examples/rails-4.2` and 
 
 ## Limits
 
-Version 0.5 emits individual bounded timings. It does not aggregate APM metrics, capture SQL text, calculate query fingerprints, or provide Sidekiq integration. Those belong to later versions in the development order.
+Version 0.5 emits individual bounded timings. It does not aggregate APM metrics, capture SQL text, or calculate query fingerprints. Sidekiq support is a separate optional integration beginning in version 0.6; full Active Job propagation remains a later 0.6 increment.

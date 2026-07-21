@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://chronos.example/schemas/sidekiq-job-v1.schema.json",
+  "title": "Chronos Sidekiq job payload v1",
+  "type": "object",
+  "required": ["kind", "class", "queue", "duration_ms", "status"],
+  "properties": {
+    "kind": {"const": "sidekiq"},
+    "class": {"type": "string"},
+    "queue": {"type": "string"},
+    "jid": {"type": "string"},
+    "duration_ms": {"type": "number", "minimum": 0},
+    "queue_latency_ms": {"type": ["number", "null"], "minimum": 0},
+    "retry_count": {"type": "integer", "minimum": 0},
+    "arguments": {"type": "array", "maxItems": 20},
+    "arguments_truncated": {"type": "boolean"},
+    "tags": {"type": "array", "maxItems": 20},
+    "status": {"enum": ["completed", "failed"]},
+    "error_class": {"type": "string"}
+  }
+}

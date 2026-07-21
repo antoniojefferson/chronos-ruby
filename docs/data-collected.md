@@ -1,6 +1,6 @@
 # Data collected
 
-Version 0.5 emits exception, request, query, job, and cache events. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
+Version 0.6 emits exception, request, query, job, and cache events. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
 
 | Data | Default | Source |
 |---|---|---|
@@ -27,9 +27,14 @@ Version 0.5 emits exception, request, query, job, and cache events. All fields p
 | SQL operation name, cached flag, duration | Collected; SQL text omitted | `sql.active_record` |
 | Mailer/action and duration | Collected; message content omitted | `deliver.action_mailer` |
 | Active Job class, queue, duration | Collected when available; arguments omitted | `perform.active_job` |
+| Sidekiq class, queue, JID, retry count, duration, status, error class | Collected with optional middleware | Sidekiq job envelope and local clock |
+| Sidekiq queue latency | Collected when enqueue time is available | Sidekiq or Chronos envelope timestamp |
+| Sidekiq arguments | Collected, sanitized, and bounded | First 20 job arguments; collections/depth/strings limited |
+| Sidekiq tags | Collected and bounded | Job payload or public worker options |
+| Sidekiq trace/request IDs | Propagated when present; trace generated otherwise | Chronos job-envelope metadata |
 | Cache operation, store, hit flag, duration | Collected; key/value omitted | ActiveSupport cache notifications |
 
-The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, source code, raw SQL, SQL bind values, database rows, cache keys/values, mail bodies/recipients, job IDs/arguments, or installed gems in version 0.5.
+The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, source code, raw SQL, SQL bind values, database rows, cache keys/values, mail bodies/recipients, or installed gems. Sidekiq JIDs and bounded arguments are the explicit version 0.6 exception to the earlier job-ID/argument exclusion.
 
 The secret `project_key` is an authentication header and is excluded from the JSON payload and logger diagnostics. The envelope field named `project_key` contains the public `project_id` required by the current v1 server contract.
 

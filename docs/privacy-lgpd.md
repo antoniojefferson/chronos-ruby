@@ -1,6 +1,6 @@
 # Privacy and LGPD
 
-Version 0.5 sanitizes exception and framework telemetry before JSON serialization, queueing, retry backlog, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
+Version 0.6 sanitizes exception and framework telemetry before JSON serialization, queueing, retry backlog, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
 
 ## Default policy
 
@@ -13,13 +13,18 @@ Version 0.5 sanitizes exception and framework telemetry before JSON serializatio
 | Payment-card candidates that pass the Luhn check | Replaced with `[FILTERED_CARD]` |
 | IPv4 addresses | Last octet replaced with `0` |
 | Unknown Ruby objects | Represented by class name without calling application serialization |
-| Request/response bodies, raw query strings, cookies, authorization headers, raw SQL/binds, cache values, mail bodies, job arguments, environment variables | Never collected automatically in version 0.5 |
+| Request/response bodies, raw query strings, cookies, authorization headers, raw SQL/binds, cache values, mail bodies, environment variables | Never collected automatically |
+| Sidekiq arguments | Collected automatically, limited before sanitization, then redacted by the common policy |
 
-The retry backlog exists only in process memory, accepts only `SerializedEvent`, has a fixed capacity, and disappears on process exit. Version 0.5 does not persist telemetry to disk.
+The retry backlog exists only in process memory, accepts only `SerializedEvent`, has a fixed capacity, and disappears on process exit. Version 0.6 does not persist telemetry to disk.
 
 ## Rails telemetry
 
 Rails subscribers use per-notification allowlists. SQL events retain only the operation name, cached flag, and duration; cache events omit key and value; mailer events omit addresses and content; Active Job events omit job ID and arguments; view identifiers are reduced to basenames. Controller parameters are sanitized by the normal payload pipeline before queueing.
+
+## Sidekiq jobs
+
+The optional Sidekiq middleware is the only version 0.6 integration that automatically reads job arguments. It traverses at most 20 top-level arguments, 20 items per nested collection, four levels, and 512 bytes per string. These structural limits run before the common key and content sanitizer. Trace propagation contains only trace and request identifiers. Do not place credentials or unnecessary personal, health, or financial data in job arguments; configure application-specific blocklist keys and audit representative synthetic payloads before enabling production delivery.
 
 ## Rack context and breadcrumbs
 
