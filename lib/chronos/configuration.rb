@@ -46,7 +46,8 @@ module Chronos
       :apm_enabled, :apm_max_groups, :apm_flush_count, :apm_batch_size,
       :apm_max_queries_per_request, :apm_slow_query_threshold_ms,
       :apm_long_transaction_threshold_ms, :apm_n_plus_one_threshold,
-      :apm_histogram_buckets
+      :apm_histogram_buckets, :external_http_enabled, :external_http_trace_headers,
+      :cache_key_mode, :dependency_reporting, :dependency_max_items
     ].freeze
 
     attr_accessor(*ATTRIBUTES)
@@ -57,6 +58,7 @@ module Chronos
       initialize_resilience_defaults
       initialize_rails_defaults
       initialize_apm_defaults
+      initialize_observability_defaults
     end
 
     def snapshot
@@ -86,6 +88,7 @@ module Chronos
       errors.concat(privacy_errors)
       errors.concat(context_errors)
       errors.concat(apm_errors)
+      errors.concat(observability_errors)
       errors
     end
 
@@ -136,6 +139,14 @@ module Chronos
       @apm_histogram_buckets = [5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0]
     end
 
+    def initialize_observability_defaults
+      @external_http_enabled = false
+      @external_http_trace_headers = true
+      @cache_key_mode = :none
+      @dependency_reporting = true
+      @dependency_max_items = 100
+    end
+
     def initialize_privacy_defaults
       @blocklist_keys = DEFAULT_BLOCKLIST_KEYS.dup
       @allowlist_keys = []
@@ -155,7 +166,9 @@ module Chronos
       @remote_configuration = true
       @remote_config_max_bytes = 4096
       @sampling_rate = 1.0
-      @enabled_event_types = ["exception", "request", "query", "job", "cache", "metric_batch"]
+      @enabled_event_types = [
+        "exception", "request", "query", "job", "cache", "external_http", "dependencies", "metric_batch"
+      ]
       @max_remote_send_interval = 60.0
     end
 

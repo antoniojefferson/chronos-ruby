@@ -39,7 +39,7 @@
 | `remote_configuration` | Optional | `true` | Accepts only the documented bounded remote policy fields |
 | `remote_config_max_bytes` | Optional | `4096` | Maximum remote policy response-header bytes |
 | `sampling_rate` | Optional | `1.0` | Local upper bound for event sampling |
-| `enabled_event_types` | Optional | exception, request, query, job, cache, metric_batch | Local allowlist for supported event envelopes |
+| `enabled_event_types` | Optional | exception, request, query, job, cache, external_http, dependencies, metric_batch | Local allowlist for supported event envelopes |
 | `max_remote_send_interval` | Optional | `60.0` | Local upper bound for remotely requested send spacing |
 | `context_store` | Optional | `:thread_local` | `:thread_local` or an object implementing `get`, `set`, `clear`, and `with_context` |
 | `breadcrumb_capacity` | Optional | `20` | Positive count of newest breadcrumbs retained per execution |
@@ -48,7 +48,7 @@
 | `rails_capture_in_console` | Optional | `false` | Enables automatic integration while Rails console is loaded |
 | `rails_capture_in_test` | Optional | `false` | Enables automatic integration in the Rails test environment |
 | `rails_capture_user_agent` | Optional | `false` | Adds the Rack user agent to request context |
-| `apm_enabled` | Optional | `true` | Aggregates request, query, and job observations into bounded metric batches |
+| `apm_enabled` | Optional | `true` | Aggregates request, query, job, and enabled external HTTP observations into bounded metric batches |
 | `apm_max_groups` | Optional | `200` | Maximum metric groups and active trace trackers retained locally |
 | `apm_flush_count` | Optional | `100` | Aggregate observations accepted before a threshold drain |
 | `apm_batch_size` | Optional | `50` | Metric groups per batch; hard maximum 50 |
@@ -57,6 +57,11 @@
 | `apm_long_transaction_threshold_ms` | Optional | `1000.0` | Transaction-labelled SQL duration that produces a signal |
 | `apm_n_plus_one_threshold` | Optional | `5` | Repeated fingerprint count producing one possible-N+1 signal; minimum 2 |
 | `apm_histogram_buckets` | Optional | Fixed millisecond boundaries | Increasing positive duration boundaries; at most 19 plus `+Inf` |
+| `external_http_enabled` | Optional | `false` | Allows explicit per-instance outbound `Net::HTTP` instrumentation |
+| `external_http_trace_headers` | Optional | `true` | Propagates Chronos trace/request headers on instrumented requests |
+| `cache_key_mode` | Optional | `:none` | `:none` omits keys; `:sha256` emits a project-scoped key hash |
+| `dependency_reporting` | Optional | `true` | Emits one bounded dependency event per configured agent |
+| `dependency_max_items` | Optional | `100` | Loaded gem entries retained in the inventory; range 1–200 |
 
 ```ruby
 Chronos.configure do |config|
@@ -84,6 +89,11 @@ Chronos.configure do |config|
   config.apm_slow_query_threshold_ms = 500.0
   config.apm_long_transaction_threshold_ms = 1000.0
   config.apm_n_plus_one_threshold = 5
+  config.external_http_enabled = false
+  config.external_http_trace_headers = true
+  config.cache_key_mode = :none
+  config.dependency_reporting = true
+  config.dependency_max_items = 100
 end
 ```
 

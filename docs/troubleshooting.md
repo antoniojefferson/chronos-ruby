@@ -22,7 +22,19 @@ Require `chronos/rails` from the generated initializer and confirm it runs befor
 
 ## Rails telemetry contains no SQL or cache key
 
-This is intentional. Version 0.5 records SQL operation name/duration and cache operation/store/hit status without raw statements, binds, keys, or values. These omissions are privacy and cardinality boundaries, not capture failures.
+This is intentional. Chronos records bounded SQL and cache operational metadata without raw statements, binds, keys, or values. Set `cache_key_mode = :sha256` before configuration only when a stable pseudonymous key identity is required.
+
+## External HTTP telemetry is missing
+
+Set `external_http_enabled = true`, then call `Chronos.instrument_net_http(http)` for each `Net::HTTP` instance after Chronos is configured. Existing and future objects are not patched globally. The method returns `false` when disabled, already installed, incompatible, or unconfigured.
+
+## Trace headers should not reach a destination
+
+Set `external_http_trace_headers = false` before configuring the agent, or do not instrument that connection. Chronos preserves an application-supplied Chronos header instead of overwriting it.
+
+## Dependency inventory is missing or incomplete
+
+The event is emitted once per agent and contains only gems loaded at collection time, capped by `dependency_max_items`. It does not parse the lockfile or activate optional frameworks. Call `Chronos.report_dependencies` after application boot if the first event can occur before all integrations load, or set `dependency_reporting = false` to disable collection.
 
 ## Sidekiq telemetry is missing
 

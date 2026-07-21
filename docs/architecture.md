@@ -1,6 +1,6 @@
 # Architecture
 
-Chronos Ruby 0.7 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
+Chronos Ruby 0.8 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
 
 ```mermaid
 flowchart TB
@@ -21,6 +21,9 @@ flowchart TB
   Application --> Telemetry[Core / TelemetryEvent]
   Telemetry --> APM[Application / ApmAggregator]
   APM --> Metrics[Core / MetricAggregate and SqlNormalizer]
+  NetHTTP[Explicit Net::HTTP instance wrapper] --> Facade
+  Rails --> Cache[Core / CacheNormalizer]
+  Application --> Dependencies[Application / DependencyReporter]
 ```
 
 ## Boundaries
@@ -49,6 +52,8 @@ Rails timings become immutable `TelemetryEvent` values. `CaptureTelemetry` appli
 Sidekiq client middleware writes a versioned, allowlisted trace/request context beside the job's public arguments. Server middleware restores a job scope, limits arguments and tags, emits a job observation, and routes a failure through the existing notice pipeline before re-raising it. Sidekiq retains queue, retry, thread, and connection lifecycle ownership.
 
 Version 0.7 routes request, query, and job observations through `ApmAggregator`. `SqlNormalizer` removes values before grouping, while `MetricAggregate` owns fixed numerical statistics. Aggregates and per-trace query trackers are bounded and mutex-protected. Threshold or lifecycle drains create `metric_batch` telemetry that passes through the existing sanitizer and delivery pipeline. No APM-specific thread is created.
+
+Version 0.8 prepends a wrapper only to each explicitly selected `Net::HTTP` object. The wrapper records bounded outcome metadata and feeds the existing APM aggregator; it does not modify `Net::HTTP` globally. `CacheNormalizer` turns public Rails cache notifications into bounded metadata before delivery. `DependencyReporter` reads already loaded runtime metadata once per agent under a mutex and queues it as a separate event.
 
 ## Failure policy
 

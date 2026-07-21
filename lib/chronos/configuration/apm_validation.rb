@@ -2,7 +2,7 @@ module Chronos
   module Internal
     # Validates bounded APM aggregation, histogram, and detector settings.
     #
-    # @responsibility Return configuration errors for version 0.7 APM options.
+    # @responsibility Return configuration errors for bounded APM and observability options.
     # @motivation Keep the general configuration validator focused and maintainable.
     # @limits It validates shape and bounds but does not allocate aggregator state.
     # @collaborators Chronos::Configuration predicates and attributes.
@@ -54,6 +54,22 @@ module Chronos
         return false unless values.all? { |value| positive_number?(value) }
 
         values.each_cons(2).all? { |left, right| right > left }
+      end
+
+      def observability_errors
+        errors = []
+        errors << "external_http_enabled must be true or false" unless boolean?(external_http_enabled)
+        errors << "external_http_trace_headers must be true or false" unless boolean?(external_http_trace_headers)
+        errors << "cache_key_mode must be :none or :sha256" unless [:none, :sha256].include?(cache_key_mode)
+        errors << "dependency_reporting must be true or false" unless boolean?(dependency_reporting)
+        unless dependency_max_items.is_a?(Integer) && dependency_max_items >= 1 && dependency_max_items <= 200
+          errors << "dependency_max_items must be between 1 and 200"
+        end
+        errors
+      end
+
+      def boolean?(value)
+        [true, false].include?(value)
       end
     end
   end

@@ -12,6 +12,30 @@ All notable changes are documented here. The project follows Semantic Versioning
 - legacy CI now resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector.
 - documentation verification now reads source and Markdown files explicitly as UTF-8 on legacy container locales.
 
+## [0.8.0.pre.1] - 2026-07-20
+
+### Added
+
+- optional per-instance `Net::HTTP` instrumentation with sanitized host, method, status, duration, timeout and connection-error classification;
+- outbound trace/request header propagation without collecting URLs, Authorization, request bodies, response bodies, or error messages;
+- external HTTP metric aggregation and traced-request `external_http` breakdown;
+- cache operation, duration, hit/miss, backend, namespace, and opt-in project-scoped SHA-256 key identity;
+- bounded dependency inventory containing loaded gem versions, Ruby, optional Rails/web server/database/Sidekiq detection, and configured release;
+- version 0.8 configuration, contracts, tests, executable example, benchmark, module documentation, and ADR-016.
+
+### Changed
+
+- dependency inventory is queued at most once per configured agent instead of being attached to every exception;
+- cache notification fields now use bounded backend/namespace/outcome names and omit raw keys by default;
+- version advanced to `0.8.0.pre.1`.
+
+### Known limitations
+
+- outbound HTTP instrumentation must be enabled and installed on each selected `Net::HTTP` instance;
+- Faraday, HTTP.rb, Excon, and RestClient adapters are not included;
+- cache key hashing is opt-in and low-entropy keys may remain guessable;
+- dependency detection uses already loaded gems and does not open a database connection or inspect lockfiles.
+
 ## [0.7.0.pre.1] - 2026-07-20
 
 ### Added

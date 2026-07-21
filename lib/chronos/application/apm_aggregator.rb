@@ -1,6 +1,6 @@
 module Chronos
   module Application
-    # Aggregates bounded request, query, and job observations into metric batches.
+    # Aggregates bounded request, query, job, and external HTTP observations into metric batches.
     #
     # @responsibility Maintain statistics, histograms, breakdown, and local query signals.
     # @motivation Avoid one network event per observation while retaining diagnostic value.
@@ -14,7 +14,9 @@ module Chronos
     # @errors Invalid observations are ignored and never escape to the application.
     # @performance Group, transaction, query, bucket, and batch counts are strictly bounded.
     class ApmAggregator
-      METRIC_TYPES = %w(request query job).freeze
+      include ApmErrorClassifier
+
+      METRIC_TYPES = %w(request query job external_http).freeze
       def initialize(config)
         @config = config
         @mutex = Mutex.new
@@ -77,7 +79,7 @@ module Chronos
           @groups[key] = aggregate
         end
         duration = non_negative(payload["duration_ms"] || payload[:duration_ms])
-        status = type == "request" ? payload["status"] || payload[:status] : nil
+        status = ["request", "external_http"].include?(type) ? payload["status"] || payload[:status] : nil
         signals = signals_for(type, payload, context, duration)
         breakdown = breakdown_for(type, payload, context, duration)
         aggregate.observe(
@@ -177,6 +179,7 @@ module Chronos
                 when "request" then %w(route method)
                 when "query" then %w(adapter operation table fingerprint normalized_query name cached role shard source)
                 when "job" then %w(kind class queue status)
+                when "external_http" then %w(host method)
                 else []
                 end
         names.each_with_object({}) do |name, result|
@@ -211,15 +214,9 @@ module Chronos
         return "view" if type == "request" && payload["kind"].to_s == "view"
         return "cache" if type == "cache"
         return "queue" if type == "job"
+        return "external_http" if type == "external_http"
 
         nil
-      end
-
-      def error?(type, payload)
-        return (payload["status"] || payload[:status]).to_i >= 500 if type == "request"
-        return (payload["status"] || payload[:status]).to_s == "failed" if type == "job"
-
-        !(payload["error_class"] || payload[:error_class]).to_s.empty?
       end
 
       def trace_id(context)

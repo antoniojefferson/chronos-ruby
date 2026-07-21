@@ -9,3 +9,5 @@ Risks include accidentally logging credentials and changing settings while event
 Tests in `spec/unit/configuration_spec.rb` verify required fields, HTTPS defaults, immutable containers, disabled operation, and bounded numeric settings.
 
 Version 0.7 adds bounded APM capacities, thresholds, and histogram boundaries. Invalid zero/negative capacities, batches above 50, N+1 thresholds below two, and non-increasing histogram boundaries are rejected before agent construction. See [Essential APM aggregation](apm-aggregation.md).
+
+Version 0.8 adds Boolean HTTP/dependency switches, `:none`/`:sha256` cache-key policy, and a dependency limit from 1 to 200. Invalid values are rejected before instrumentation or collection starts. See [External HTTP](external-http.md), [Cache observability](cache-observability.md), and [Dependency inventory](dependencies.md).
