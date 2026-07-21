@@ -9,7 +9,7 @@ module Chronos
     # @thread_safety Validation reads one configuration instance without shared state.
     # @compatibility Ruby 2.2.10 through Ruby 2.6.
     # @errors Invalid values become messages; malformed URLs are contained.
-    module ConfigurationValidation
+    module ConfigurationValidation # rubocop:disable Metrics/ModuleLength
       private
 
       def resilience_errors
@@ -60,6 +60,7 @@ module Chronos
         errors.concat(matcher_errors("allowlist_keys", allowlist_keys))
         errors.concat(matcher_errors("hash_keys", hash_keys))
         errors.concat(filter_errors)
+        errors.concat(ignore_rule_errors)
         errors.concat(anonymization_errors)
         errors
       end
@@ -97,6 +98,20 @@ module Chronos
 
       def anonymization_errors
         [true, false].include?(anonymize_ip) ? [] : ["anonymize_ip must be true or false"]
+      end
+
+      def ignore_rule_errors
+        errors = []
+        unless ignore_rules.is_a?(Array) && ignore_rules.all? { |rule| rule.respond_to?(:call) }
+          errors << "ignore_rules must contain only callable objects"
+        end
+        unless positive_integer?(max_ignore_rules) && max_ignore_rules <= 100
+          errors << "max_ignore_rules must be an integer between 1 and 100"
+        end
+        if ignore_rules.is_a?(Array) && max_ignore_rules.is_a?(Integer) && ignore_rules.length > max_ignore_rules
+          errors << "ignore_rules cannot exceed max_ignore_rules"
+        end
+        errors
       end
 
       def matcher_errors(name, values)

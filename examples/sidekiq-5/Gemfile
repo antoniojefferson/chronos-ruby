@@ -1,0 +1,5 @@
+source "https://rubygems.org"
+
+gem "chronos-ruby", :path => "../.."
+gem "redis", "~> 4.0"
+gem "sidekiq", "5.2.10"

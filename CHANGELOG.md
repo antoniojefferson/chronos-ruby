@@ -12,6 +12,35 @@ All notable changes are documented here. The project follows Semantic Versioning
 - legacy CI now resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector.
 - documentation verification now reads source and Markdown files explicitly as UTF-8 on legacy container locales.
 
+## [0.9.0.pre.2] - 2026-07-21
+
+### Added
+
+- bounded startup and runtime exception ignore rules through `config.ignore_rules` and `Chronos.ignore_if`;
+- Active Job trace/request propagation without modifying public arguments, plus adapter, job/provider IDs, attempts, status, and failure telemetry;
+- real-gem Sidekiq 4.2/5.2 Docker compatibility jobs;
+- repeatable Rack comparison and fake-endpoint load gates;
+- corrected `script/test_all` so `pipefail` no longer turns installed Rubies into false skips and an empty matrix fails;
+- Airbrake migration, SemVer, deprecation, protocol stability, security review, and 1.0 readiness documentation.
+
+### Changed
+
+- version advanced to `0.9.0.pre.2` instead of `1.0.0` because the full external legacy matrix has not yet supplied zero-failure evidence;
+- Active Job identifiers are now documented collected fields and propagated context is bounded to trace/request IDs.
+
+### Security
+
+- local ignore rules are bounded to 100, contain callback failures, and cannot be installed remotely;
+- fake-endpoint load validation rejects payloads containing the secret authentication key;
+- package signing remains deferred until a trusted key lifecycle exists; protected publishing credentials remain required.
+
+### Known limitations
+
+- compatibility stays `Best effort` until all new and existing GitHub Actions matrix jobs pass without skips;
+- end-of-life runtimes and framework dependencies retain their upstream security risk;
+- Active Job adapters that bypass standard serialization/execution hooks need dedicated evidence;
+- comparative results are not a performance claim and must be published with controlled environment metadata.
+
 ## [0.9.0.pre.1] - 2026-07-21
 
 ### Added

@@ -41,6 +41,14 @@ required_documents = %w(
   docs/modules/cache-observability.md
   docs/modules/dependencies.md
   docs/modules/deploy-tracking.md
+  docs/modules/ignore-rules.md
+  docs/modules/active-job.md
+  docs/migration-from-airbrake.md
+  docs/semver.md
+  docs/deprecation-policy.md
+  docs/security-review.md
+  docs/protocol-v1.md
+  docs/release-1.0-readiness.md
 )
 
 missing = required_documents.reject { |path| File.file?(File.join(root, path)) }
@@ -75,6 +83,12 @@ abort "README does not document version 0.6 Sidekiq integration" unless readme.i
 abort "README does not document version 0.7 APM aggregation" unless readme.include?("Version 0.7")
 abort "README does not document version 0.8 observability" unless readme.include?("Version 0.8")
 abort "README does not document version 0.9 deploy tracking" unless readme.include?("Version 0.9")
+abort "README does not document local ignore rules" unless readme.include?("Chronos.ignore_if")
+abort "README does not document Active Job propagation" unless readme.include?("namespaced serialized field")
+
+%w(benchmarks/comparative.rb benchmarks/fake_endpoint_load.rb script/generate_sbom).each do |relative_path|
+  abort "Missing release gate: #{relative_path}" unless File.file?(File.join(root, relative_path))
+end
 
 apm_schema_path = File.join(root, "contracts/apm-batch-v1.schema.json")
 apm_schema = JSON.parse(read_utf8(apm_schema_path))

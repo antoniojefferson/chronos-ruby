@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+
+require "json"
+require "time"
+require "chronos/version"
+
+output = ARGV[0] || "chronos-ruby-#{Chronos::VERSION}.spdx.json"
+created = Time.at(Integer(ENV.fetch("SOURCE_DATE_EPOCH", Time.now.to_i.to_s))).utc.iso8601
+packages = Gem.loaded_specs.values.sort_by(&:name).map do |spec|
+  {
+    "SPDXID" => "SPDXRef-Gem-#{spec.name.gsub(/[^A-Za-z0-9.-]/, '-')}",
+    "name" => spec.name,
+    "versionInfo" => spec.version.to_s,
+    "downloadLocation" => "https://rubygems.org/gems/#{spec.name}-#{spec.version}.gem",
+    "filesAnalyzed" => false,
+    "licenseConcluded" => "NOASSERTION",
+    "licenseDeclared" => spec.licenses.empty? ? "NOASSERTION" : spec.licenses.join(" AND ")
+  }
+end
+
+document = {
+  "spdxVersion" => "SPDX-2.3",
+  "dataLicense" => "CC0-1.0",
+  "SPDXID" => "SPDXRef-DOCUMENT",
+  "name" => "chronos-ruby-#{Chronos::VERSION}",
+  "documentNamespace" => "https://github.com/antoniojefferson/chronos-ruby/releases/tag/v#{Chronos::VERSION}/sbom",
+  "creationInfo" => {"created" => created, "creators" => ["Tool: chronos-ruby/script/generate_sbom"]},
+  "packages" => packages
+}
+
+File.open(output, "w") { |file| file.write(JSON.pretty_generate(document) + "\n") }
+puts "Generated #{output} with #{packages.length} packages"

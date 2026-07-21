@@ -26,7 +26,8 @@ Version 0.9 emits exceptions, cache telemetry, dependency/deploy events, and agg
 | View template basename and duration | Collected with Rails integration | `render_template.action_view` |
 | SQL operation name, cached flag, duration | Collected; SQL text omitted | `sql.active_record` |
 | Mailer/action and duration | Collected; message content omitted | `deliver.action_mailer` |
-| Active Job class, queue, duration | Collected when available; arguments omitted | `perform.active_job` |
+| Active Job adapter, job/provider IDs, class, queue, attempts, duration, status, error class | Collected when available; arguments omitted | serialization and `perform.active_job` |
+| Active Job trace/request IDs | Propagated in a bounded namespaced field | Current Chronos context |
 | Sidekiq class, queue, JID, retry count, duration, status, error class | Collected with optional middleware | Sidekiq job envelope and local clock |
 | Sidekiq queue latency | Collected when enqueue time is available | Sidekiq or Chronos envelope timestamp |
 | Sidekiq arguments | Collected, sanitized, and bounded | First 20 job arguments; collections/depth/strings limited |
@@ -48,7 +49,7 @@ Version 0.9 emits exceptions, cache telemetry, dependency/deploy events, and agg
 | Event release, revision, deploy ID, environment, service, region, instance | Present as bounded correlation; values optional | Explicit immutable configuration or normalized deploy payload |
 | Deploy environment, revision, version, repository, actor, deploy ID, service, region, instance | Explicit synchronous deploy API | Application/deployment integration arguments |
 
-The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, Git state, source code, raw SQL, SQL bind values, database rows, raw cache keys/values, mail bodies/recipients, gem paths, or lockfile contents. Sidekiq JIDs/arguments, loaded gem names/versions, and deploy fields are documented integration data.
+The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, Git state, source code, raw SQL, SQL bind values, database rows, raw cache keys/values, mail bodies/recipients, Active Job arguments, gem paths, or lockfile contents. Active Job IDs, Sidekiq JIDs/arguments, loaded gem names/versions, and deploy fields are documented integration data.
 
 APM dimensions never include user ID, job ID, raw URL, exception message, bind value, or cache key. Normalized routes replace common numeric/UUID segments. Normalized SQL can retain schema, table, and column identifiers; review those identifiers as part of the privacy audit.
 

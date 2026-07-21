@@ -31,6 +31,17 @@ jobs:
       - run: bundle _1.17.3_ install
       - run: bundle _1.17.3_ exec rake
       - run: gem build chronos-ruby.gemspec
+      - name: Generate checksum and SBOM
+        run: |
+          sha256sum chronos-ruby-*.gem > "chronos-ruby-${GITHUB_REF_NAME#v}.gem.sha256"
+          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)" bundle _1.17.3_ exec ruby -Ilib script/generate_sbom
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chronos-ruby-${{ github.ref_name }}
+          path: |
+            chronos-ruby-*.gem
+            chronos-ruby-*.gem.sha256
+            chronos-ruby-*.spdx.json
       - name: Publish gem
         env:
           GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}

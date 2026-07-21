@@ -50,6 +50,10 @@ module Chronos
       @capture.call_sync(exception, context_for_capture(context))
     end
 
+    def ignore_if(&block)
+      @ignore_policy.add(&block)
+    end
+
     def with_context(context = {}, &block)
       @context_store.with_context(context, &block)
     end
@@ -186,7 +190,12 @@ module Chronos
     private
 
     def initialize_capture(options)
-      @capture = options[:capture] || Application::CaptureException.new(@config, @delivery_pipeline, @logger)
+      @ignore_policy = options[:ignore_policy] || Application::IgnorePolicy.new(
+        @config.ignore_rules, @config.max_ignore_rules, @logger
+      )
+      @capture = options[:capture] || Application::CaptureException.new(
+        @config, @delivery_pipeline, @logger, :ignore_policy => @ignore_policy
+      )
       @telemetry = options[:telemetry] || Application::CaptureTelemetry.new(@config, @delivery_pipeline, @logger)
     end
 

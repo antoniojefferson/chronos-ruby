@@ -12,7 +12,7 @@ RSpec.describe Chronos do
   end
 
   it "has a version number" do
-    expect(Chronos::VERSION).to eq("0.9.0.pre.1")
+    expect(Chronos::VERSION).to eq("0.9.0.pre.2")
   end
 
   it "defines a base error" do

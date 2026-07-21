@@ -37,7 +37,7 @@ module Chronos
       :queue_size, :workers, :enabled, :error_notifications,
       :ignored_environments, :proxy, :ssl_verify, :user_agent,
       :max_payload_size, :gzip, :blocklist_keys, :allowlist_keys,
-      :filters, :hash_keys, :anonymize_ip, :max_retries,
+      :filters, :hash_keys, :anonymize_ip, :ignore_rules, :max_ignore_rules, :max_retries,
       :retry_base_interval, :retry_max_interval, :retry_jitter,
       :backlog_size, :circuit_failure_threshold, :circuit_reset_timeout,
       :remote_configuration, :remote_config_max_bytes, :sampling_rate,
@@ -162,6 +162,8 @@ module Chronos
       @filters = []
       @hash_keys = []
       @anonymize_ip = true
+      @ignore_rules = []
+      @max_ignore_rules = 20
     end
 
     def initialize_resilience_defaults

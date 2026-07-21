@@ -33,6 +33,7 @@ require "chronos/core/breadcrumb"
 require "chronos/application/retry_policy"
 require "chronos/application/circuit_breaker"
 require "chronos/application/remote_configuration"
+require "chronos/application/ignore_policy"
 require "chronos/application/delivery_pipeline"
 require "chronos/application/capture_exception"
 require "chronos/application/apm_error_classifier"
@@ -60,7 +61,7 @@ require "chronos/integrations/rack/middleware"
 #     config.host = "https://chronos.example.com"
 #   end
 #   Chronos.notify(RuntimeError.new("failed"))
-module Chronos
+module Chronos # rubocop:disable Metrics/ModuleLength
   extend ObservabilityFacade
 
   @mutex = Mutex.new
@@ -140,6 +141,13 @@ module Chronos
     def notify_once(exception, context = {})
       agent = current_agent
       agent ? agent.notify_once(exception, context) : false
+    rescue StandardError
+      false
+    end
+
+    def ignore_if(&block)
+      agent = current_agent
+      agent ? agent.ignore_if(&block) : false
     rescue StandardError
       false
     end

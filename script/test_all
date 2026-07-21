@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+tested=0
 for version in 2.2.10 2.3.8 2.4.10 2.5.9 2.6.10; do
-  if rbenv versions --bare | grep -qx "$version"; then
+  if rbenv versions --bare | grep -x "$version" >/dev/null; then
     echo "Testing Ruby $version"
     RBENV_VERSION="$version" bundle _1.17.3_ exec rake
+    tested=$((tested + 1))
   else
     echo "Skipping Ruby $version because it is not installed"
   fi
 done
+
+if [ "$tested" -eq 0 ]; then
+  echo "No supported Ruby version was tested" >&2
+  exit 1
+fi

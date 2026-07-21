@@ -32,6 +32,8 @@
 | `allowlist_keys` | Optional | `[]` | Explicit key-name exceptions; content detection still runs |
 | `hash_keys` | Optional | `[]` | Scalar identifier keys replaced by scoped SHA-256 values |
 | `filters` | Optional | `[]` | Callable application-specific privacy filters |
+| `ignore_rules` | Optional | `[]` | Callable local exception rules evaluated before serialization |
+| `max_ignore_rules` | Optional | `20` | Maximum retained local rules; range 1–100 |
 | `anonymize_ip` | Recommended | `true` | Replaces the final octet of supplied IPv4 addresses |
 | `max_retries` | Optional | `3` | Maximum retry attempts after the first delivery failure |
 | `retry_base_interval` | Optional | `0.5` | Initial exponential-backoff delay in seconds |
@@ -83,6 +85,8 @@ Chronos.configure do |config|
   config.workers = 1
   config.blocklist_keys += [:medical_record, /bank_account/i]
   config.hash_keys += [:customer_id]
+  config.ignore_rules << proc { |notice| notice.exception_class == "SomeExpectedError" }
+  config.max_ignore_rules = 20
   config.max_retries = 3
   config.backlog_size = 100
   config.circuit_failure_threshold = 5
@@ -106,7 +110,7 @@ Chronos.configure do |config|
 end
 ```
 
-Privacy matcher collections and filters are copied into the immutable runtime snapshot. Matchers must be String, Symbol, or Regexp values, and every custom filter must respond to `call`.
+Privacy matcher collections, filters, and startup ignore rules are copied into the immutable runtime snapshot. Matchers must be String, Symbol, or Regexp values, and every filter/rule must respond to `call`. Runtime rules added through `Chronos.ignore_if` cannot exceed `max_ignore_rules`.
 
 The gem never reads all environment variables automatically. The host application decides which values to pass. See [Privacy and LGPD](privacy-lgpd.md) before adding application context.
 

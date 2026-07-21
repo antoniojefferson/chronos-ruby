@@ -1,5 +1,6 @@
 require "chronos"
 require "chronos/rails/notifications_subscriber"
+require "chronos/integrations/active_job"
 require "chronos/rails/installer"
 
 require "chronos/rails/railtie" if defined?(::Rails::Railtie)

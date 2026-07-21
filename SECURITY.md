@@ -7,3 +7,5 @@ Never include live project keys, customer payloads, personal data, or production
 The Chronos 0.x line provides technical compatibility with end-of-life Ruby versions. It cannot provide security maintenance for the Ruby runtime, OpenSSL, operating system, Rails, or other dependencies used by the host application.
 
 Security fixes in the agent will be assessed for backporting to maintained Chronos version lines. No response-time commitment is made before a formal security process is published.
+
+The current prerelease review and residual risks are recorded in [docs/security-review.md](docs/security-review.md). Release publishing uses a protected GitHub environment and a scoped RubyGems key. Package signing is deferred until the project has a trusted certificate issuance, rotation, revocation, and offline-key process; do not add a private signing key to the repository or workflow secrets without that process.

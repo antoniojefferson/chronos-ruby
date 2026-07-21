@@ -53,6 +53,17 @@ RSpec.describe Chronos::Agent do
     agent.close(1.0)
   end
 
+  it "registers bounded runtime ignore rules" do
+    transport = FakeTransport.new
+    agent = described_class.new(snapshot(:max_ignore_rules => 1), :transport => transport)
+
+    expect(agent.ignore_if { |notice| notice.message == "expected" }).to eq(true)
+    expect(agent.ignore_if { |_notice| true }).to eq(false)
+    expect(agent.notify_sync(RuntimeError.new("expected"))).to eq(false)
+    expect(transport.events).to be_empty
+    agent.close(1.0)
+  end
+
   it "exposes only trace and request identifiers for process propagation" do
     agent = described_class.new(snapshot, :transport => FakeTransport.new)
 

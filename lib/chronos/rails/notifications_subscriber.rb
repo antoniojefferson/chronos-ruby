@@ -144,11 +144,39 @@ module Chronos
 
       def active_job(payload, duration)
         job = value(payload, :job)
+        exception = job_exception(payload)
         data = {
           "kind" => "active_job", "class" => safe_class_name(job),
-          "queue" => safe_job_value(job, :queue_name), "duration_ms" => duration
+          "adapter" => active_job_adapter(job), "job_id" => safe_job_value(job, :job_id),
+          "provider_job_id" => safe_job_value(job, :provider_job_id),
+          "queue" => safe_job_value(job, :queue_name), "attempts" => job_attempts(job),
+          "duration_ms" => duration, "status" => exception ? "failed" : "completed"
         }
+        data["error_class"] = exception.class.name.to_s if exception
         @notifier.record_event("job", data)
+        @notifier.notify_once(exception, :context => {"job" => data}) if exception
+      end
+
+      def job_exception(payload)
+        exception = value(payload, :exception_object)
+        details = value(payload, :exception)
+        exception ||= RuntimeError.new(Array(details).last.to_s) if details
+        exception
+      end
+
+      def active_job_adapter(job)
+        adapter = job.respond_to?(:queue_adapter) ? job.queue_adapter : nil
+        adapter = adapter.class if adapter && !adapter.is_a?(Class)
+        adapter ? adapter.name.to_s.split("::").last.to_s.sub(/Adapter$/, "") : ""
+      rescue StandardError
+        ""
+      end
+
+      def job_attempts(job)
+        value = job.respond_to?(:executions) ? job.executions : 0
+        value.is_a?(Numeric) ? value.to_i : 0
+      rescue StandardError
+        0
       end
 
       def cache(name, payload, duration)

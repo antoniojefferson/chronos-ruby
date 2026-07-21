@@ -28,10 +28,10 @@ The public `ActiveSupport::Notifications.subscribe` API is used for:
 | `render_template.action_view` | `request` with `kind=view` | template basename and duration |
 | `sql.active_record` | `query` | operation name, cached flag, and duration |
 | `deliver.action_mailer` | `job` with `kind=mailer` | mailer, action, and duration |
-| `perform.active_job` | `job` | job class, queue, and duration, when Active Job is available |
+| `perform.active_job` | `job` | adapter, job/provider IDs, class, queue, attempts, duration, status, and error class |
 | cache read/write/hit notifications | `cache` | operation, backend, namespace, hit/miss, duration, and optional scoped key hash |
 
-Raw SQL, binds, cache keys, mail recipients and bodies, job IDs and arguments, request/response bodies, cookies, and authorization headers are not copied. Template identifiers are reduced to their basename. Every event passes through `Sanitizer`, `SafeSerializer`, the bounded queue, retry policy, circuit breaker, and memory backlog.
+Raw SQL, binds, cache keys, mail recipients and bodies, job arguments, request/response bodies, cookies, and authorization headers are not copied. Documented Active Job IDs are collected, while public job arguments remain unchanged and omitted. Template identifiers are reduced to their basename. Every event passes through `Sanitizer`, `SafeSerializer`, the bounded queue, retry policy, circuit breaker, and memory backlog.
 
 ## Controller exceptions and deduplication
 
@@ -57,4 +57,4 @@ The repository contains independent applications under `examples/rails-4.2` and 
 
 ## Limits
 
-Version 0.7 aggregates controller, SQL, and job timings into bounded APM batches. SQL literals and binds remain excluded while a bounded normalized query and fingerprint are produced. Sidekiq support remains a separate optional integration; full Active Job propagation remains a later legacy increment.
+Version 0.7 aggregates controller, SQL, and job timings into bounded APM batches. SQL literals and binds remain excluded while a bounded normalized query and fingerprint are produced. Sidekiq support remains a separate optional integration. Version `0.9.0.pre.2` provides bounded Active Job trace/request propagation through a namespaced serialized field; adapters that replace the standard Active Job serialization/execution hooks require separate compatibility evidence.

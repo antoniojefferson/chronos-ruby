@@ -1,4 +1,4 @@
-name: Legacy Rails CI
+name: Legacy Sidekiq CI
 
 on:
   push:
@@ -16,23 +16,19 @@ jobs:
       matrix:
         include:
           - image: ruby:2.2.10
-            example: examples/rails-4.2
-          - image: ruby:2.3.8
-            example: examples/rails-4.2
+            example: examples/sidekiq-4
           - image: ruby:2.5.9
-            example: examples/rails-5.2
-          - image: ruby:2.6.10
-            example: examples/rails-5.2
+            example: examples/sidekiq-5
     name: ${{ matrix.image }} / ${{ matrix.example }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Run Rails compatibility application
+      - name: Run Sidekiq compatibility smoke
         run: |
           docker run --rm \
             --volume "$PWD:/app" \
             --workdir /app \
             --env EXAMPLE_PATH="${{ matrix.example }}" \
             "${{ matrix.image }}" \
-            sh script/ci_rails_legacy
+            sh script/ci_sidekiq_legacy
