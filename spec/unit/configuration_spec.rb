@@ -7,6 +7,8 @@ RSpec.describe Chronos::Configuration do # rubocop:disable Metrics/BlockLength
     expect(result.ssl_verify).to eq(true)
     expect(result.gzip).to eq(false)
     expect(result.anonymize_ip).to eq(true)
+    expect(result.ignore_rules).to eq([])
+    expect(result.max_ignore_rules).to eq(20)
     expect(result.max_retries).to eq(3)
     expect(result.backlog_size).to eq(100)
     expect(result.circuit_failure_threshold).to eq(5)
@@ -125,13 +127,23 @@ RSpec.describe Chronos::Configuration do # rubocop:disable Metrics/BlockLength
       :allowlist_keys => nil,
       :hash_keys => ["id"],
       :filters => [Object.new],
+      :ignore_rules => [Object.new],
+      :max_ignore_rules => 101,
       :anonymize_ip => "yes"
     )
 
     expect(config.validation_errors).to include("blocklist_keys must be an array")
     expect(config.validation_errors).to include("allowlist_keys must be an array")
     expect(config.validation_errors).to include("filters must contain only callable objects")
+    expect(config.validation_errors).to include("ignore_rules must contain only callable objects")
+    expect(config.validation_errors).to include("max_ignore_rules must be an integer between 1 and 100")
     expect(config.validation_errors).to include("anonymize_ip must be true or false")
+  end
+
+  it "rejects more configured ignore rules than the bounded limit" do
+    config = configuration(:ignore_rules => [proc { true }, proc { true }], :max_ignore_rules => 1)
+
+    expect(config.validation_errors).to include("ignore_rules cannot exceed max_ignore_rules")
   end
 
   it "freezes the filter collection without freezing application callables" do

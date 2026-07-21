@@ -33,7 +33,7 @@ See [Compatibility](docs/compatibility.md).
 The current public build is a pre-release. Add its exact version to the application's `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "0.9.0.pre.1"
+gem "chronos-ruby", "0.9.0.pre.2"
 ```
 
 Install with a Bundler version compatible with the application. For the oldest supported runtime:
@@ -54,7 +54,7 @@ gem install chronos-ruby --pre
 Version 0.5 exposes Rails support explicitly, keeping Rails and ActiveSupport out of plain Ruby applications:
 
 ```ruby
-gem "chronos-ruby", "0.9.0.pre.1", :require => "chronos/rails"
+gem "chronos-ruby", "0.9.0.pre.2", :require => "chronos/rails"
 ```
 
 Generate the initializer with:
@@ -166,7 +166,15 @@ Chronos.configure do |config|
 end
 ```
 
-Local exception-specific ignore callbacks are not available in version 0.4. The server may provide a bounded list of exact fingerprints to ignore; it cannot provide regular expressions or executable rules.
+Version `0.9.0.pre.2` adds bounded local rules after configuration:
+
+```ruby
+Chronos.ignore_if do |notice|
+  notice.exception_class == "SomeExpectedError"
+end
+```
+
+Rules receive an immutable normalized notice, run before serialization/queueing, and must return exactly `true` to discard. The default limit is 20 and the hard configurable maximum is 100. A failing rule is contained. See [Bounded local ignore rules](docs/modules/ignore-rules.md).
 
 ## Performance monitoring
 
@@ -193,12 +201,12 @@ Version `0.6.0.pre.1` adds optional Sidekiq 4/5 middleware:
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "0.9.0.pre.1", :require => "chronos/sidekiq"
+gem "chronos-ruby", "0.9.0.pre.2", :require => "chronos/sidekiq"
 ```
 
 The client middleware propagates only trace/request identifiers in a versioned Sidekiq-envelope field and never changes worker arguments. The server records class, queue, JID, retry count, duration, calculable queue latency, bounded arguments/tags, status, and error class. Values pass through the shared sanitizer before delivery. Failed jobs are notified once and the original exception is re-raised. See [Sidekiq 4/5 legacy integration](docs/modules/sidekiq-legacy.md).
 
-The Rails subscriber continues to record basic Active Job class, queue, and duration. Full Active Job context propagation plus optional Resque and Delayed Job adapters are subsequent version 0.6 increments.
+When Active Job is available, the Rails integration propagates only bounded trace/request identifiers in a namespaced serialized field without changing job arguments. It records adapter, job/provider IDs, class, queue, attempts, duration, status, and error class, and captures a supplied failure once. See [Active Job legacy integration](docs/modules/active-job.md).
 
 ## External HTTP, cache, and dependencies
 

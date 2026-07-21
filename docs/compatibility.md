@@ -13,11 +13,14 @@ Chronos Ruby 0.x is the legacy line. Technical compatibility does not make an en
 
 | Ruby | Sidekiq integration | Status | Evidence |
 |---|---|---|---|
-| 2.2.10–2.6 | Sidekiq 4 / 5 | Best effort | Middleware unit/integration contracts; dedicated real-gem matrix pending |
+| 2.2.10 | Sidekiq 4.2.10 | Best effort | Unit/integration contracts and dedicated real-gem Docker job |
+| 2.5.9 | Sidekiq 5.2.10 | Best effort | Unit/integration contracts and dedicated real-gem Docker job |
 
 Version 0.5 includes Rails 4.2 and 5.2 applications plus a dedicated matrix, but this document conservatively keeps the combinations at `Best effort` until all release-gate evidence, including fake-server payload validation, is green. Rails 5.0 uses the same feature-detected public APIs but does not yet have its own example application.
 
-Version `0.6.0.pre.1` uses the public Sidekiq 4/5 middleware signatures and remains `Best effort` until dedicated jobs exercise both real gem versions across their valid Ruby combinations.
+Version `0.9.0.pre.2` adds dedicated Sidekiq 4.2.10 and 5.2.10 real-gem jobs. Status remains `Best effort` until both external jobs pass on the release candidate.
+
+Active Job propagation uses the standard `serialize`, `deserialize`, and `perform_now` extension points with a namespaced bounded field. Rails 4.2/5.2 example jobs and unit contracts provide evidence; the complete external matrix must still pass before stable support is declared.
 
 Version `0.7.0.pre.1` keeps the same Ruby/Rails matrix and implements APM aggregation without modern concurrency or SQL-parser dependencies. Its compatibility remains `Best effort` until request/SQL/job aggregate payloads pass the dedicated fake-server gates for every listed runtime.
 

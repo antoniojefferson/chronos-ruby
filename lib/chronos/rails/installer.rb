@@ -33,6 +33,7 @@ module Chronos
           return false if self.class.applications[application.object_id]
 
           install_middleware(application, options)
+          install_active_job
           @subscriber.install
           self.class.applications[application.object_id] = true
         end
@@ -56,6 +57,12 @@ module Chronos
           :include_user_agent => options[:include_user_agent]
         )
         true
+      end
+
+      def install_active_job
+        return false unless defined?(::ActiveJob::Base)
+
+        Chronos::Integrations::ActiveJob.install(::ActiveJob::Base, @notifier)
       end
 
       def environment

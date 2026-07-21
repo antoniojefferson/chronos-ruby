@@ -34,6 +34,20 @@ RSpec.describe Chronos::Application::CaptureException do
     pipeline.close(0.1)
   end
 
+  it "discards a notice matched by a bounded local ignore policy" do
+    config = snapshot(:ignore_rules => [proc { |notice| notice.exception_class == "ExpectedError" }])
+    transport = FakeTransport.new
+    pipeline = Chronos::Application::DeliveryPipeline.new(config, transport)
+    policy = Chronos::Application::IgnorePolicy.new(config.ignore_rules, config.max_ignore_rules, nil)
+    capture = described_class.new(config, pipeline, nil, :ignore_policy => policy)
+    expected_error = Class.new(StandardError)
+    stub_const("ExpectedError", expected_error)
+
+    expect(capture.call_sync(ExpectedError.new("ignored"))).to eq(false)
+    expect(transport.events).to be_empty
+    pipeline.close(0.1)
+  end
+
   it "contains failures from the configured logger" do
     logger = Object.new
     def logger.warn(_message)

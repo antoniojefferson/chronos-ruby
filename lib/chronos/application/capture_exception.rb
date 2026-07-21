@@ -18,6 +18,7 @@ module Chronos
         @delivery_pipeline = delivery_pipeline
         @logger = logger || Internal::SafeLogger.new(config.logger)
         @notice_builder = options[:notice_builder] || Core::NoticeBuilder.new(config)
+        @ignore_policy = options[:ignore_policy]
         @serializer = options[:serializer] || Core::PayloadSerializer.new(
           config,
           nil,
@@ -29,6 +30,7 @@ module Chronos
         return false unless capture_enabled?
 
         notice = build_notice(exception, context)
+        return false if ignored?(notice)
         return false unless @delivery_pipeline.capture_allowed?("exception", notice.fingerprint)
 
         @delivery_pipeline.enqueue(@serializer.call(notice))
@@ -41,6 +43,7 @@ module Chronos
         return false unless capture_enabled?
 
         notice = build_notice(exception, context)
+        return false if ignored?(notice)
         return false unless @delivery_pipeline.capture_allowed?("exception", notice.fingerprint)
 
         @delivery_pipeline.deliver_sync(@serializer.call(notice))
@@ -57,6 +60,10 @@ module Chronos
 
       def build_notice(exception, context)
         @notice_builder.call(exception, context)
+      end
+
+      def ignored?(notice)
+        @ignore_policy && @ignore_policy.ignored?(notice)
       end
 
       def diagnose(error)
