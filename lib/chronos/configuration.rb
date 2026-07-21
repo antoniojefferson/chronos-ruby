@@ -32,7 +32,8 @@ module Chronos
 
     ATTRIBUTES = [
       :project_id, :project_key, :host, :environment, :app_version,
-      :service_name, :root_directory, :logger, :timeout, :open_timeout,
+      :service_name, :revision, :deploy_id, :region, :instance_id,
+      :root_directory, :logger, :timeout, :open_timeout,
       :queue_size, :workers, :enabled, :error_notifications,
       :ignored_environments, :proxy, :ssl_verify, :user_agent,
       :max_payload_size, :gzip, :blocklist_keys, :allowlist_keys,
@@ -59,6 +60,7 @@ module Chronos
       initialize_rails_defaults
       initialize_apm_defaults
       initialize_observability_defaults
+      initialize_correlation_defaults
     end
 
     def snapshot
@@ -120,6 +122,13 @@ module Chronos
       @breadcrumb_max_bytes = 2048
     end
 
+    def initialize_correlation_defaults
+      @revision = nil
+      @deploy_id = nil
+      @region = nil
+      @instance_id = nil
+    end
+
     def initialize_rails_defaults
       @rails_enabled = true
       @rails_capture_in_console = false
@@ -167,7 +176,7 @@ module Chronos
       @remote_config_max_bytes = 4096
       @sampling_rate = 1.0
       @enabled_event_types = [
-        "exception", "request", "query", "job", "cache", "external_http", "dependencies", "metric_batch"
+        "exception", "request", "query", "job", "cache", "external_http", "dependencies", "deploy", "metric_batch"
       ]
       @max_remote_send_interval = 60.0
     end

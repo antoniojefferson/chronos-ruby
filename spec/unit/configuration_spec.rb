@@ -23,6 +23,10 @@ RSpec.describe Chronos::Configuration do # rubocop:disable Metrics/BlockLength
     expect(described_class.new.dependency_reporting).to eq(true)
     expect(result.dependency_reporting).to eq(false)
     expect(result.dependency_max_items).to eq(100)
+    expect(result.revision).to be_nil
+    expect(result.deploy_id).to be_nil
+    expect(result.region).to be_nil
+    expect(result.instance_id).to be_nil
     expect(result.blocklist_keys).to include("password", "authorization", "cpf", "cnpj")
     expect(result).to be_frozen
     expect(result.ignored_environments).to be_frozen
@@ -32,14 +36,17 @@ RSpec.describe Chronos::Configuration do # rubocop:disable Metrics/BlockLength
   it "validates HTTP, cache, and dependency collection settings" do
     config = configuration(
       :external_http_enabled => "yes", :cache_key_mode => :raw,
-      :dependency_reporting => "yes", :dependency_max_items => 0
+      :dependency_reporting => "yes", :dependency_max_items => 0,
+      :revision => :invalid, :deploy_id => "x" * 129
     )
 
     expect(config.validation_errors).to include(
       "external_http_enabled must be true or false",
       "cache_key_mode must be :none or :sha256",
       "dependency_reporting must be true or false",
-      "dependency_max_items must be between 1 and 200"
+      "dependency_max_items must be between 1 and 200",
+      "revision must be a String with at most 128 bytes",
+      "deploy_id must be a String with at most 128 bytes"
     )
   end
 

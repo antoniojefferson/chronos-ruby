@@ -1,0 +1,40 @@
+name: Notify Chronos deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment environment
+        required: true
+        default: production
+      version:
+        description: Application release version
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "2.6"
+          bundler-cache: true
+      - name: Notify Chronos
+        env:
+          CHRONOS_PROJECT_ID: ${{ secrets.CHRONOS_PROJECT_ID }}
+          CHRONOS_PROJECT_KEY: ${{ secrets.CHRONOS_PROJECT_KEY }}
+          CHRONOS_HOST: ${{ secrets.CHRONOS_HOST }}
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
+          APP_VERSION: ${{ inputs.version }}
+          GIT_SHA: ${{ github.sha }}
+          DEPLOY_REPOSITORY: ${{ github.repository }}
+          DEPLOY_ACTOR: ${{ github.actor }}
+          DEPLOY_ID: github-${{ github.run_id }}-${{ github.run_attempt }}
+          SERVICE_NAME: billing
+        run: bundle exec ruby examples/deploy/notify.rb

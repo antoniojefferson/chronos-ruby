@@ -1,6 +1,6 @@
 # Data collected
 
-Version 0.8 emits exceptions, cache telemetry, one dependency inventory, and aggregated request/query/job/external-HTTP metric batches. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
+Version 0.9 emits exceptions, cache telemetry, dependency/deploy events, and aggregated request/query/job/external-HTTP metric batches. All fields pass through the privacy sanitizer and bounded safe serializer before queueing, retry storage, or delivery.
 
 | Data | Default | Source |
 |---|---|---|
@@ -45,8 +45,10 @@ Version 0.8 emits exceptions, cache telemetry, one dependency inventory, and agg
 | Cache key hash | Disabled by default | Project-scoped SHA-256 when `cache_key_mode = :sha256` |
 | Loaded gem names/versions and Ruby runtime | Once per agent by default; bounded | `Gem.loaded_specs` and Ruby constants |
 | Rails, web server, database adapter, Sidekiq, release | Included when safely detectable/configured | Loaded constants/specs and `app_version` |
+| Event release, revision, deploy ID, environment, service, region, instance | Present as bounded correlation; values optional | Explicit immutable configuration or normalized deploy payload |
+| Deploy environment, revision, version, repository, actor, deploy ID, service, region, instance | Explicit synchronous deploy API | Application/deployment integration arguments |
 
-The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, source code, raw SQL, SQL bind values, database rows, raw cache keys/values, mail bodies/recipients, gem paths, or lockfile contents. Sidekiq JIDs/arguments and bounded loaded gem names/versions are documented integration fields.
+The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, Git state, source code, raw SQL, SQL bind values, database rows, raw cache keys/values, mail bodies/recipients, gem paths, or lockfile contents. Sidekiq JIDs/arguments, loaded gem names/versions, and deploy fields are documented integration data.
 
 APM dimensions never include user ID, job ID, raw URL, exception message, bind value, or cache key. Normalized routes replace common numeric/UUID segments. Normalized SQL can retain schema, table, and column identifiers; review those identifiers as part of the privacy audit.
 

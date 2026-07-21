@@ -1,6 +1,6 @@
 # Privacy and LGPD
 
-Version 0.8 sanitizes exception, framework telemetry, dependency inventory, and APM metric batches before JSON serialization, queueing, retry backlog, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
+Version 0.9 sanitizes exception, framework telemetry, dependency/deploy inventory, correlation, and APM metric batches before JSON serialization, queueing, retry backlog, or transport. This reduces accidental exposure, but the host application remains responsible for lawful purpose, minimization, access control, retention, and responses to data-subject requests.
 
 ## Default policy
 
@@ -19,8 +19,17 @@ Version 0.8 sanitizes exception, framework telemetry, dependency inventory, and 
 | External HTTP | Host/method/status/timing only; URL path/query, Authorization, bodies, headers, and error messages omitted |
 | Cache key | Omitted by default; optional project-scoped SHA-256 hash; cache value never read |
 | Dependencies | Bounded loaded gem names/versions and detected runtime labels; paths and lockfiles omitted |
+| Deploy correlation | Explicit bounded operational identifiers; no automatic Git or environment scan |
+| Repository | Credentials removed from common HTTP/SCP forms; query/fragment omitted for parsed URLs |
+| Actor | Explicit and sanitized; omit it when personal identity is unnecessary |
 
-The retry backlog exists only in process memory, accepts only `SerializedEvent`, has a fixed capacity, and disappears on process exit. Version 0.8 does not persist telemetry to disk.
+The retry backlog exists only in process memory, accepts only `SerializedEvent`, has a fixed capacity, and disappears on process exit. Version 0.9 does not persist telemetry to disk.
+
+## Deploy metadata
+
+Release, revision, deploy ID, environment, service, region, and instance are operational identifiers but can become personal or sensitive when applications encode customer, tenant, employee, or infrastructure-secret values in them. Use opaque bounded identifiers. Repository should be an owner/name identifier rather than a credential-bearing clone URL. Actor is optional; prefer a service account label when individual identity is unnecessary.
+
+The deploy normalizer removes user information from standard HTTP(S) repository URLs and usernames from SCP-style Git references. This is defensive, not a substitute for secret management. Never pass access tokens in any deploy field. All values still traverse the common sanitizer before transport.
 
 ## External services, cache, and dependencies
 

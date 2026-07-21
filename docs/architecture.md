@@ -1,6 +1,6 @@
 # Architecture
 
-Chronos Ruby 0.8 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
+Chronos Ruby 0.9 uses hexagonal boundaries so the legacy core remains independent of frameworks and delivery infrastructure.
 
 ```mermaid
 flowchart TB
@@ -24,6 +24,8 @@ flowchart TB
   NetHTTP[Explicit Net::HTTP instance wrapper] --> Facade
   Rails --> Cache[Core / CacheNormalizer]
   Application --> Dependencies[Application / DependencyReporter]
+  Deploy[Manual, Capistrano, Kamal command, GitHub workflow] --> Facade
+  Core --> Correlation[Core / DeployNormalizer and CorrelationContext]
 ```
 
 ## Boundaries
@@ -54,6 +56,10 @@ Sidekiq client middleware writes a versioned, allowlisted trace/request context 
 Version 0.7 routes request, query, and job observations through `ApmAggregator`. `SqlNormalizer` removes values before grouping, while `MetricAggregate` owns fixed numerical statistics. Aggregates and per-trace query trackers are bounded and mutex-protected. Threshold or lifecycle drains create `metric_batch` telemetry that passes through the existing sanitizer and delivery pipeline. No APM-specific thread is created.
 
 Version 0.8 prepends a wrapper only to each explicitly selected `Net::HTTP` object. The wrapper records bounded outcome metadata and feeds the existing APM aggregator; it does not modify `Net::HTTP` globally. `CacheNormalizer` turns public Rails cache notifications into bounded metadata before delivery. `DependencyReporter` reads already loaded runtime metadata once per agent under a mutex and queues it as a separate event.
+
+Version 0.9 routes explicit deploy attributes through `DeployNormalizer`, synchronous `CaptureTelemetry`, the common sanitizer, and `DeliveryPipeline`. `CorrelationContext` supplies the same fixed seven-field shape to exception and telemetry serializers. Deploy event overrides apply only while serializing that event; the agent configuration remains immutable for concurrent application capture. A successful deployment resets the dependency reporter once and flushes the refreshed inventory.
+
+Capistrano remains an optional integration task with no runtime dependency. Kamal and GitHub Actions call the same manual Ruby command rather than adding SDKs or transport paths.
 
 ## Failure policy
 

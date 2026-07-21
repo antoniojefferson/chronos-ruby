@@ -36,6 +36,18 @@ Set `external_http_trace_headers = false` before configuring the agent, or do no
 
 The event is emitted once per agent and contains only gems loaded at collection time, capped by `dependency_max_items`. It does not parse the lockfile or activate optional frameworks. Call `Chronos.report_dependencies` after application boot if the first event can occur before all integrations load, or set `dependency_reporting = false` to disable collection.
 
+## `Chronos.notify_deploy` returns false
+
+Confirm Chronos is configured/enabled, environment is present, and at least revision or version is non-empty. Check credentials, TLS, proxy, timeout, retry/circuit state, and endpoint response. The call is synchronous and deliberately returns the delivery result. Repository credentials are removed and do not help authenticate with Chronos.
+
+## Events have empty or stale release correlation
+
+Set `app_version`, `revision`, `deploy_id`, `environment`, `service_name`, `region`, and `instance_id` before `Chronos.configure` creates its snapshot. `notify_deploy` does not mutate a running agent because that would mix release identities across concurrent events. Restart/configure each deployed process with the new values.
+
+## Capistrano task is missing
+
+Require `chronos/capistrano` after the Capistrano/Rake task DSL is loaded. The installer registers once per DSL and hooks `chronos:notify_deploy` after `deploy:published`. Confirm the base Chronos configuration runs in the task process and the expected `stage`, `current_revision`, `repo_url`, and `chronos_*` variables exist.
+
 ## Sidekiq telemetry is missing
 
 Require `chronos/sidekiq` after Sidekiq is available and configure Chronos before jobs run. The entry point uses Sidekiq's public client/server middleware configuration and remains optional. Requiring only `chronos` or `chronos/rails` does not load Sidekiq. A job already enqueued before client middleware installation may lack propagated trace context, but server timing and failure capture can still run.

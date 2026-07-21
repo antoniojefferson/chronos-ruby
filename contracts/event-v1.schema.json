@@ -20,7 +20,7 @@
   "properties": {
     "schema_version": {"const": "1.0"},
     "event_id": {"type": "string", "minLength": 1},
-    "event_type": {"enum": ["exception", "request", "query", "job", "cache", "external_http", "dependencies", "metric_batch"]},
+    "event_type": {"enum": ["exception", "request", "query", "job", "cache", "external_http", "dependencies", "deploy", "metric_batch"]},
     "occurred_at": {"type": "string"},
     "sent_at": {"type": "string"},
     "project_key": {"type": "string", "minLength": 1},
@@ -32,6 +32,20 @@
         "name": {"type": ["string", "null"]},
         "version": {"type": ["string", "null"]},
         "instance_id": {"type": ["string", "null"]}
+      }
+    },
+    "correlation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["release", "revision", "deploy_id", "environment", "service", "region", "instance"],
+      "properties": {
+        "release": {"type": ["string", "null"], "maxLength": 128},
+        "revision": {"type": ["string", "null"], "maxLength": 128},
+        "deploy_id": {"type": ["string", "null"], "maxLength": 128},
+        "environment": {"type": ["string", "null"], "maxLength": 128},
+        "service": {"type": ["string", "null"], "maxLength": 128},
+        "region": {"type": ["string", "null"], "maxLength": 128},
+        "instance": {"type": ["string", "null"], "maxLength": 128}
       }
     },
     "runtime": {"type": "object"},

@@ -1,10 +1,10 @@
 # Chronos Ruby
 
-Chronos Ruby is the framework-independent client for sending Ruby application errors and bounded telemetry to Chronos. Version 0.8 adds optional per-instance outbound `Net::HTTP` timing, privacy-safe cache identity, and one bounded dependency inventory per agent.
+Chronos Ruby is the framework-independent client for sending Ruby application errors and bounded telemetry to Chronos. Version 0.9 adds synchronous deploy tracking and bounded release correlation across every event.
 
 ## What the gem collects
 
-Version 0.8 can collect:
+Version 0.9 can collect:
 
 - exception class, message, structured backtrace, and chained causes;
 - timestamp, severity, tags, and an optional fingerprint;
@@ -13,6 +13,8 @@ Version 0.8 can collect:
 - application version, environment, and service name.
 - Rack method, normalized route, status, duration, request ID, host, query-free path, optional user agent, controller/action, response size, trace ID, and already-parsed parameters when the middleware is used;
 - bounded breadcrumbs explicitly supplied by the application or integration.
+- release, revision, deploy ID, environment, service, region, and instance correlation;
+- explicit bounded deployment metadata supplied through the public API or integration.
 
 See [Data collected](docs/data-collected.md) for the complete field table.
 
@@ -31,7 +33,7 @@ See [Compatibility](docs/compatibility.md).
 The current public build is a pre-release. Add its exact version to the application's `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "0.8.0.pre.1"
+gem "chronos-ruby", "0.9.0.pre.1"
 ```
 
 Install with a Bundler version compatible with the application. For the oldest supported runtime:
@@ -52,7 +54,7 @@ gem install chronos-ruby --pre
 Version 0.5 exposes Rails support explicitly, keeping Rails and ActiveSupport out of plain Ruby applications:
 
 ```ruby
-gem "chronos-ruby", "0.8.0.pre.1", :require => "chronos/rails"
+gem "chronos-ruby", "0.9.0.pre.1", :require => "chronos/rails"
 ```
 
 Generate the initializer with:
@@ -191,7 +193,7 @@ Version `0.6.0.pre.1` adds optional Sidekiq 4/5 middleware:
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "0.8.0.pre.1", :require => "chronos/sidekiq"
+gem "chronos-ruby", "0.9.0.pre.1", :require => "chronos/sidekiq"
 ```
 
 The client middleware propagates only trace/request identifiers in a versioned Sidekiq-envelope field and never changes worker arguments. The server records class, queue, JID, retry count, duration, calculable queue latency, bounded arguments/tags, status, and error class. Values pass through the shared sanitizer before delivery. Failed jobs are notified once and the original exception is re-raised. See [Sidekiq 4/5 legacy integration](docs/modules/sidekiq-legacy.md).
@@ -220,7 +222,21 @@ Rails cache telemetry omits raw keys by default. Set `cache_key_mode = :sha256` 
 
 ## Deploy tracking
 
-Deploy notifications are not implemented in version 0.8. `app_version` is included in event service metadata and the once-per-agent dependency inventory for release correlation.
+Version 0.9 sends deployment metadata synchronously and adds a bounded correlation block to every event:
+
+```ruby
+Chronos.notify_deploy(
+  :environment => "production",
+  :revision => ENV["GIT_SHA"],
+  :version => ENV["APP_VERSION"],
+  :repository => "owner/repository",
+  :actor => ENV["DEPLOY_USER"]
+)
+```
+
+Configure `app_version`, `revision`, `deploy_id`, `environment`, `service_name`, `region`, and `instance_id` in each newly deployed process so subsequent telemetry carries the same release identity. The gem never scans environment variables or Git automatically.
+
+Optional Capistrano support loads through `chronos/capistrano`. Manual, Kamal-command, and GitHub Actions examples share the explicit deploy command under `examples/deploy/`. See [Deploy tracking and release correlation](docs/modules/deploy-tracking.md).
 
 ## Asynchronous queue
 
@@ -296,6 +312,11 @@ Chronos.configure do |config|
   config.external_http_enabled = false
   config.cache_key_mode = :none
   config.dependency_reporting = true
+  config.app_version = ENV["APP_VERSION"]
+  config.revision = ENV["GIT_SHA"]
+  config.deploy_id = ENV["DEPLOY_ID"]
+  config.region = ENV["REGION"]
+  config.instance_id = ENV["INSTANCE_ID"]
 end
 ```
 
@@ -307,7 +328,7 @@ Configuration errors are raised during `Chronos.configure`. Capture and delivery
 
 ## Benchmark
 
-Run the version 0.8 benchmarks with:
+Run the version 0.9 benchmarks with:
 
 ```bash
 bundle _1.17.3_ exec ruby benchmarks/capture_exception.rb
@@ -320,13 +341,14 @@ bundle _1.17.3_ exec ruby benchmarks/rails_notifications.rb
 bundle _1.17.3_ exec ruby benchmarks/sidekiq_middleware.rb
 bundle _1.17.3_ exec ruby benchmarks/apm_aggregation.rb
 bundle _1.17.3_ exec ruby benchmarks/external_http.rb
+bundle _1.17.3_ exec ruby benchmarks/correlation.rb
 ```
 
 Results depend on runtime, hardware, and payload. No performance comparison is claimed until repeatable measurements are published.
 
 ## Migration from Airbrake
 
-An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.8 does not claim API compatibility or automatic replacement.
+An Airbrake migration guide will be added before the legacy 1.0 release. Version 0.9 does not claim API compatibility or automatic replacement.
 
 ## Local development
 

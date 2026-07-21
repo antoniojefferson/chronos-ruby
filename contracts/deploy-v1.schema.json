@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://chronos.example/schemas/deploy-v1.schema.json",
+  "title": "Chronos deploy payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "deploy_id", "environment", "revision", "version", "repository",
+    "actor", "service", "region", "instance"
+  ],
+  "properties": {
+    "deploy_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "environment": {"type": "string", "minLength": 1, "maxLength": 128},
+    "revision": {"type": ["string", "null"], "maxLength": 128},
+    "version": {"type": ["string", "null"], "maxLength": 128},
+    "repository": {"type": ["string", "null"], "maxLength": 512},
+    "actor": {"type": ["string", "null"], "maxLength": 128},
+    "service": {"type": ["string", "null"], "maxLength": 128},
+    "region": {"type": ["string", "null"], "maxLength": 128},
+    "instance": {"type": ["string", "null"], "maxLength": 128}
+  },
+  "anyOf": [
+    {"properties": {"revision": {"type": "string", "minLength": 1}}},
+    {"properties": {"version": {"type": "string", "minLength": 1}}}
+  ]
+}

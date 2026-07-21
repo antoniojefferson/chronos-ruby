@@ -8,8 +8,12 @@
 | `project_key` | Yes when enabled | `nil` | Secret authentication key sent only as an HTTP header |
 | `host` | Yes when enabled | `nil` | Absolute Chronos HTTP endpoint; HTTPS is required by default |
 | `environment` | Recommended | `production` | Application environment |
-| `app_version` | Optional | `nil` | Release or revision identifier |
+| `app_version` | Optional | `nil` | Application release/version identifier |
 | `service_name` | Recommended | `nil` | Logical service name |
+| `revision` | Optional | `nil` | Source revision correlated with every event; maximum 128 bytes |
+| `deploy_id` | Optional | `nil` | Deployment identifier correlated with every event; maximum 128 bytes |
+| `region` | Optional | `nil` | Deployment region correlated with every event; maximum 128 bytes |
+| `instance_id` | Optional | `nil` | Explicit instance correlation; otherwise runtime hostname is used |
 | `root_directory` | Optional | `Dir.pwd` | Used to identify application backtrace frames |
 | `logger` | Optional | `nil` | Logger receiving bounded internal diagnostics |
 | `timeout` | Optional | `5.0` | HTTP read timeout in seconds |
@@ -39,7 +43,7 @@
 | `remote_configuration` | Optional | `true` | Accepts only the documented bounded remote policy fields |
 | `remote_config_max_bytes` | Optional | `4096` | Maximum remote policy response-header bytes |
 | `sampling_rate` | Optional | `1.0` | Local upper bound for event sampling |
-| `enabled_event_types` | Optional | exception, request, query, job, cache, external_http, dependencies, metric_batch | Local allowlist for supported event envelopes |
+| `enabled_event_types` | Optional | exception, request, query, job, cache, external_http, dependencies, deploy, metric_batch | Local allowlist for supported event envelopes |
 | `max_remote_send_interval` | Optional | `60.0` | Local upper bound for remotely requested send spacing |
 | `context_store` | Optional | `:thread_local` | `:thread_local` or an object implementing `get`, `set`, `clear`, and `with_context` |
 | `breadcrumb_capacity` | Optional | `20` | Positive count of newest breadcrumbs retained per execution |
@@ -70,6 +74,11 @@ Chronos.configure do |config|
   config.host = ENV["CHRONOS_HOST"]
   config.environment = ENV["APP_ENV"] || "production"
   config.service_name = "billing"
+  config.app_version = ENV["APP_VERSION"]
+  config.revision = ENV["GIT_SHA"]
+  config.deploy_id = ENV["DEPLOY_ID"]
+  config.region = ENV["REGION"]
+  config.instance_id = ENV["INSTANCE_ID"]
   config.queue_size = 100
   config.workers = 1
   config.blocklist_keys += [:medical_record, /bank_account/i]
@@ -102,3 +111,5 @@ Privacy matcher collections and filters are copied into the immutable runtime sn
 The gem never reads all environment variables automatically. The host application decides which values to pass. See [Privacy and LGPD](privacy-lgpd.md) before adding application context.
 
 Remote configuration can only reduce collection within local bounds. It cannot increase `max_payload_size` or `sampling_rate`, enable an unsupported or locally disabled event type, change the endpoint, replace credentials, disable TLS verification, or install executable matching rules.
+
+Release correlation values are copied into the immutable snapshot. Calling `Chronos.notify_deploy` reports a deployment but does not mutate those values for concurrent application events; configure each deployed process with its own release identity.

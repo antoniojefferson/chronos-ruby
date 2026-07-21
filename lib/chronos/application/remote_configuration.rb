@@ -14,7 +14,7 @@ module Chronos
     # @performance Validation is bounded by configured document and list limits.
     class RemoteConfiguration
       SUPPORTED_EVENT_TYPES = %w(
-        exception request query job cache external_http dependencies metric_batch
+        exception request query job cache external_http dependencies deploy metric_batch
       ).freeze
       MAX_IGNORED_FINGERPRINTS = 100
       MAX_FINGERPRINT_BYTES = 256

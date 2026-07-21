@@ -11,3 +11,5 @@ Tests in `spec/unit/configuration_spec.rb` verify required fields, HTTPS default
 Version 0.7 adds bounded APM capacities, thresholds, and histogram boundaries. Invalid zero/negative capacities, batches above 50, N+1 thresholds below two, and non-increasing histogram boundaries are rejected before agent construction. See [Essential APM aggregation](apm-aggregation.md).
 
 Version 0.8 adds Boolean HTTP/dependency switches, `:none`/`:sha256` cache-key policy, and a dependency limit from 1 to 200. Invalid values are rejected before instrumentation or collection starts. See [External HTTP](external-http.md), [Cache observability](cache-observability.md), and [Dependency inventory](dependencies.md).
+
+Version 0.9 adds optional `revision`, `deploy_id`, `region`, and `instance_id` strings, each limited to 128 bytes. Together with the existing release/environment/service options they form immutable event correlation. See [Deploy tracking and release correlation](deploy-tracking.md).

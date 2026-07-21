@@ -37,7 +37,7 @@ module Chronos
         pipeline_options
       )
       initialize_capture(options)
-      @dependency_reporter = options[:dependency_reporter] || Application::DependencyReporter.new(config)
+      initialize_observability(options)
     end
 
     def notify(exception, context = {})
@@ -67,6 +67,8 @@ module Chronos
     end
 
     def record_event(event_type, payload = {}, context = {})
+      return false if event_type.to_s == "deploy"
+
       report_dependencies unless event_type.to_s == "dependencies"
       @telemetry.call(event_type, payload, telemetry_context(context))
     end
@@ -78,6 +80,18 @@ module Chronos
       @telemetry.call("dependencies", payload, {})
     rescue StandardError => error
       @logger.warn("Chronos dependency reporting failed: #{error.class}")
+      false
+    end
+
+    def notify_deploy(attributes = {}, timeout = DEFAULT_FLUSH_TIMEOUT)
+      payload = @deploy_normalizer.call(attributes)
+      return false unless @telemetry.call_sync("deploy", payload, {})
+
+      @dependency_reporter.reset(payload["version"]) if @dependency_reporter.respond_to?(:reset)
+      report_dependencies
+      flush(timeout)
+    rescue StandardError => error
+      @logger.warn("Chronos deploy notification failed: #{error.class}")
       false
     end
 
@@ -174,6 +188,11 @@ module Chronos
     def initialize_capture(options)
       @capture = options[:capture] || Application::CaptureException.new(@config, @delivery_pipeline, @logger)
       @telemetry = options[:telemetry] || Application::CaptureTelemetry.new(@config, @delivery_pipeline, @logger)
+    end
+
+    def initialize_observability(options)
+      @dependency_reporter = options[:dependency_reporter] || Application::DependencyReporter.new(@config)
+      @deploy_normalizer = options[:deploy_normalizer] || Core::DeployNormalizer.new(@config)
     end
 
     def build_context_store(strategy)
