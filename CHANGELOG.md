@@ -4,6 +4,22 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [0.9.0.pre.4] - 2026-07-22
+
+### Added
+
+- `Chronos.verify_integration` and `chronos:verify_integration` send a correlated synthetic exception and report credential, project, receiver, and receipt status as bounded JSON;
+- strict integration-verification response contract v1, Rails task registration, failure classification, security limits, and end-to-end tests.
+
+### Changed
+
+- version advanced to `0.9.0.pre.4` because `0.9.0.pre.3` had already been published before integration verification was added.
+
+### Fixed
+
+- legacy dependency resolution pins `parallel` to Ruby 2.2-compatible `1.19.2` and the Sidekiq 5 smoke pins `rack-protection` to Ruby 2.5-compatible `2.2.4`.
+- the Rails verification task now always depends on `environment`, even when Rails defines that Rake task after the Chronos Railtie hook runs.
+
 ## [0.9.0.pre.3] - 2026-07-21
 
 ### Changed

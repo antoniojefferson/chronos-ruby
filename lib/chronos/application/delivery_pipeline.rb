@@ -42,13 +42,16 @@ module Chronos
       end
 
       def deliver_sync(event)
+        deliver_sync_result(event).success?
+      end
+
+      def deliver_sync_result(event)
         record_pre_delivery(event)
-        result = deliver_with_backlog(event)
-        result && result.success?
+        deliver_with_backlog(event)
       rescue StandardError => error
         diagnose(error)
         store_in_backlog(event)
-        false
+        Ports::TransportResult.new(:network_error, :error => error.class.name)
       end
 
       # WorkerPool delivery entry point. Events were counted when accepted into the queue.

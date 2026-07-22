@@ -21,4 +21,15 @@ module Chronos
   # @example
   #   Chronos.configure { |config| config.project_key = nil }
   class ConfigurationError < Error; end
+
+  # Synthetic exception sent only by an explicit integration verification.
+  #
+  # @responsibility Give verification notices a stable, recognizable exception class.
+  # @motivation Let the Chronos receiver distinguish an integration check from an application failure.
+  # @limits It is never raised into the host application and carries no application data.
+  # @thread_safety A fresh instance is created for each verification.
+  # @compatibility Ruby 2.2.10 and newer legacy runtimes.
+  # @example
+  #   Chronos.verify_integration
+  class IntegrationVerificationError < Error; end
 end

@@ -41,6 +41,7 @@ required_documents = %w(
   docs/modules/cache-observability.md
   docs/modules/dependencies.md
   docs/modules/deploy-tracking.md
+  docs/modules/integration-verification.md
   docs/modules/ignore-rules.md
   docs/modules/active-job.md
   docs/migration-from-airbrake.md
@@ -76,6 +77,15 @@ rack_schema_path = File.join(root, "contracts/rack-context-v1.schema.json")
 rack_schema = JSON.parse(read_utf8(rack_schema_path))
 abort "Rack context contract must require trace isolation" unless rack_schema["required"].include?("trace_id")
 
+verification_path = File.join(root, "contracts/integration-verification-response-v1.schema.json")
+verification_schema = JSON.parse(read_utf8(verification_path))
+unless verification_schema["additionalProperties"] == false &&
+       verification_schema["required"].include?("verification_id") &&
+       verification_schema["required"].include?("credentials_valid") &&
+       verification_schema["required"].include?("event_received")
+  abort "Integration verification response contract must be strict and correlated"
+end
+
 readme = read_utf8(File.join(root, "README.md"))
 abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\]/
 abort "README does not document version 0.5 Rails integration" unless readme.include?("Version 0.5")
@@ -85,6 +95,9 @@ abort "README does not document version 0.8 observability" unless readme.include
 abort "README does not document version 0.9 deploy tracking" unless readme.include?("Version 0.9")
 abort "README does not document local ignore rules" unless readme.include?("Chronos.ignore_if")
 abort "README does not document Active Job propagation" unless readme.include?("namespaced serialized field")
+unless readme.include?("chronos:verify_integration") && readme.include?("Chronos.verify_integration")
+  abort "README does not document integration verification"
+end
 
 %w(benchmarks/comparative.rb benchmarks/fake_endpoint_load.rb script/generate_sbom).each do |relative_path|
   abort "Missing release gate: #{relative_path}" unless File.file?(File.join(root, relative_path))

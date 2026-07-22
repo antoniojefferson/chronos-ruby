@@ -7,6 +7,7 @@ require "chronos/ports"
 require "chronos/adapters"
 require "chronos/internal"
 require "chronos/core/notice"
+require "chronos/core/integration_verification_result"
 require "chronos/core/backtrace_parser"
 require "chronos/core/exception_cause_collector"
 require "chronos/core/runtime_info"
@@ -36,6 +37,7 @@ require "chronos/application/remote_configuration"
 require "chronos/application/ignore_policy"
 require "chronos/application/delivery_pipeline"
 require "chronos/application/capture_exception"
+require "chronos/application/verify_integration"
 require "chronos/application/apm_error_classifier"
 require "chronos/application/apm_aggregator"
 require "chronos/application/dependency_reporter"
@@ -93,6 +95,21 @@ module Chronos # rubocop:disable Metrics/ModuleLength
       agent ? agent.notify_sync(exception, context) : false
     rescue StandardError
       false
+    end
+
+    def verify_integration
+      agent = current_agent
+      return agent.verify_integration if agent
+
+      verification_failure(
+        "not_configured", "Chronos is not configured.",
+        "Run Chronos.configure before verifying the integration."
+      )
+    rescue StandardError
+      verification_failure(
+        "verification_failed", "Chronos integration verification failed locally.",
+        "Review the Chronos configuration and retry."
+      )
     end
 
     def with_context(context = {})
@@ -185,6 +202,15 @@ module Chronos # rubocop:disable Metrics/ModuleLength
 
     def current_agent
       @mutex.synchronize { @agent }
+    end
+
+    def verification_failure(status, message, guidance)
+      Core::IntegrationVerificationResult.new(
+        :success => false, :status => status, :credentials_valid => nil,
+        :event => {"id" => nil, "received" => false},
+        :receiver => {"name" => "chronos", "status" => "not_checked", "received_at" => nil},
+        :error => {"code" => status, "message" => message, "guidance" => guidance}
+      )
     end
   end
 end

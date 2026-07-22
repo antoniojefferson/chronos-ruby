@@ -48,11 +48,14 @@ Version 0.9 emits exceptions, cache telemetry, dependency/deploy events, and agg
 | Rails, web server, database adapter, Sidekiq, release | Included when safely detectable/configured | Loaded constants/specs and `app_version` |
 | Event release, revision, deploy ID, environment, service, region, instance | Present as bounded correlation; values optional | Explicit immutable configuration or normalized deploy payload |
 | Deploy environment, revision, version, repository, actor, deploy ID, service, region, instance | Explicit synchronous deploy API | Application/deployment integration arguments |
+| Integration verification ID, fixed test marker, synthetic exception class/message, and receipt correlation | Only when `Chronos.verify_integration` or its Rake task is invoked | Locally generated bounded values |
 
 The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, Git state, source code, raw SQL, SQL bind values, database rows, raw cache keys/values, mail bodies/recipients, Active Job arguments, gem paths, or lockfile contents. Active Job IDs, Sidekiq JIDs/arguments, loaded gem names/versions, and deploy fields are documented integration data.
 
 APM dimensions never include user ID, job ID, raw URL, exception message, bind value, or cache key. Normalized routes replace common numeric/UUID segments. Normalized SQL can retain schema, table, and column identifiers; review those identifiers as part of the privacy audit.
 
 The secret `project_key` is an authentication header and is excluded from the JSON payload and logger diagnostics. The envelope field named `project_key` contains the public `project_id` required by the current v1 server contract.
+
+The integration check uses the fixed class `Chronos::IntegrationVerificationError`, tag/fingerprint `chronos-integration-verification`, and `context.integration_verification.test: true`. Its returned object allowlists only project identity/status/environment, receiver name/status/receipt time, correlation IDs, booleans, and safe guidance. Raw response bodies and Chronos implementation details are discarded.
 
 See [Privacy and LGPD](privacy-lgpd.md) for redaction rules and the payload audit procedure.

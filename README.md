@@ -33,7 +33,7 @@ See [Compatibility](docs/compatibility.md).
 The current public build is a pre-release. Add its exact version to the application's `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "0.9.0.pre.3"
+gem "chronos-ruby", "0.9.0.pre.4"
 ```
 
 Install with a Bundler version compatible with the application. For the oldest supported runtime:
@@ -54,7 +54,7 @@ gem install chronos-ruby --pre
 Version 0.5 exposes Rails support explicitly, keeping Rails and ActiveSupport out of plain Ruby applications:
 
 ```ruby
-gem "chronos-ruby", "0.9.0.pre.3", :require => "chronos/rails"
+gem "chronos-ruby", "0.9.0.pre.4", :require => "chronos/rails"
 ```
 
 Generate the initializer with:
@@ -83,6 +83,27 @@ end
 ```
 
 HTTPS verification is enabled by default. HTTP requires explicitly setting `ssl_verify = false` and should only be used with a local test server.
+
+## Verify the Chronos integration
+
+After configuring the application, Rails projects can verify credentials and end-to-end ingestion with:
+
+```bash
+bundle exec rake chronos:verify_integration
+```
+
+The task sends one synthetic exception identified as an integration verification and prints one JSON object. It exits with status `0` only when Chronos confirms valid credentials and receipt of the correlated event; configuration, authentication, inactive-project, network, protocol, rate-limit, and receiver failures exit nonzero with safe guidance.
+
+Plain Ruby Rakefiles can install the same task explicitly after loading their configuration:
+
+```ruby
+require "chronos"
+# Chronos.configure { |config| ... }
+require "chronos/rake_tasks"
+Chronos::RakeTasks.install
+```
+
+Ruby code may call `result = Chronos.verify_integration`, inspect `result.success?`, and serialize `result.to_h` or `result.to_json`. The result contains only bounded contract fields; it never exposes `project_key`, raw server responses, stack traces, source paths, or receiver internals. See [Integration verification](docs/modules/integration-verification.md).
 
 ## Automatic capture
 
@@ -201,7 +222,7 @@ Version `0.6.0.pre.1` adds optional Sidekiq 4/5 middleware:
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "0.9.0.pre.3", :require => "chronos/sidekiq"
+gem "chronos-ruby", "0.9.0.pre.4", :require => "chronos/sidekiq"
 ```
 
 The client middleware propagates only trace/request identifiers in a versioned Sidekiq-envelope field and never changes worker arguments. The server records class, queue, JID, retry count, duration, calculable queue latency, bounded arguments/tags, status, and error class. Values pass through the shared sanitizer before delivery. Failed jobs are notified once and the original exception is re-raised. See [Sidekiq 4/5 legacy integration](docs/modules/sidekiq-legacy.md).

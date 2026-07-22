@@ -50,6 +50,24 @@ module Chronos
       @capture.call_sync(exception, context_for_capture(context))
     end
 
+    def verify_integration
+      @verification.call
+    rescue StandardError => error
+      @logger.warn("Chronos integration verification failed: #{error.class}")
+      Core::IntegrationVerificationResult.new(
+        :success => false,
+        :status => "verification_failed",
+        :credentials_valid => nil,
+        :event => {"id" => nil, "received" => false},
+        :receiver => {"name" => "chronos", "status" => "not_checked", "received_at" => nil},
+        :error => {
+          "code" => "verification_failed",
+          "message" => "Chronos integration verification failed locally.",
+          "guidance" => "Review the Chronos configuration and retry."
+        }
+      )
+    end
+
     def ignore_if(&block)
       @ignore_policy.add(&block)
     end
@@ -202,6 +220,9 @@ module Chronos
     def initialize_observability(options)
       @dependency_reporter = options[:dependency_reporter] || Application::DependencyReporter.new(@config)
       @deploy_normalizer = options[:deploy_normalizer] || Core::DeployNormalizer.new(@config)
+      @verification = options[:verification] || Application::VerifyIntegration.new(
+        @config, @delivery_pipeline, @logger
+      )
     end
 
     def build_context_store(strategy)
