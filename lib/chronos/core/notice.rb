@@ -23,7 +23,7 @@ module Chronos
 
       def initialize(attributes)
         ATTRIBUTES.each do |attribute|
-          instance_variable_set("@#{attribute}", deep_freeze(attributes[attribute]))
+          instance_variable_set("@#{attribute}", immutable_copy(attributes[attribute]))
         end
         freeze
       end
@@ -36,17 +36,29 @@ module Chronos
 
       private
 
-      def deep_freeze(value)
+      def immutable_copy(value)
         case value
         when Hash
-          value.each do |key, child|
-            deep_freeze(key)
-            deep_freeze(child)
+          value.each_with_object({}) do |(key, child), copy|
+            copy[immutable_copy(key)] = immutable_copy(child)
           end
         when Array
-          value.each { |child| deep_freeze(child) }
+          value.map { |child| immutable_copy(child) }
+        when String
+          value.dup
+        when NilClass, TrueClass, FalseClass, Symbol, Numeric
+          value
+        else
+          value.dup
+        end.freeze
+      rescue TypeError
+        value
+      rescue StandardError
+        begin
+          value.dup.freeze
+        rescue StandardError
+          value
         end
-        value.freeze
       end
     end
   end

@@ -4,14 +4,6 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
-### Fixed
-
-- `WorkerPool#flush` no longer returns before a worker marks a just-popped event as active;
-- release publishing now updates RubyGems to a Ruby 2.6-compatible version that supports `GEM_HOST_API_KEY`.
-- Updated the legacy development toolchain to non-vulnerable Rake and RuboCop versions.
-- legacy CI now resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector.
-- documentation verification now reads source and Markdown files explicitly as UTF-8 on legacy container locales.
-
 ## [0.9.0.pre.2] - 2026-07-21
 
 ### Added
@@ -30,7 +22,13 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ### Fixed
 
-- the Sidekiq 5 compatibility smoke now resolves the shared Sidekiq 4/5 fixture inside `examples/` instead of the nonexistent `/app/sidekiq-4` path.
+- exception notices now copy request and application values before freezing their immutable representation, preventing `can't modify frozen String` on repeated Rack/Rails failures;
+- `WorkerPool#flush` no longer returns before a worker marks a just-popped event as active;
+- release publishing now updates RubyGems to a Ruby 2.6-compatible version that supports `GEM_HOST_API_KEY`;
+- the legacy development toolchain uses non-vulnerable Rake and RuboCop versions;
+- legacy CI resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector;
+- documentation verification reads source and Markdown files explicitly as UTF-8 on legacy container locales;
+- the Sidekiq 5 compatibility smoke resolves the shared Sidekiq 4/5 fixture inside `examples/` instead of the nonexistent `/app/sidekiq-4` path.
 
 ### Security
 

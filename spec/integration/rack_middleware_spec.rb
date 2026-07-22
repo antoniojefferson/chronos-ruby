@@ -46,6 +46,29 @@ RSpec.describe Chronos::Integrations::Rack::Middleware do # rubocop:disable Metr
     agent.close(1.0)
   end
 
+  it "does not freeze Rack environment values after repeated failures" do
+    agent = Chronos::Agent.new(snapshot, :transport => FakeTransport.new)
+    errors = []
+    app = proc do |env|
+      env["PATH_INFO"] << ""
+      error = RuntimeError.new(String.new("rack failed"))
+      errors << error
+      raise error
+    end
+    middleware = described_class.new(app, :notifier => agent, :include_user_agent => true)
+    env = rack_env
+
+    2.times do
+      expect { middleware.call(env) }.to raise_error(RuntimeError) do |error|
+        expect(error).to equal(errors.last)
+      end
+      env.each_value do |value|
+        expect(value).not_to be_frozen if value.is_a?(String)
+      end
+    end
+    agent.close(1.0)
+  end
+
   it "does not read the request body or enumerate a successful response body" do
     input = Object.new
     body = Object.new
