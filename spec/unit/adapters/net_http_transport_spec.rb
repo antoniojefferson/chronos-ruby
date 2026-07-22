@@ -1,4 +1,4 @@
-RSpec.describe Chronos::Adapters::NetHttpTransport do
+RSpec.describe Chronos::Adapters::NetHttpTransport do # rubocop:disable Metrics/BlockLength
   def event
     Chronos::Core::SerializedEvent.new("event-id", "{\"message\":\"safe\"}")
   end
@@ -23,6 +23,20 @@ RSpec.describe Chronos::Adapters::NetHttpTransport do
     expect(server.request_headers["x-chronos-project-key"]).to eq("project-key")
     expect(server.request_headers["idempotency-key"]).to eq("event-id")
     expect(server.request_body).not_to include("project-key")
+  end
+
+  it "returns only a bounded JSON object from the response body" do
+    server = FakeHttpServer.new("202 Accepted", :body => JSON.generate("status" => "accepted"))
+    result = transport_for(server).send_event(event)
+    server.stop
+
+    expect(result.response).to eq("status" => "accepted")
+    expect(result.response).to be_frozen
+
+    oversized = FakeHttpServer.new("202 Accepted", :body => JSON.generate("value" => "x" * 9000))
+    oversized_result = transport_for(oversized).send_event(event)
+    oversized.stop
+    expect(oversized_result.response).to be_nil
   end
 
   it "classifies rate limiting and Retry-After" do

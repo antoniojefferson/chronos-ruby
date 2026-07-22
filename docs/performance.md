@@ -29,7 +29,7 @@ Current controls:
 
 Run the scripts under `benchmarks/` and record Ruby version, operating system, CPU, warmup, iteration count, median, and dispersion before publishing results. `benchmarks/filtering.rb` measures privacy filtering, `benchmarks/retry_backlog.rb` measures fixed-memory outage behavior, `benchmarks/request_overhead.rb` compares Rack-protocol calls, and `benchmarks/rails_notifications.rb` isolates subscriber normalization overhead.
 
-## Version 0.9.0.pre.3 release gates
+## Version 0.9.0.pre.4 release gates
 
 `benchmarks/comparative.rb` compares the same successful Rack fixture without and with Chronos instrumentation. It performs configurable warmup, at least three samples, and reports median plus median absolute deviation. `benchmarks/fake_endpoint_load.rb` sends asynchronous exception events to a local TCP endpoint, verifies the v1 schema marker, ensures the secret key is absent from every payload, and fails on loss, rejection, invalid payload, or timeout.
 

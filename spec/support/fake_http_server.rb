@@ -7,6 +7,7 @@ class FakeHttpServer
     @status = status
     @headers = options[:headers] || {}
     @response_body = options[:body] || "{}"
+    @response_builder = options[:response_builder]
     @delay = options[:delay] || 0
     @server = TCPServer.new("127.0.0.1", 0)
     @port = @server.addr[1]
@@ -39,6 +40,7 @@ class FakeHttpServer
     end
     length = @request_headers["content-length"].to_i
     @request_body = client.read(length) if length > 0
+    @response_body = @response_builder.call(@request_body, @request_headers) if @response_builder
     sleep(@delay)
     write_response(client)
   rescue IOError, Errno::EBADF, Errno::ECONNRESET, Errno::EPIPE

@@ -16,6 +16,11 @@ module Chronos
       initializer "chronos.install", :after => :load_config_initializers do |application|
         Chronos::Rails::Installer.new.install(application)
       end
+
+      rake_tasks do
+        require "chronos/rake_tasks"
+        Chronos::RakeTasks.install
+      end
     end
   end
 end

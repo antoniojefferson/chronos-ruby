@@ -12,7 +12,7 @@ RSpec.describe Chronos do
   end
 
   it "has a version number" do
-    expect(Chronos::VERSION).to eq("0.9.0.pre.3")
+    expect(Chronos::VERSION).to eq("0.9.0.pre.4")
   end
 
   it "defines a base error" do
@@ -24,6 +24,14 @@ RSpec.describe Chronos do
     expect(Chronos.add_breadcrumb(:message => "ignored")).to eq(false)
     expect(Chronos.notify_deploy(:revision => "abc123")).to eq(false)
     expect(Chronos.with_context(:request_id => "request") { :result }).to eq(:result)
+  end
+
+  it "returns a structured integration result before configuration" do
+    result = Chronos.verify_integration
+
+    expect(result).not_to be_success
+    expect(result.status).to eq("not_configured")
+    expect(result.to_h).to include("credentials_valid" => nil, "event_received" => false)
   end
 
   it "installs outbound HTTP instrumentation only after explicit enablement" do

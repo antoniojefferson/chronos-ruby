@@ -22,6 +22,7 @@ module Chronos
     class NetHttpTransport
       EVENT_PATH = "/api/v1/events".freeze
       REMOTE_CONFIGURATION_HEADER = "X-Chronos-Remote-Configuration".freeze
+      RESPONSE_BODY_MAX_BYTES = 8192
 
       def initialize(config, logger = nil)
         @config = config
@@ -71,7 +72,11 @@ module Chronos
         request["Idempotency-Key"] = event.event_id
         request.body = request_body(event.body)
         request["Content-Encoding"] = "gzip" if @config.gzip
-        http.start { |connection| connection.request(request) }
+        http.start do |connection|
+          connection.request(request) do |response|
+            read_bounded_response(response)
+          end
+        end
       end
 
       def endpoint_uri
@@ -101,7 +106,7 @@ module Chronos
 
       def classify(response)
         code = response.code.to_i
-        options = {:status_code => code}
+        options = {:status_code => code, :response => parse_response(response)}
         if code >= 200 && code < 300
           options[:remote_configuration] = parse_remote_configuration(response)
           return Ports::TransportResult.new(:success, options)
@@ -114,6 +119,35 @@ module Chronos
         return Ports::TransportResult.new(:server_error, options) if code >= 500
 
         Ports::TransportResult.new(:client_error, options)
+      end
+
+      def read_bounded_response(response)
+        body = ""
+        overflow = false
+        response.read_body do |chunk|
+          next if overflow
+
+          remaining = RESPONSE_BODY_MAX_BYTES - body.bytesize
+          if chunk.bytesize > remaining
+            overflow = true
+          else
+            body << chunk
+          end
+        end
+        response.instance_variable_set(:@chronos_response_body, overflow ? nil : body)
+      end
+
+      def parse_response(response)
+        content_type = response["Content-Type"].to_s.split(";", 2).first
+        return nil unless content_type == "application/json"
+
+        body = response.instance_variable_get(:@chronos_response_body)
+        return nil if body.nil? || body.empty?
+
+        parsed = JSON.parse(body)
+        parsed.is_a?(Hash) ? parsed : nil
+      rescue JSON::ParserError, EncodingError
+        nil
       end
 
       def parse_remote_configuration(response)

@@ -8,7 +8,7 @@ module Chronos
     # @thread_safety Immutable after construction.
     # @compatibility Ruby 2.2.10 through Ruby 2.6.
     class TransportResult
-      attr_reader :status, :status_code, :retry_after, :error, :remote_configuration
+      attr_reader :status, :status_code, :retry_after, :error, :remote_configuration, :response
 
       def initialize(status, options = {})
         @status = status
@@ -16,6 +16,7 @@ module Chronos
         @retry_after = options[:retry_after]
         @error = options[:error]
         @remote_configuration = options[:remote_configuration]
+        @response = deep_freeze(options[:response])
         freeze
       end
 
@@ -25,6 +26,22 @@ module Chronos
 
       def retryable?
         [:request_timeout, :rate_limited, :server_error, :network_error].include?(status)
+      end
+
+      private
+
+      def deep_freeze(value)
+        if value.is_a?(Hash)
+          value.each do |key, child|
+            deep_freeze(key)
+            deep_freeze(child)
+          end
+        elsif value.is_a?(Array)
+          value.each { |child| deep_freeze(child) }
+        end
+        value.freeze
+      rescue StandardError
+        nil
       end
     end
 

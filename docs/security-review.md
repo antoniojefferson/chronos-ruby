@@ -1,6 +1,6 @@
-# Security review for 0.9.0.pre.3
+# Security review for 0.9.0.pre.4
 
-Review date: 2026-07-21. Scope: capture, serialization, transport, remote configuration, framework/job integrations, release workflow, examples, and fixtures.
+Review date: 2026-07-22. Scope: capture, serialization, transport, integration verification, remote configuration, framework/job integrations, release workflow, examples, and fixtures.
 
 Verified by contracts and implementation review:
 
@@ -12,5 +12,6 @@ Verified by contracts and implementation review:
 - integrations contain agent failures and do not collect bodies, authorization, raw SQL/binds, mail content, or raw cache keys;
 - Active Job propagation uses a namespaced v1 field containing only bounded trace/request identifiers and does not alter job arguments;
 - fixture privacy is enforced by contract tests and dependency advisories are checked by the security workflow.
+- integration verification accepts only a strict correlated response and never exposes raw receiver bodies, credentials, stack traces, paths, SQL, or internal architecture.
 
 Residual risks: supported Ruby/Rails versions are end-of-life; in-memory backlog is lost at exit; application filters/ignore rules execute application code; project identifiers and documented job IDs may be personal data in some deployments; package signing is not enabled because no trusted certificate/key lifecycle exists. Release artifacts should use protected environments and published SHA-256 checksums until signing can be operated safely.

@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://chronos.example/schemas/integration-verification-response-v1.schema.json",
+  "title": "Chronos integration verification response v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "success",
+    "status",
+    "verification_id",
+    "credentials_valid",
+    "event_received",
+    "event",
+    "project",
+    "receiver",
+    "error"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "success": {"type": "boolean"},
+    "status": {
+      "enum": [
+        "accepted",
+        "invalid_credentials",
+        "project_inactive",
+        "receiver_unavailable",
+        "receiver_internal_error",
+        "request_rejected",
+        "rate_limited"
+      ]
+    },
+    "verification_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "credentials_valid": {"type": ["boolean", "null"]},
+    "event_received": {"type": "boolean"},
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": {"type": ["string", "null"], "maxLength": 128}
+      }
+    },
+    "project": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["id", "name", "status", "environment"],
+      "properties": {
+        "id": {"type": ["string", "null"], "maxLength": 128},
+        "name": {"type": ["string", "null"], "maxLength": 128},
+        "status": {"type": ["string", "null"], "maxLength": 32},
+        "environment": {"type": ["string", "null"], "maxLength": 128}
+      }
+    },
+    "receiver": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["name", "status", "received_at"],
+      "properties": {
+        "name": {"type": ["string", "null"], "maxLength": 64},
+        "status": {"type": ["string", "null"], "maxLength": 32},
+        "received_at": {"type": ["string", "null"], "maxLength": 64}
+      }
+    },
+    "error": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["code", "message", "guidance"],
+      "properties": {
+        "code": {"type": "string", "maxLength": 64},
+        "message": {"type": "string", "maxLength": 512},
+        "guidance": {"type": "string", "maxLength": 512}
+      }
+    }
+  }
+}

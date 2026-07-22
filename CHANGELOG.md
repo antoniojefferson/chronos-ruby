@@ -4,6 +4,17 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [0.9.0.pre.4] - 2026-07-22
+
+### Added
+
+- `Chronos.verify_integration` and `chronos:verify_integration` send a correlated synthetic exception and report credential, project, receiver, and receipt status as bounded JSON;
+- strict integration-verification response contract v1, Rails task registration, failure classification, security limits, and end-to-end tests.
+
+### Changed
+
+- version advanced to `0.9.0.pre.4` because `0.9.0.pre.3` had already been published before integration verification was added.
+
 ## [0.9.0.pre.3] - 2026-07-21
 
 ### Changed
