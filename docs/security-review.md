@@ -1,4 +1,4 @@
-# Security review for 0.9.0.pre.2
+# Security review for 0.9.0.pre.3
 
 Review date: 2026-07-21. Scope: capture, serialization, transport, remote configuration, framework/job integrations, release workflow, examples, and fixtures.
 

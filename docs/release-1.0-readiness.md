@@ -1,6 +1,6 @@
 # Version 1.0 readiness
 
-Version `0.9.0.pre.2` is a hardening release, not the stable release. The local suite, lint, documentation verifier, build, load test, and comparative benchmark are required evidence. The release can advance to `1.0.0` only after the GitHub Actions matrix is green for every declared legacy Ruby/framework/job combination.
+Version `0.9.0.pre.3` is a hardening release, not the stable release. The local suite, lint, documentation verifier, build, load test, and comparative benchmark are required evidence. The release can advance to `1.0.0` only after the GitHub Actions matrix is green for every declared legacy Ruby/framework/job combination.
 
 | Gate | State in pre.2 |
 |---|---|
