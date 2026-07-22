@@ -1,5 +1,6 @@
 source "https://rubygems.org"
 
 gem "chronos-ruby", :path => "../.."
+gem "rack-protection", "2.2.4"
 gem "redis", "~> 4.0"
 gem "sidekiq", "5.2.10"
