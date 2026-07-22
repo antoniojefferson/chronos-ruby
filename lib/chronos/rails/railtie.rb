@@ -19,7 +19,7 @@ module Chronos
 
       rake_tasks do
         require "chronos/rake_tasks"
-        Chronos::RakeTasks.install
+        Chronos::RakeTasks.install(:load_environment => true)
       end
     end
   end

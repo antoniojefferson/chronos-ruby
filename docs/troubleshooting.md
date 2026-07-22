@@ -16,7 +16,7 @@ Check DNS, TLS certificates, credentials, HTTP status, proxy configuration, and 
 
 Read the single JSON object printed by the task and use `status` and `error.guidance`. `invalid_credentials` means an active project API key must be created or the configured `project_id`/`project_key` corrected. `project_inactive` means authentication succeeded but the selected project must be activated. `receiver_unavailable` covers DNS, TLS, network, timeout, circuit-open, and gateway/service-unavailable failures. `receiver_internal_error` means Chronos reached its own safe internal-error boundary. `invalid_response` means the receiver did not implement the correlated response v1 contract. Every failure exits nonzero and deliberately omits raw receiver messages and implementation details.
 
-If Rails does not list the task, require `chronos/rails` and confirm the application initializer loads. In plain Ruby, require `chronos/rake_tasks` and call `Chronos::RakeTasks.install` from the Rakefile after loading configuration.
+If Rails does not list the task, require `chronos/rails` and confirm the application initializer loads. A `not_configured` result means the current Rake process did not execute `Chronos.configure`; update to a release containing the Rails environment prerequisite fix and confirm the variables are exported into that process. In plain Ruby, require `chronos/rake_tasks` and call `Chronos::RakeTasks.install` from the Rakefile after loading configuration.
 
 ## Rack exception is not captured
 

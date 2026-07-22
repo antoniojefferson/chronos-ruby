@@ -18,6 +18,7 @@ All notable changes are documented here. The project follows Semantic Versioning
 ### Fixed
 
 - legacy dependency resolution pins `parallel` to Ruby 2.2-compatible `1.19.2` and the Sidekiq 5 smoke pins `rack-protection` to Ruby 2.5-compatible `2.2.4`.
+- the Rails verification task now always depends on `environment`, even when Rails defines that Rake task after the Chronos Railtie hook runs.
 
 ## [0.9.0.pre.3] - 2026-07-21
 

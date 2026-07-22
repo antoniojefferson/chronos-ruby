@@ -35,6 +35,18 @@ RSpec.describe Chronos::RakeTasks do
     expect(JSON.parse(output.string)).to include("success" => true, "status" => "verified")
   end
 
+  it "loads a Rails environment task defined after Chronos installs its task" do
+    output = StringIO.new
+    environment_loaded = false
+    allow(Chronos).to receive(:verify_integration).and_return(result(true, "verified"))
+
+    described_class.install(:output => output, :load_environment => true)
+    Rake::Task.define_task("environment") { environment_loaded = true }
+    Rake::Task[described_class::TASK_NAME].invoke
+
+    expect(environment_loaded).to eq(true)
+  end
+
   it "prints structured failure JSON and exits nonzero" do
     output = StringIO.new
     statuses = []

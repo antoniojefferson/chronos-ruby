@@ -26,7 +26,8 @@ module Chronos
 
       output = options[:output] || $stdout
       exiter = options[:exit] || proc { |status| exit(status) }
-      prerequisites = ::Rake::Task.task_defined?("environment") ? ["environment"] : []
+      load_environment = options[:load_environment] || ::Rake::Task.task_defined?("environment")
+      prerequisites = load_environment ? ["environment"] : []
 
       desc "Send an identified fake error and verify Chronos credentials and ingestion"
       task TASK_NAME => prerequisites do

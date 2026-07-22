@@ -1,4 +1,5 @@
 require "chronos/rails"
+require "chronos/rake_tasks"
 
 RSpec.describe "Chronos Rails Railtie" do
   it "registers installation after application configuration without Zeitwerk" do
@@ -28,6 +29,14 @@ RSpec.describe "Chronos Rails Railtie" do
     expect(Chronos::Rails::Railtie.initializer_name).to eq("chronos.install")
     expect(Chronos::Rails::Railtie.initializer_options).to eq(:after => :load_config_initializers)
     expect(Chronos::Rails::Railtie.rake_tasks_block).to be_a(Proc)
+  end
+
+  it "requires the Rails environment even when its Rake task is defined later" do
+    allow(Chronos::RakeTasks).to receive(:install)
+
+    Chronos::Rails::Railtie.rake_tasks_block.call
+
+    expect(Chronos::RakeTasks).to have_received(:install).with(:load_environment => true)
   end
 
   it "is discovered automatically when Rails is already loaded" do
