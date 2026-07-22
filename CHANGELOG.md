@@ -14,7 +14,7 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 - exception notices now copy request and application values before freezing their immutable representation, preventing `can't modify frozen String` on repeated Rack/Rails failures;
 - `WorkerPool#flush` no longer returns before a worker marks a just-popped event as active;
-- release publishing now updates RubyGems to a Ruby 2.6-compatible version that supports `GEM_HOST_API_KEY`;
+- release publishing now uses RubyGems Trusted Publishing with short-lived GitHub OIDC credentials, avoiding interactive MFA and long-lived API secrets in CI;
 - the legacy development toolchain uses non-vulnerable Rake and RuboCop versions;
 - legacy CI resolves Bundler 1.17.3 through `Gem.bin_path` on RubyGems versions that do not support the `_version_` executable selector;
 - documentation verification reads source and Markdown files explicitly as UTF-8 on legacy container locales.
