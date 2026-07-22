@@ -33,7 +33,7 @@ See [Compatibility](docs/compatibility.md).
 The current public build is a pre-release. Add its exact version to the application's `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "0.9.0.pre.2"
+gem "chronos-ruby", "0.9.0.pre.3"
 ```
 
 Install with a Bundler version compatible with the application. For the oldest supported runtime:
@@ -54,7 +54,7 @@ gem install chronos-ruby --pre
 Version 0.5 exposes Rails support explicitly, keeping Rails and ActiveSupport out of plain Ruby applications:
 
 ```ruby
-gem "chronos-ruby", "0.9.0.pre.2", :require => "chronos/rails"
+gem "chronos-ruby", "0.9.0.pre.3", :require => "chronos/rails"
 ```
 
 Generate the initializer with:
@@ -201,7 +201,7 @@ Version `0.6.0.pre.1` adds optional Sidekiq 4/5 middleware:
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "0.9.0.pre.2", :require => "chronos/sidekiq"
+gem "chronos-ruby", "0.9.0.pre.3", :require => "chronos/sidekiq"
 ```
 
 The client middleware propagates only trace/request identifiers in a versioned Sidekiq-envelope field and never changes worker arguments. The server records class, queue, JID, retry count, duration, calculable queue latency, bounded arguments/tags, status, and error class. Values pass through the shared sanitizer before delivery. Failed jobs are notified once and the original exception is re-raised. See [Sidekiq 4/5 legacy integration](docs/modules/sidekiq-legacy.md).
