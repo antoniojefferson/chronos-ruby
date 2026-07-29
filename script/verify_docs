@@ -44,12 +44,24 @@ required_documents = %w(
   docs/modules/integration-verification.md
   docs/modules/ignore-rules.md
   docs/modules/active-job.md
+  docs/modules/context.md
+  docs/modules/sampling.md
+  docs/modules/breadcrumbs.md
+  docs/modules/runtime-metrics.md
+  docs/modules/request-monitoring.md
+  docs/modules/sql-monitoring.md
+  docs/modules/job-monitoring.md
+  docs/modules/deploys.md
   docs/migration-from-airbrake.md
   docs/semver.md
   docs/deprecation-policy.md
   docs/security-review.md
   docs/protocol-v1.md
   docs/release-1.0-readiness.md
+  docs/adr/ADR-007-feature-detection.md
+  docs/adr/ADR-008-context-store.md
+  docs/adr/ADR-009-sampling.md
+  docs/adr/ADR-010-opentelemetry-interoperability.md
 )
 
 missing = required_documents.reject { |path| File.file?(File.join(root, path)) }
@@ -88,13 +100,14 @@ end
 
 readme = read_utf8(File.join(root, "README.md"))
 abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\]/
-abort "README does not document version 0.5 Rails integration" unless readme.include?("Version 0.5")
+abort "README does not document stable version 1.0" unless readme.include?("1.0.0")
+abort "README does not document version 0.5 Rails integration" unless readme.include?("Versão 0.5")
 abort "README does not document version 0.6 Sidekiq integration" unless readme.include?("0.6.0.pre.1")
-abort "README does not document version 0.7 APM aggregation" unless readme.include?("Version 0.7")
-abort "README does not document version 0.8 observability" unless readme.include?("Version 0.8")
-abort "README does not document version 0.9 deploy tracking" unless readme.include?("Version 0.9")
+abort "README does not document version 0.7 APM aggregation" unless readme.include?("Versão 0.7")
+abort "README does not document version 0.8 observability" unless readme.include?("Versão 0.8")
+abort "README does not document version 0.9 deploy tracking" unless readme.include?("Versão 0.9")
 abort "README does not document local ignore rules" unless readme.include?("Chronos.ignore_if")
-abort "README does not document Active Job propagation" unless readme.include?("namespaced serialized field")
+abort "README does not document Active Job propagation" unless readme.include?("chronos_context")
 unless readme.include?("chronos:verify_integration") && readme.include?("Chronos.verify_integration")
   abort "README does not document integration verification"
 end

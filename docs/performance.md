@@ -1,6 +1,6 @@
 # Performance
 
-Performance is a functional requirement, but version 0.9 makes no unverified speed claim.
+Performance is a functional requirement, but version 1.0 makes no unverified speed claim.
 
 Current controls:
 
@@ -29,7 +29,7 @@ Current controls:
 
 Run the scripts under `benchmarks/` and record Ruby version, operating system, CPU, warmup, iteration count, median, and dispersion before publishing results. `benchmarks/filtering.rb` measures privacy filtering, `benchmarks/retry_backlog.rb` measures fixed-memory outage behavior, `benchmarks/request_overhead.rb` compares Rack-protocol calls, and `benchmarks/rails_notifications.rb` isolates subscriber normalization overhead.
 
-## Version 0.9.0.pre.4 release gates
+## Version 1.0.0 release gates
 
 `benchmarks/comparative.rb` compares the same successful Rack fixture without and with Chronos instrumentation. It performs configurable warmup, at least three samples, and reports median plus median absolute deviation. `benchmarks/fake_endpoint_load.rb` sends asynchronous exception events to a local TCP endpoint, verifies the v1 schema marker, ensures the secret key is absent from every payload, and fails on loss, rejection, invalid payload, or timeout.
 
@@ -39,6 +39,17 @@ ITERATIONS=500 bundle exec ruby benchmarks/fake_endpoint_load.rb
 ```
 
 Results are environment-specific evidence, not a general speed claim. Record CPU, OS, Ruby, gem commit, and environment variables with any published result. Airbrake comparison remains optional and must use a legally compatible, equivalent sanitized payload on the same supported runtime.
+
+### Stable candidate measurement
+
+The 1.0 candidate was measured on 2026-07-29 on an Apple Silicon arm64 host running macOS 26.6, with Ruby 2.2.10 executing as x86_64. The working tree was based on commit `ce7c67852dd39406f514499b0347a67c5b09bb8c` plus the 1.0 release changes. This is release-gate evidence for this environment, not a universal performance claim.
+
+| Gate | Configuration | Result |
+|---|---|---|
+| Rack comparison | 1,000 warmup calls, 10,000 calls/sample, 5 samples | direct median 0.016036 s (MAD 0.000187); Chronos median 0.482321 s (MAD 0.016988); median incremental work 46.628 µs/request |
+| Fake endpoint load | 500 asynchronous exceptions, 2 workers, queue 500 | 500/500 accepted and received, zero invalid/secret-bearing payloads, 1.444941 s, 346.03 events/s |
+
+The release workflow repeats both gates on the tag. It does not enforce a cross-hardware timing threshold; correctness, bounded delivery, complete receipt, privacy and repeatability are hard failures, while timing regressions are reviewed with the recorded environment.
 
 ## Version 0.5 Rails subscriber benchmark
 

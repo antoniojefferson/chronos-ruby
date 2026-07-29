@@ -4,12 +4,102 @@ on:
   push:
     tags:
       - "v0.*"
+      - "v1.*"
 
 permissions:
   contents: read
 
 jobs:
+  legacy-core:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - ruby:2.2.10
+          - ruby:2.3.8
+          - ruby:2.4.10
+          - ruby:2.5.9
+          - ruby:2.6.10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run legacy suite
+        run: |
+          docker run --rm \
+            --volume "$PWD:/app" \
+            --workdir /app \
+            "${{ matrix.image }}" \
+            sh script/ci_legacy
+
+  legacy-rails:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ruby:2.2.10
+            example: examples/rails-4.2
+          - image: ruby:2.3.8
+            example: examples/rails-4.2
+          - image: ruby:2.5.9
+            example: examples/rails-5.2
+          - image: ruby:2.6.10
+            example: examples/rails-5.2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run Rails compatibility application
+        run: |
+          docker run --rm \
+            --volume "$PWD:/app" \
+            --workdir /app \
+            --env EXAMPLE_PATH="${{ matrix.example }}" \
+            "${{ matrix.image }}" \
+            sh script/ci_rails_legacy
+
+  legacy-sidekiq:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ruby:2.2.10
+            example: examples/sidekiq-4
+          - image: ruby:2.5.9
+            example: examples/sidekiq-5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run Sidekiq compatibility application
+        run: |
+          docker run --rm \
+            --volume "$PWD:/app" \
+            --workdir /app \
+            --env EXAMPLE_PATH="${{ matrix.example }}" \
+            "${{ matrix.image }}" \
+            sh script/ci_sidekiq_legacy
+
+  release-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "2.6"
+      - run: gem install bundler -v 1.17.3
+      - run: bundle _1.17.3_ install
+      - run: ruby script/verify_docs
+      - run: ITERATIONS=10000 WARMUP=1000 SAMPLES=5 bundle _1.17.3_ exec ruby benchmarks/comparative.rb
+      - run: ITERATIONS=500 bundle _1.17.3_ exec ruby benchmarks/fake_endpoint_load.rb
+
   publish:
+    needs: [legacy-core, legacy-rails, legacy-sidekiq, release-readiness]
     runs-on: ubuntu-latest
     environment: rubygems
     permissions:
