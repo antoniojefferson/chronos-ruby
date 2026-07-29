@@ -4,6 +4,24 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-29
+
+### Added
+
+- stable legacy release gates for Ruby 2.2.10 through 2.6.10, Rails 4.2/5.2, Sidekiq 4/5, documentation, repeatable comparison, and fake-endpoint load validation;
+- the remaining mandatory module documents and ADRs for feature detection, context storage, sampling, and future OpenTelemetry interoperability.
+
+### Changed
+
+- promoted the reviewed public API and protocol v1 implementation from `0.9.0.pre.4` to `1.0.0`;
+- release publishing now accepts `v1.*` tags and cannot publish until every legacy compatibility and release-readiness job succeeds;
+- compatibility status is now `Supported` only for the exact runtime/framework combinations covered by green release gates.
+
+### Security
+
+- stable artifacts continue to use RubyGems Trusted Publishing, SHA-256 checksums, SPDX SBOMs, strict payload privacy contracts, and dependency auditing;
+- package signing remains deferred until a trusted signing-key lifecycle is available.
+
 ## [0.9.0.pre.4] - 2026-07-22
 
 ### Added

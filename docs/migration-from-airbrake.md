@@ -1,6 +1,6 @@
 # Migration from Airbrake
 
-Version `0.9.0.pre.2` provides a staged migration path. Run both agents only long enough to compare delivery, then remove Airbrake to avoid duplicate reports and overhead.
+Version `1.0.0` provides a staged migration path. Run both agents only long enough to compare delivery, then remove Airbrake to avoid duplicate reports and overhead.
 
 | Airbrake concept | Chronos equivalent |
 |---|---|

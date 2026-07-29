@@ -1,6 +1,6 @@
-# Security review for 0.9.0.pre.4
+# Security review for 1.0.0
 
-Review date: 2026-07-22. Scope: capture, serialization, transport, integration verification, remote configuration, framework/job integrations, release workflow, examples, and fixtures.
+Review date: 2026-07-29. Scope: capture, serialization, transport, integration verification, remote configuration, framework/job integrations, stable release workflow, examples, and fixtures.
 
 Verified by contracts and implementation review:
 
@@ -14,4 +14,4 @@ Verified by contracts and implementation review:
 - fixture privacy is enforced by contract tests and dependency advisories are checked by the security workflow.
 - integration verification accepts only a strict correlated response and never exposes raw receiver bodies, credentials, stack traces, paths, SQL, or internal architecture.
 
-Residual risks: supported Ruby/Rails versions are end-of-life; in-memory backlog is lost at exit; application filters/ignore rules execute application code; project identifiers and documented job IDs may be personal data in some deployments; package signing is not enabled because no trusted certificate/key lifecycle exists. Release artifacts should use protected environments and published SHA-256 checksums until signing can be operated safely.
+Residual risks: supported Ruby/Rails versions are end-of-life; in-memory backlog is lost at exit; application filters/ignore rules execute application code; project identifiers and documented job IDs may be personal data in some deployments; package signing is not enabled because no trusted certificate/key lifecycle exists. Stable artifacts use a protected environment, Trusted Publishing, SHA-256 checksums and SPDX SBOMs until signing can be operated safely.
