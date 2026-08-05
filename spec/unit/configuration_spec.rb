@@ -20,6 +20,15 @@ RSpec.describe Chronos::Configuration do # rubocop:disable Metrics/BlockLength
     expect(result.apm_max_groups).to eq(200)
     expect(result.apm_flush_count).to eq(100)
     expect(result.apm_max_queries_per_request).to eq(100)
+    expect(result.apm_trace_ttl_seconds).to eq(60.0)
+    expect(result.apm_query_analysis_enabled).to eq(true)
+    expect(result.apm_query_analysis_max_queries).to eq(100)
+    expect(result.apm_query_inspection_enabled).to eq(false)
+    expect(result.apm_query_statistics_enabled).to eq(false)
+    expect(result.apm_query_plan_enabled).to eq(false)
+    expect(result.apm_query_inspection_max_queries).to eq(20)
+    expect(result.apm_transaction_tracking_enabled).to eq(true)
+    expect(result.apm_transaction_max_connections).to eq(100)
     expect(result.external_http_enabled).to eq(false)
     expect(result.cache_key_mode).to eq(:none)
     expect(described_class.new.dependency_reporting).to eq(true)
@@ -33,6 +42,27 @@ RSpec.describe Chronos::Configuration do # rubocop:disable Metrics/BlockLength
     expect(result).to be_frozen
     expect(result.ignored_environments).to be_frozen
     expect(result.blocklist_keys).to be_frozen
+  end
+
+  it "validates bounded opt-in query inspection settings" do
+    config = configuration(
+      :apm_trace_ttl_seconds => 0, :apm_query_analysis_enabled => "yes",
+      :apm_query_inspection_enabled => false, :apm_query_statistics_enabled => true,
+      :apm_query_plan_enabled => true, :apm_query_inspection_min_duration_ms => -1,
+      :apm_query_inspection_max_queries => 101, :apm_transaction_tracking_enabled => "yes",
+      :apm_transaction_max_connections => 501, :apm_query_analysis_max_queries => 501
+    )
+
+    expect(config.validation_errors).to include(
+      "apm_trace_ttl_seconds must be greater than zero",
+      "apm_query_analysis_enabled must be true or false",
+      "apm_query_inspection_min_duration_ms must be zero or greater",
+      "apm_query_inspection_max_queries must be between 1 and 100",
+      "apm_query_analysis_max_queries must be between 1 and 500",
+      "apm_transaction_tracking_enabled must be true or false",
+      "apm_transaction_max_connections must be between 1 and 500",
+      "query statistics and plans require apm_query_inspection_enabled"
+    )
   end
 
   it "validates HTTP, cache, and dependency collection settings" do

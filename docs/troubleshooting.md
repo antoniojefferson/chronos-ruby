@@ -74,6 +74,12 @@ This is intentional. The normalizer removes common literal forms and never reads
 
 Local detectors emit bounded heuristics, not confirmed diagnoses. Repetition can be legitimate and exception class names can be adapter-specific. Confirm the trace in the SaaS and application logs before changing application behavior.
 
+## Index recommendation is inaccurate or inspection reports an error
+
+An `index_candidate` uses normalized SQL only and has low confidence. `missing_index_candidate` means the observed index prefix was absent from the bounded catalog snapshot; it does not evaluate selectivity, write cost, partial/expression indexes, storage, or production data distribution. Validate with a DBA and the actual workload before creating a migration.
+
+Inspection is disabled by default. Enable `apm_query_inspection_enabled` first in staging, keep the fingerprint and duration limits small, then opt into statistics or plans. `query_inspection_failed` contains only the exception class. Unsupported adapters, prepared placeholders, permissions, planner timeouts, or unavailable catalog APIs can cause it. The gem never retries an inspection or falls back to `EXPLAIN ANALYZE`.
+
 ## Context appears missing
 
 The legacy context store is thread-local. A new application-created thread does not inherit context. Establish a new `Chronos.with_context` scope inside that thread, and issue manual notification before the scope exits. For Rack capture, supply user and explicit parameters through the documented environment keys.

@@ -4,13 +4,13 @@ Version `0.8.0.pre.1` aggregates request, SQL, job, and explicitly instrumented 
 
 ## Request metrics
 
-Request groups use normalized route and HTTP method. Status codes are counted inside the group so error rate can be calculated without making status part of an unbounded key. Each metric contains count, error count/rate, total, minimum, maximum, average, fixed histogram buckets, and component breakdown. Percentiles remain server-side because retaining every duration locally would violate the memory boundary.
+Request groups use normalized route and HTTP method. Status codes are counted inside the group so error rate can be calculated without making status part of an unbounded key. Each metric contains count, error count/rate, total, minimum, maximum, average, fixed histogram buckets, approximate p50/p95/p99 upper bounds, severity counts, bounded diagnostics, and component breakdown. The SaaS may calculate more precise percentiles from merged histograms; the agent never retains raw duration arrays.
 
 Rack records request metrics for non-Rails applications. Rails controller notifications and Rack share `record_event_once`, so the same request is counted only once. Controller notification data wins when available because its route is more precise.
 
 ## SQL metrics and signals
 
-`Chronos::Core::SqlNormalizer` removes block/line comments, quoted literal values, numeric values, booleans, nulls, and repeated `IN` values before producing a SHA-256 fingerprint. Binds are never read. Query dimensions can contain adapter, operation, inferred table, bounded normalized query, fingerprint, Active Record operation name, cache flag, connection role/shard, and a bounded source frame for slow sampled queries.
+`Chronos::Core::SqlNormalizer` removes block/line comments, quoted literal values, numeric values, booleans, nulls, and repeated `IN` values before producing a SHA-256 fingerprint. Binds are never read. `SqlQueryAnalyzer` extracts bounded SELECT access columns. The optional `ActiveRecordQueryInspector` compares existing indexes and adds allowlisted statistics/plans without retaining raw SQL. Query dimensions can contain adapter, operation, inferred table, bounded normalized query, fingerprint, Active Record operation name, cache flag, connection role/shard, and a bounded source frame for slow sampled queries.
 
 Local signals are intentionally heuristic:
 
@@ -18,7 +18,8 @@ Local signals are intentionally heuristic:
 - `repeated_query` after the same fingerprint appears again in one trace;
 - `possible_n_plus_one` once when the configured repetition threshold is reached;
 - `long_transaction` for transaction-labelled SQL over its threshold;
-- `connection_error` and `deadlock` from bounded exception class names.
+- `connection_error`, query/pool/lock timeout, constraint violation, and `deadlock` from bounded exception class names;
+- index candidate/coverage and sequential-scan evidence from bounded query analysis.
 
 The SaaS must confirm and correlate these signals. They are not proof of an N+1, deadlock, or application defect.
 
@@ -29,9 +30,11 @@ The SaaS must confirm and correlate these signals. They are not proof of an N+1,
 - at most `apm_max_queries_per_request` fingerprints per trace;
 - at most 19 configured histogram boundaries plus `+Inf`;
 - at most `apm_batch_size` groups per payload, with a hard maximum of 50;
-- trackers are removed when their request completes and all remaining trackers are cleared on aggregate drain.
+- trackers are removed when their request completes or their idle TTL expires; aggregate drain preserves active trackers;
+- at most 20 diagnostics and one representative bounded query analysis per metric group;
+- at most `apm_query_inspection_max_queries` database inspections per Rails subscriber.
 
-New groups beyond capacity are dropped and counted in `dropped_groups`. Existing groups continue accumulating. The state is process-local and is lost on restart.
+New groups beyond capacity are dropped and counted in `dropped_groups`. Tracking loss is reported through `dropped_trace_trackers`, `expired_trace_trackers`, and `dropped_query_fingerprints`. Existing groups continue accumulating. The state is process-local and is lost on restart.
 
 ## Breakdown
 
@@ -51,6 +54,16 @@ Chronos.configure do |config|
   config.apm_long_transaction_threshold_ms = 1000.0
   config.apm_n_plus_one_threshold = 5
   config.apm_histogram_buckets = [5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0]
+  config.apm_trace_ttl_seconds = 60.0
+  config.apm_query_analysis_enabled = true
+  config.apm_query_analysis_max_queries = 100
+  config.apm_query_inspection_enabled = false
+  config.apm_query_statistics_enabled = false
+  config.apm_query_plan_enabled = false
+  config.apm_query_inspection_min_duration_ms = 500.0
+  config.apm_query_inspection_max_queries = 20
+  config.apm_transaction_tracking_enabled = true
+  config.apm_transaction_max_connections = 100
 end
 ```
 

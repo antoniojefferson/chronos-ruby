@@ -15,7 +15,8 @@ Version 0.9 sanitizes exception, framework telemetry, dependency/deploy inventor
 | Unknown Ruby objects | Represented by class name without calling application serialization |
 | Request/response bodies, raw query strings, cookies, authorization headers, raw SQL/binds, cache values, mail bodies, environment variables | Never collected automatically |
 | Sidekiq arguments | Collected automatically, limited before sanitization, then redacted by the common policy |
-| SQL | Comments, quoted/numeric/boolean/null literals removed; binds never read; bounded identifiers remain |
+| SQL | Comments, quoted/numeric/boolean/null literals removed; binds never read; bounded identifiers remain; raw SQL is never transmitted |
+| Query inspection | Disabled by default; local `EXPLAIN` has no `ANALYZE`; only allowlisted plan/catalog metadata is retained |
 | External HTTP | Host/method/status/timing only; URL path/query, Authorization, bodies, headers, and error messages omitted |
 | Cache key | Omitted by default; optional project-scoped SHA-256 hash; cache value never read |
 | Dependencies | Bounded loaded gem names/versions and detected runtime labels; paths and lockfiles omitted |
@@ -39,15 +40,17 @@ Raw cache keys can contain user or business data and are never delivered. Option
 
 ## Rails telemetry
 
-Rails subscribers use per-notification allowlists. SQL events retain only the operation name, cached flag, and duration; cache events omit key and value; mailer events omit addresses and content; Active Job events omit job ID and arguments; view identifiers are reduced to basenames. Controller parameters are sanitized by the normal payload pipeline before queueing.
+Rails subscribers use per-notification allowlists. SQL events retain normalized value-free metadata, bounded analysis, cached flag, duration and optional allowlisted inspection evidence; cache events omit key and value; mailer events omit addresses and content; Active Job events omit arguments; view identifiers are reduced to basenames. Controller parameters are sanitized by the normal payload pipeline before queueing.
 
 ## Sidekiq jobs
 
 The optional Sidekiq middleware is the only version 0.6 integration that automatically reads job arguments. It traverses at most 20 top-level arguments, 20 items per nested collection, four levels, and 512 bytes per string. These structural limits run before the common key and content sanitizer. Trace propagation contains only trace and request identifiers. Do not place credentials or unnecessary personal, health, or financial data in job arguments; configure application-specific blocklist keys and audit representative synthetic payloads before enabling production delivery.
 
-## APM dimensions
+## APM dimensions and query inspection
 
 Metric groups deliberately exclude user IDs, JIDs, raw URLs, request parameters, bind values, exception messages, and cache keys. SQL normalization removes common literal forms and comments before fingerprinting, but retains bounded database identifiers and cannot parse every dialect. Do not encode personal or secret values in schema, table, column, SQL keyword, or operation names. Slow-query source contains a bounded file/line frame under the configured application root, not source-code contents.
+
+Static query analysis is enabled by default and processes only the normalized SQL. Index, statistics, and plan inspection are separate opt-ins. The original SELECT is used only to ask the same local connection for `EXPLAIN` without `ANALYZE`; it is never placed in telemetry. Plan predicates and arbitrary `Extra`/filter text are discarded. Only bounded node type, relation, index, estimated rows, cost and schema-index definitions cross the sanitizer. These identifiers can still disclose business vocabulary, so production enablement requires a representative synthetic payload audit.
 
 ## Rack context and breadcrumbs
 

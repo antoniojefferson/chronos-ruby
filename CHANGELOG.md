@@ -4,6 +4,24 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-05
+
+### Added
+
+- bounded normalized SELECT analysis with access columns, index candidates, existing-index comparison, optional table statistics, and allowlisted non-executing query plans;
+- structured query diagnostics and severity counts for errors, warnings, information, and suggestions, including actionable N+1 and index guidance;
+- approximate p50/p95/p99 metrics, complete outer-transaction timing, expanded adapter error families, and trace/fingerprint loss counters;
+- explicit low-risk defaults and bounded opt-in configuration for database index/statistics/plan inspection.
+
+### Changed
+
+- aggregate drains preserve active trace trackers until request completion or idle TTL instead of discarding incomplete correlation;
+- possible N+1 now requires a non-cached SELECT, and query analysis sent to consumers prefers inspected evidence over an earlier static-only observation.
+
+### Security
+
+- query inspection never uses `EXPLAIN ANALYZE`, never executes DDL, omits raw SQL/binds/predicates/messages, and retains only bounded schema and planner fields.
+
 ## [1.0.0] - 2026-07-29
 
 ### Added

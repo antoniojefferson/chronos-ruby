@@ -47,7 +47,13 @@ module Chronos
       :apm_enabled, :apm_max_groups, :apm_flush_count, :apm_batch_size,
       :apm_max_queries_per_request, :apm_slow_query_threshold_ms,
       :apm_long_transaction_threshold_ms, :apm_n_plus_one_threshold,
-      :apm_histogram_buckets, :external_http_enabled, :external_http_trace_headers,
+      :apm_histogram_buckets, :apm_trace_ttl_seconds,
+      :apm_query_analysis_enabled, :apm_query_inspection_enabled,
+      :apm_query_analysis_max_queries,
+      :apm_query_statistics_enabled, :apm_query_plan_enabled,
+      :apm_query_inspection_min_duration_ms, :apm_query_inspection_max_queries,
+      :apm_transaction_tracking_enabled, :apm_transaction_max_connections,
+      :external_http_enabled, :external_http_trace_headers,
       :cache_key_mode, :dependency_reporting, :dependency_max_items
     ].freeze
 
@@ -146,6 +152,16 @@ module Chronos
       @apm_long_transaction_threshold_ms = 1000.0
       @apm_n_plus_one_threshold = 5
       @apm_histogram_buckets = [5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0]
+      @apm_trace_ttl_seconds = 60.0
+      @apm_query_analysis_enabled = true
+      @apm_query_analysis_max_queries = 100
+      @apm_query_inspection_enabled = false
+      @apm_query_statistics_enabled = false
+      @apm_query_plan_enabled = false
+      @apm_query_inspection_min_duration_ms = 500.0
+      @apm_query_inspection_max_queries = 20
+      @apm_transaction_tracking_enabled = true
+      @apm_transaction_max_connections = 100
     end
 
     def initialize_observability_defaults

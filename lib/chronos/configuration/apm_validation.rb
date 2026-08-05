@@ -9,7 +9,7 @@ module Chronos
     # @thread_safety Reads one mutable configuration instance without shared state.
     # @compatibility Ruby 2.2.10 through Ruby 2.6.
     # @errors Invalid values become messages and never raise from validation.
-    module ApmConfigurationValidation
+    module ApmConfigurationValidation # rubocop:disable Metrics/ModuleLength
       private
 
       def apm_errors
@@ -32,6 +32,24 @@ module Chronos
         unless positive_integer?(apm_max_queries_per_request)
           errors << "apm_max_queries_per_request must be a positive integer"
         end
+        errors.concat(query_capacity_errors)
+        errors
+      end
+
+      def query_capacity_errors
+        errors = []
+        unless apm_query_analysis_max_queries.is_a?(Integer) &&
+               apm_query_analysis_max_queries >= 1 && apm_query_analysis_max_queries <= 500
+          errors << "apm_query_analysis_max_queries must be between 1 and 500"
+        end
+        unless apm_query_inspection_max_queries.is_a?(Integer) &&
+               apm_query_inspection_max_queries >= 1 && apm_query_inspection_max_queries <= 100
+          errors << "apm_query_inspection_max_queries must be between 1 and 100"
+        end
+        unless apm_transaction_max_connections.is_a?(Integer) &&
+               apm_transaction_max_connections >= 1 && apm_transaction_max_connections <= 500
+          errors << "apm_transaction_max_connections must be between 1 and 500"
+        end
         errors
       end
 
@@ -46,7 +64,39 @@ module Chronos
         unless apm_n_plus_one_threshold.is_a?(Integer) && apm_n_plus_one_threshold >= 2
           errors << "apm_n_plus_one_threshold must be an integer greater than or equal to 2"
         end
+        errors.concat(query_threshold_errors)
         errors
+      end
+
+      def query_threshold_errors
+        errors = []
+        unless positive_number?(apm_trace_ttl_seconds)
+          errors << "apm_trace_ttl_seconds must be greater than zero"
+        end
+        unless non_negative_number?(apm_query_inspection_min_duration_ms)
+          errors << "apm_query_inspection_min_duration_ms must be zero or greater"
+        end
+        query_analysis_boolean_attributes.each do |name, value|
+          errors << "#{name} must be true or false" unless boolean?(value)
+        end
+        if (apm_query_statistics_enabled || apm_query_plan_enabled) && !apm_query_inspection_enabled
+          errors << "query statistics and plans require apm_query_inspection_enabled"
+        end
+        errors
+      end
+
+      def query_analysis_boolean_attributes
+        {
+          :apm_query_analysis_enabled => apm_query_analysis_enabled,
+          :apm_query_inspection_enabled => apm_query_inspection_enabled,
+          :apm_query_statistics_enabled => apm_query_statistics_enabled,
+          :apm_query_plan_enabled => apm_query_plan_enabled,
+          :apm_transaction_tracking_enabled => apm_transaction_tracking_enabled
+        }
+      end
+
+      def non_negative_number?(value)
+        value.is_a?(Numeric) && value >= 0
       end
 
       def increasing_positive_numbers?(values)

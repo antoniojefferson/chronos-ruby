@@ -58,6 +58,7 @@ required_documents = %w(
   docs/security-review.md
   docs/protocol-v1.md
   docs/release-1.0-readiness.md
+  docs/release-1.1-readiness.md
   docs/adr/ADR-007-feature-detection.md
   docs/adr/ADR-008-context-store.md
   docs/adr/ADR-009-sampling.md
@@ -100,7 +101,7 @@ end
 
 readme = read_utf8(File.join(root, "README.md"))
 abort "README contains a placeholder" if readme =~ /TODO|UPDATE_WITH|\[USERNAME\]/
-abort "README does not document stable version 1.0" unless readme.include?("1.0.0")
+abort "README does not document stable version 1.1" unless readme.include?("1.1.0")
 abort "README does not document version 0.5 Rails integration" unless readme.include?("Versão 0.5")
 abort "README does not document version 0.6 Sidekiq integration" unless readme.include?("0.6.0.pre.1")
 abort "README does not document version 0.7 APM aggregation" unless readme.include?("Versão 0.7")
@@ -112,7 +113,8 @@ unless readme.include?("chronos:verify_integration") && readme.include?("Chronos
   abort "README does not document integration verification"
 end
 
-%w(benchmarks/comparative.rb benchmarks/fake_endpoint_load.rb script/generate_sbom).each do |relative_path|
+%w(benchmarks/comparative.rb benchmarks/fake_endpoint_load.rb benchmarks/query_analysis.rb
+   script/generate_sbom).each do |relative_path|
   abort "Missing release gate: #{relative_path}" unless File.file?(File.join(root, relative_path))
 end
 
