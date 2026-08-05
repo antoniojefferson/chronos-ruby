@@ -63,6 +63,16 @@
 | `apm_long_transaction_threshold_ms` | Optional | `1000.0` | Transaction-labelled SQL duration that produces a signal |
 | `apm_n_plus_one_threshold` | Optional | `5` | Repeated fingerprint count producing one possible-N+1 signal; minimum 2 |
 | `apm_histogram_buckets` | Optional | Fixed millisecond boundaries | Increasing positive duration boundaries; at most 19 plus `+Inf` |
+| `apm_trace_ttl_seconds` | Optional | `60.0` | Maximum idle time retained for an incomplete trace or transaction tracker |
+| `apm_query_analysis_enabled` | Optional | `true` | Analyzes bounded normalized SELECT shapes and emits informational/index-candidate diagnostics |
+| `apm_query_analysis_max_queries` | Optional | `100` | Maximum normalized fingerprints analyzed and cached per subscriber; range 1–500 |
+| `apm_query_inspection_enabled` | Optional | `false` | Opts in to read-only comparison with ActiveRecord index metadata |
+| `apm_query_statistics_enabled` | Optional | `false` | Adds adapter-specific estimated table-row statistics; requires query inspection |
+| `apm_query_plan_enabled` | Optional | `false` | Adds allowlisted `EXPLAIN` evidence for eligible SELECTs; never uses `ANALYZE` |
+| `apm_query_inspection_min_duration_ms` | Optional | `500.0` | Minimum observed query duration before an opt-in database inspection |
+| `apm_query_inspection_max_queries` | Optional | `20` | Maximum unique fingerprints inspected per subscriber; range 1–100 |
+| `apm_transaction_tracking_enabled` | Optional | `true` | Measures bounded outer transaction elapsed time by notification connection |
+| `apm_transaction_max_connections` | Optional | `100` | Maximum concurrently tracked transaction connections; range 1–500 |
 | `external_http_enabled` | Optional | `false` | Allows explicit per-instance outbound `Net::HTTP` instrumentation |
 | `external_http_trace_headers` | Optional | `true` | Propagates Chronos trace/request headers on instrumented requests |
 | `cache_key_mode` | Optional | `:none` | `:none` omits keys; `:sha256` emits a project-scoped key hash |
@@ -102,6 +112,17 @@ Chronos.configure do |config|
   config.apm_slow_query_threshold_ms = 500.0
   config.apm_long_transaction_threshold_ms = 1000.0
   config.apm_n_plus_one_threshold = 5
+  config.apm_trace_ttl_seconds = 60.0
+  config.apm_query_analysis_enabled = true
+  config.apm_query_analysis_max_queries = 100
+  # Database access is explicit because each inspected fingerprint adds read-only work.
+  config.apm_query_inspection_enabled = false
+  config.apm_query_statistics_enabled = false
+  config.apm_query_plan_enabled = false
+  config.apm_query_inspection_min_duration_ms = 500.0
+  config.apm_query_inspection_max_queries = 20
+  config.apm_transaction_tracking_enabled = true
+  config.apm_transaction_max_connections = 100
   config.external_http_enabled = false
   config.external_http_trace_headers = true
   config.cache_key_mode = :none

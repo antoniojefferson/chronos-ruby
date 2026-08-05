@@ -1,10 +1,10 @@
 # Chronos Ruby
 
-Chronos Ruby 1.0.0 é o agente independente de framework para enviar exceções e telemetria limitada de aplicações Ruby ao Chronos. Esta é a linha estável legado, compatível com o protocolo v1 e voltada a Ruby 2.2.10–2.6.
+Chronos Ruby 1.1.0 é o agente independente de framework para enviar exceções e telemetria limitada de aplicações Ruby ao Chronos. Esta é a linha estável legado, compatível com o protocolo v1 e voltada a Ruby 2.2.10–2.6.
 
 ## O que a gem coleta
 
-A versão 1.0 pode coletar:
+A versão 1.1 pode coletar:
 
 - classe, mensagem, backtrace estruturado e causas encadeadas da exceção;
 - timestamp, severidade, tags e fingerprint opcional;
@@ -20,11 +20,11 @@ Veja a tabela completa em [Dados coletados](docs/data-collected.md).
 
 ## O que não é coletado por padrão
 
-A gem não varre variáveis de ambiente, sistema de arquivos ou lockfiles e não lê bodies HTTP, cookies, headers de autorização, conteúdo de e-mail, SQL bruto, binds, valores de cache ou código-fonte. O inventário de dependências contém somente nomes e versões já carregados, uma vez por agente. A aplicação continua responsável por minimização e base legal dos dados enviados.
+A gem não varre variáveis de ambiente, sistema de arquivos ou lockfiles e não coleta bodies HTTP, cookies, headers de autorização, conteúdo de e-mail, SQL bruto, binds, valores de cache ou código-fonte. A inspeção de plano, desativada por padrão, usa o SQL original somente na conexão local para `EXPLAIN` sem `ANALYZE` e o descarta. O inventário de dependências contém somente nomes e versões já carregados, uma vez por agente. A aplicação continua responsável por minimização e base legal dos dados enviados.
 
 ## Versões Ruby e Rails suportadas
 
-A versão 1.0.0 suporta Ruby puro e Rack em Ruby 2.2.10, 2.3.8, 2.4.10, 2.5.9 e 2.6.10. As combinações Rails validadas são Rails 4.2 com Ruby 2.2.10/2.3.8 e Rails 5.2 com Ruby 2.5.9/2.6.10. Sidekiq 4.2.10 com Ruby 2.2.10 e Sidekiq 5.2.10 com Ruby 2.5.9 também possuem gates dedicados.
+A versão 1.1.0 suporta Ruby puro e Rack em Ruby 2.2.10, 2.3.8, 2.4.10, 2.5.9 e 2.6.10. As combinações Rails validadas são Rails 4.2 com Ruby 2.2.10/2.3.8 e Rails 5.2 com Ruby 2.5.9/2.6.10. Sidekiq 4.2.10 com Ruby 2.2.10 e Sidekiq 5.2.10 com Ruby 2.5.9 também possuem gates dedicados. Ruby 2.7/Rails 6 não é declarado nesta release porque ainda não possui aplicação e matriz completas.
 
 Rubies e frameworks antigos estão fora do suporte de segurança de seus mantenedores. A Chronos oferece compatibilidade técnica, não manutenção de segurança do runtime. Veja [Compatibilidade](docs/compatibility.md).
 
@@ -33,7 +33,7 @@ Rubies e frameworks antigos estão fora do suporte de segurança de seus mantene
 Obrigatório: adicione a versão estável ao `Gemfile`.
 
 ```ruby
-gem "chronos-ruby", "~> 1.0.0"
+gem "chronos-ruby", "~> 1.1.0"
 ```
 
 Em runtimes antigos, use Bundler compatível:
@@ -46,7 +46,7 @@ bundle _1.17.3_ install
 Sem Bundler:
 
 ```bash
-gem install chronos-ruby -v 1.0.0
+gem install chronos-ruby -v 1.1.0
 ```
 
 ## Instalação em Rails
@@ -54,7 +54,7 @@ gem install chronos-ruby -v 1.0.0
 Obrigatório: carregue a integração Rails explicitamente para manter Rails/ActiveSupport fora de aplicações Ruby puras.
 
 ```ruby
-gem "chronos-ruby", "~> 1.0.0", :require => "chronos/rails"
+gem "chronos-ruby", "~> 1.1.0", :require => "chronos/rails"
 ```
 
 Gere o initializer:
@@ -174,7 +174,7 @@ A regra recebe um notice normalizado e imutável, e somente `true` descarta. Fal
 
 ## Monitoramento de performance
 
-A Versão 0.7 introduziu agregação local de requests, queries e jobs em `metric_batch`; a Versão 0.8 adicionou HTTP externo. Grupos possuem contagem, erro, duração, histograma, status e breakdown limitados. Percentis são calculados no SaaS.
+A Versão 0.7 introduziu agregação local de requests, queries e jobs em `metric_batch`; a Versão 0.8 adicionou HTTP externo. Grupos possuem contagem, erro, duração, histograma, percentis aproximados, severidades, diagnósticos, status e breakdown limitados.
 
 ```ruby
 Chronos.configure do |config|
@@ -185,10 +185,22 @@ Chronos.configure do |config|
   config.apm_max_queries_per_request = 100
   config.apm_slow_query_threshold_ms = 500.0
   config.apm_n_plus_one_threshold = 5
+  config.apm_trace_ttl_seconds = 60.0
+  config.apm_query_analysis_enabled = true
+  config.apm_query_analysis_max_queries = 100
+
+  # Opt-in: cada fingerprint elegível pode consultar catálogo/estatística/plano.
+  config.apm_query_inspection_enabled = false
+  config.apm_query_statistics_enabled = false
+  config.apm_query_plan_enabled = false
+  config.apm_query_inspection_min_duration_ms = 500.0
+  config.apm_query_inspection_max_queries = 20
+  config.apm_transaction_tracking_enabled = true
+  config.apm_transaction_max_connections = 100
 end
 ```
 
-SQL bruto e binds não são lidos. Sinais de query lenta, repetição, possível N+1, transação longa, conexão e deadlock são heurísticos. Veja [APM](docs/modules/apm-aggregation.md), [Requests](docs/modules/request-monitoring.md) e [SQL](docs/modules/sql-monitoring.md).
+Por padrão, SQL bruto e binds não são lidos pelo pipeline de análise. A inspeção opt-in usa o SQL original apenas localmente para solicitar `EXPLAIN` sem `ANALYZE`; nunca o inclui no evento. A análise estática produz candidatos, não ordens de criação de índice. Erros usam severidade `error`; lentidão e risco usam `warning`; padrões observados usam `info`; correções propostas usam `suggestion`. Veja [APM](docs/modules/apm-aggregation.md), [Requests](docs/modules/request-monitoring.md) e [SQL](docs/modules/sql-monitoring.md).
 
 ## Sidekiq e Active Job
 
@@ -196,7 +208,7 @@ A versão `0.6.0.pre.1` introduziu middleware Sidekiq 4/5; a API estável manté
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "~> 1.0.0", :require => "chronos/sidekiq"
+gem "chronos-ruby", "~> 1.1.0", :require => "chronos/sidekiq"
 ```
 
 O envelope de contexto não altera argumentos públicos e contém somente IDs limitados de trace/request. Active Job usa um campo serializado com namespace (`chronos_context`) e hooks públicos. Erros aninhados são deduplicados e reerguidos. Veja [Sidekiq legado](docs/modules/sidekiq-legacy.md), [Active Job](docs/modules/active-job.md) e [Jobs](docs/modules/job-monitoring.md).

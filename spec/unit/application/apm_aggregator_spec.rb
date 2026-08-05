@@ -1,4 +1,4 @@
-RSpec.describe Chronos::Application::ApmAggregator do
+RSpec.describe Chronos::Application::ApmAggregator do # rubocop:disable Metrics/BlockLength
   def aggregator(overrides = {})
     described_class.new(snapshot(overrides))
   end
@@ -20,9 +20,25 @@ RSpec.describe Chronos::Application::ApmAggregator do
     expect(metric["duration_ms"]).to eq(
       "total" => 300.0, "min" => 100.0, "max" => 200.0, "average" => 150.0
     )
+    expect(metric["percentiles_ms"]).to include("p50" => 100.0, "p95" => 250.0, "p99" => 250.0)
     histogram_count = metric["histogram"].inject(0) { |total, bucket| total + bucket["count"] }
     expect(histogram_count).to eq(2)
     expect(metric["breakdown_ms"]).to include("database" => 50.0, "view" => 20.0)
+  end
+
+  it "uses complete transaction duration and classifies bounded database error families" do
+    subject = aggregator(:apm_long_transaction_threshold_ms => 1000.0)
+    subject.record(
+      "query", "operation" => "COMMIT", "fingerprint" => "transaction", "duration_ms" => 2.0,
+               "transaction_duration_ms" => 1500.0, "error_class" => "ActiveRecord::LockWaitTimeout"
+    )
+
+    metric = subject.flush.first["metrics"].first
+    expect(metric["signals"]).to include("long_transaction" => 1, "query_timeout" => 1, "lock_timeout" => 1)
+    expect(metric["diagnostics"]).to include(
+      include("code" => "long_transaction", "severity" => "warning"),
+      include("code" => "lock_timeout", "severity" => "error")
+    )
   end
 
   it "detects bounded slow, repeated, and possible N+1 query signals per request" do
@@ -74,5 +90,65 @@ RSpec.describe Chronos::Application::ApmAggregator do
       metric["signals"].each { |name, count| result[name] = result.fetch(name, 0) + count }
     end
     expect(signals).to include("long_transaction" => 1, "deadlock" => 1, "connection_error" => 1)
+  end
+
+  it "attaches errors, warnings, infos, and suggestions to query metrics" do
+    subject = aggregator(:apm_n_plus_one_threshold => 2, :apm_slow_query_threshold_ms => 50.0)
+    query = {
+      "operation" => "SELECT", "fingerprint" => "payments", "duration_ms" => 75.0,
+      "error_class" => "ActiveRecord::Deadlocked",
+      "analysis" => {
+        "tables" => ["payments"],
+        "diagnostics" => [{"code" => "missing_index_candidate", "severity" => "suggestion",
+                           "category" => "index", "message" => "Review index",
+                           "evidence" => {"table" => "payments", "columns" => ["account_id"]}}]
+      }
+    }
+    2.times { subject.record("query", query, "trace_id" => "trace") }
+
+    metric = subject.flush.first["metrics"].find { |item| item["metric_type"] == "query" }
+    expect(metric["severity_counts"]).to include("error" => 4, "warning" => 3, "info" => 1, "suggestion" => 3)
+    expect(metric["diagnostics"]).to include(
+      include("code" => "query_execution_error", "severity" => "error"),
+      include("code" => "deadlock", "severity" => "error"),
+      include("code" => "possible_n_plus_one", "severity" => "warning"),
+      include("code" => "n_plus_one_eager_loading", "severity" => "suggestion"),
+      include("code" => "missing_index_candidate", "severity" => "suggestion")
+    )
+    expect(metric["query_analysis"]).to include("tables" => ["payments"])
+    expect(metric["query_analysis"]).not_to have_key("diagnostics")
+  end
+
+  it "preserves bounded trace correlation across aggregate flushes" do
+    clock = 0.0
+    subject = described_class.new(
+      snapshot(:apm_n_plus_one_threshold => 3, :apm_trace_ttl_seconds => 60.0),
+      :clock => proc { clock }
+    )
+    query = {"operation" => "SELECT", "fingerprint" => "accounts", "duration_ms" => 10.0}
+    2.times { subject.record("query", query, "trace_id" => "trace") }
+    first = subject.flush.first
+    expect(first["metrics"].first["tracking"]["active_traces"]).to eq(1)
+
+    subject.record("query", query, "trace_id" => "trace")
+    subject.record("request", {"route" => "/accounts", "method" => "GET", "duration_ms" => 50.0},
+                   "trace_id" => "trace")
+    request = subject.flush.first["metrics"].find { |item| item["metric_type"] == "request" }
+
+    expect(request["signals"]).to include("repeated_query" => 2, "possible_n_plus_one" => 1)
+    expect(subject.diagnostics["transactions"]).to eq(0)
+  end
+
+  it "expires stale traces and reports bounded tracking loss" do
+    clock = 0.0
+    subject = described_class.new(snapshot(:apm_trace_ttl_seconds => 10.0), :clock => proc { clock })
+    subject.record("query", {"operation" => "SELECT", "fingerprint" => "old", "duration_ms" => 1.0},
+                   "trace_id" => "trace")
+    subject.flush
+    clock = 11.0
+    subject.record("query", "operation" => "SELECT", "fingerprint" => "new", "duration_ms" => 1.0)
+
+    batch = subject.flush.first
+    expect(batch["metrics"].first["tracking"]).to include("expired_trace_trackers" => 1, "active_traces" => 0)
   end
 end

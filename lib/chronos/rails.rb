@@ -1,4 +1,5 @@
 require "chronos"
+require "chronos/rails/active_record_query_inspector"
 require "chronos/rails/notifications_subscriber"
 require "chronos/integrations/active_job"
 require "chronos/rails/installer"

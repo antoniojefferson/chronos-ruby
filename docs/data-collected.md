@@ -33,13 +33,19 @@ Version 0.9 emits exceptions, cache telemetry, dependency/deploy events, and agg
 | Sidekiq arguments | Collected, sanitized, and bounded | First 20 job arguments; collections/depth/strings limited |
 | Sidekiq tags | Collected and bounded | Job payload or public worker options |
 | Sidekiq trace/request IDs | Propagated when present; trace generated otherwise | Chronos job-envelope metadata |
-| APM counts, error counts/rates, duration total/min/max/average | Aggregated by default | Request, query, and job observations |
-| Fixed duration histogram and status counts | Aggregated by default | Local bounded counters |
+| APM counts, error counts/rates, duration total/min/max/average and approximate p50/p95/p99 | Aggregated by default | Request, query, and job observations plus fixed histogram |
+| Fixed duration histogram, status counts, severity counts and bounded diagnostics | Aggregated by default | Local bounded counters and classifiers |
 | Component breakdown | database/view/external_http/cache/queue/application when observable | Trace-local bounded totals |
 | Normalized SQL and SHA-256 fingerprint | Collected without comments, literals, or binds | `sql.active_record` payload |
 | SQL adapter, operation, inferred table, AR name, cache flag, role/shard | Collected when exposed | Public notification payload and connection feature detection |
 | Slow SQL source frame | Collected only for threshold-selected slow queries | Bounded application call frame |
 | APM diagnostic signals | Heuristic counters | Local threshold and repetition detection |
+| SELECT tables and equality/range/join/order columns; index candidates | Collected by default from normalized SQL; bounded | Local static query analyzer |
+| Existing index names/columns/uniqueness | Disabled by default; read-only opt-in | Public ActiveRecord schema metadata |
+| Estimated table rows | Disabled by default; read-only opt-in | PostgreSQL `pg_class` or MySQL `information_schema` |
+| Allowlisted plan node type/table/index/estimated rows/cost | Disabled by default; `EXPLAIN` without `ANALYZE` | Local database planner |
+| Complete outer transaction approximate duration | Collected by default with bounded state | BEGIN/COMMIT/ROLLBACK notifications keyed by local connection identity |
+| Trace tracking loss/expiration counters | Aggregated by default | Local bounded tracker lifecycle |
 | External HTTP host, method, status, duration, timeout, connection-error flag, error class | Disabled by default; per-instance opt-in | Instrumented `Net::HTTP` object |
 | Chronos trace/request headers | Propagated when available | Current execution context |
 | Cache operation, backend, namespace, hit/miss, duration | Collected; key/value omitted | ActiveSupport cache notifications |
@@ -50,7 +56,7 @@ Version 0.9 emits exceptions, cache telemetry, dependency/deploy events, and agg
 | Deploy environment, revision, version, repository, actor, deploy ID, service, region, instance | Explicit synchronous deploy API | Application/deployment integration arguments |
 | Integration verification ID, fixed test marker, synthetic exception class/message, and receipt correlation | Only when `Chronos.verify_integration` or its Rake task is invoked | Locally generated bounded values |
 
-The gem never collects request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, Git state, source code, raw SQL, SQL bind values, database rows, raw cache keys/values, mail bodies/recipients, Active Job arguments, gem paths, or lockfile contents. Active Job IDs, Sidekiq JIDs/arguments, loaded gem names/versions, and deploy fields are documented integration data.
+The gem never transmits request bodies, response bodies, raw query strings, cookies, HTTP authorization headers, environment variables in bulk, Git state, source code, raw SQL, SQL bind values, database rows, plan predicates, raw cache keys/values, mail bodies/recipients, Active Job arguments, gem paths, or lockfile contents. Opt-in plan inspection temporarily supplies the already observed local SELECT to `EXPLAIN` without `ANALYZE` and discards it. Active Job IDs, Sidekiq JIDs/arguments, loaded gem names/versions, and deploy fields are documented integration data.
 
 APM dimensions never include user ID, job ID, raw URL, exception message, bind value, or cache key. Normalized routes replace common numeric/UUID segments. Normalized SQL can retain schema, table, and column identifiers; review those identifiers as part of the privacy audit.
 

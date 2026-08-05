@@ -1,6 +1,6 @@
 # Performance
 
-Performance is a functional requirement, but version 1.0 makes no unverified speed claim.
+Performance is a functional requirement, but version 1.1 makes no unverified speed claim.
 
 Current controls:
 
@@ -18,9 +18,11 @@ Current controls:
 - shutdown and flush have caller-controlled timeouts;
 - request context and breadcrumbs have fixed structural and byte limits;
 - Rack middleware never consumes request or response bodies.
-- Rails subscribers copy only small allowlisted field sets and never copy raw SQL or job arguments.
+- Rails subscribers copy only small allowlisted field sets and never deliver raw SQL or job arguments.
 - Sidekiq middleware creates no per-job thread or connection and bounds arguments, collections, nesting, strings, and tags before telemetry capture.
 - APM group, trace, query-fingerprint, histogram, and batch counts are fixed; no APM timer thread is created.
+- active trace trackers survive aggregate drains but expire after `apm_trace_ttl_seconds`; query inspections and transaction connections have independent fixed caps;
+- normalized query analysis is bounded and database inspection is disabled by default; opt-in index/statistics/plan inspection adds database round trips only once per selected fingerprint;
 - outbound HTTP instrumentation uses two clock reads and bounded metadata without body/header traversal;
 - cache normalization is bounded and SHA-256 runs only when explicitly enabled;
 - dependency inventory runs at most once per agent and is capped at 200 loaded specs.
@@ -29,7 +31,21 @@ Current controls:
 
 Run the scripts under `benchmarks/` and record Ruby version, operating system, CPU, warmup, iteration count, median, and dispersion before publishing results. `benchmarks/filtering.rb` measures privacy filtering, `benchmarks/retry_backlog.rb` measures fixed-memory outage behavior, `benchmarks/request_overhead.rb` compares Rack-protocol calls, and `benchmarks/rails_notifications.rb` isolates subscriber normalization overhead.
 
-## Version 1.0.0 release gates
+`benchmarks/query_analysis.rb` compares normalization alone with normalization plus bounded static analysis. It deliberately excludes database inspection because catalog and planner cost must be measured against the actual adapter, schema, statistics, and database host before production enablement.
+
+```bash
+ITERATIONS=100000 WARMUP=5000 bundle exec ruby benchmarks/query_analysis.rb
+```
+
+## Version 1.1.0 release gates
+
+Version 1.1 adds a release-gate benchmark for normalized SQL analysis. Static analysis is calculated once per fingerprint and cached under `apm_query_analysis_max_queries`; database inspection remains disabled in the benchmark because its cost depends on the actual adapter, schema, statistics, network, and database host.
+
+The tag workflow runs query analysis with 1,000 warmup and 10,000 measured iterations, then repeats the existing Rack comparison and 500-event fake-endpoint privacy/load gate. Local preparation evidence is recorded in [Version 1.1 readiness](release-1.1-readiness.md). Results are environment-specific and are not a cross-runtime performance promise.
+
+The local Ruby 2.2.10 preparation run measured 453.981 µs per normalization, 594.862 µs for the first static analysis of a fingerprint, 43.946 µs median incremental Rack work, and 500/500 fake-endpoint deliveries at 378.15 events/s. Static analysis is cached; the 594.862 µs value is not paid for every repeated fingerprint.
+
+## Historical version 1.0.0 release gates
 
 `benchmarks/comparative.rb` compares the same successful Rack fixture without and with Chronos instrumentation. It performs configurable warmup, at least three samples, and reports median plus median absolute deviation. `benchmarks/fake_endpoint_load.rb` sends asynchronous exception events to a local TCP endpoint, verifies the v1 schema marker, ensures the secret key is absent from every payload, and fails on loss, rejection, invalid payload, or timeout.
 

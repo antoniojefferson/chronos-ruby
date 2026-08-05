@@ -11,7 +11,7 @@ module Chronos
   #   agent.notify(RuntimeError.new("failed"))
   # @errors Capture errors return false; explicit construction requires valid configuration.
   # @performance No worker threads are created until the first asynchronous event.
-  class Agent
+  class Agent # rubocop:disable Metrics/ClassLength
     DEFAULT_FLUSH_TIMEOUT = 5.0
 
     attr_reader :config
@@ -133,7 +133,17 @@ module Chronos
       {
         :enabled => @config.apm_enabled,
         :slow_query_threshold_ms => @config.apm_slow_query_threshold_ms,
-        :root_directory => @config.root_directory
+        :root_directory => @config.root_directory,
+        :query_analysis_enabled => @config.apm_query_analysis_enabled,
+        :query_analysis_max_queries => @config.apm_query_analysis_max_queries,
+        :query_inspection_enabled => @config.apm_query_inspection_enabled,
+        :query_statistics_enabled => @config.apm_query_statistics_enabled,
+        :query_plan_enabled => @config.apm_query_plan_enabled,
+        :query_inspection_min_duration_ms => @config.apm_query_inspection_min_duration_ms,
+        :query_inspection_max_queries => @config.apm_query_inspection_max_queries,
+        :transaction_tracking_enabled => @config.apm_transaction_tracking_enabled,
+        :transaction_max_connections => @config.apm_transaction_max_connections,
+        :transaction_ttl_seconds => @config.apm_trace_ttl_seconds
       }
     end
 

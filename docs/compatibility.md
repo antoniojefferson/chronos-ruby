@@ -1,6 +1,6 @@
 # Compatibility
 
-Chronos Ruby 1.0 is the stable legacy line. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure.
+Chronos Ruby 1.1 is the current stable legacy line. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure. The planned Ruby 2.7/Rails 6 transitional matrix remains deferred until it has dedicated CI and a real application gate.
 
 ## Core and Rack
 
@@ -33,11 +33,11 @@ Chronos Ruby 1.0 is the stable legacy line. Technical compatibility does not mak
 
 Active Job uses the public `serialize`, `deserialize`, and `perform_now` extension points with a bounded namespaced field. Support follows the validated Rails pairs above. Adapters that bypass these hooks require their own evidence.
 
-The release workflow repeats every supported pair before publishing. The green candidate evidence that permitted the 1.0 promotion is recorded in [Version 1.0 readiness](release-1.0-readiness.md).
+The release workflow repeats every supported pair before publishing. Historical 1.0 evidence remains in [Version 1.0 readiness](release-1.0-readiness.md); the 1.1 candidate is recorded in [Version 1.1 readiness](release-1.1-readiness.md).
 
 Status meanings:
 
 - Supported: every mandatory compatibility gate for the exact pair passes.
-- Best effort: intended to work but missing a complete gate; no 1.0 pair is advertised this way.
+- Best effort: intended to work but missing a complete gate; no 1.1 pair is advertised this way.
 - Deprecated: still tested while removal is planned.
-- Unsupported: outside the tested 1.0 contract.
+- Unsupported: outside the tested 1.1 contract.

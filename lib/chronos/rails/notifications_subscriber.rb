@@ -12,7 +12,7 @@ module Chronos
     #   Chronos::Rails::NotificationsSubscriber.new.install
     # @errors Subscriber failures are contained and never escape into Rails.
     # @performance Each notification builds a small allowlisted hash and queues asynchronously.
-    class NotificationsSubscriber
+    class NotificationsSubscriber # rubocop:disable Metrics/ClassLength
       EVENTS = %w(
         process_action.action_controller render_template.action_view sql.active_record
         deliver.action_mailer perform.active_job cache_read.active_support
@@ -26,10 +26,18 @@ module Chronos
         attr_reader :mutex, :installed_buses
       end
 
-      def initialize(notifier = Chronos, notifications = nil)
+      def initialize(notifier = Chronos, notifications = nil, options = {})
         @notifier = notifier
         @notifications = notifications || active_support_notifications
         @sql_normalizer = Core::SqlNormalizer.new
+        @query_analyzer = options[:query_analyzer] || Core::SqlQueryAnalyzer.new
+        @query_inspector = options[:query_inspector] || default_query_inspector
+        @query_inspection_mutex = Mutex.new
+        @query_inspections = {}
+        @query_analyses = {}
+        @clock = options[:clock] || proc { Process.clock_gettime(Process::CLOCK_MONOTONIC) }
+        @transaction_mutex = Mutex.new
+        @transactions = {}
         cache_options = notifier.respond_to?(:cache_integration_options) ? notifier.cache_integration_options : {}
         @cache_normalizer = Core::CacheNormalizer.new(
           cache_options[:project_id].to_s, cache_options[:key_mode] || :none
@@ -122,6 +130,8 @@ module Chronos
       end
 
       def sql(payload, duration)
+        return false if query_inspection_suppressed?
+
         metadata = {
           :name => value(payload, :name), :cached => value(payload, :cached),
           :adapter => value(payload, :adapter), :connection => value(payload, :connection),
@@ -131,7 +141,158 @@ module Chronos
         }
         metadata[:source] = sampled_query_source if duration >= slow_query_threshold
         data = @sql_normalizer.call(value(payload, :sql), metadata).merge("duration_ms" => duration)
+        track_transaction(data, metadata[:connection])
+        if query_analysis_options[:analysis_enabled]
+          inspection = query_inspection(value(payload, :sql), data, metadata[:connection], duration)
+          analysis = cached_query_analysis(data, inspection)
+          data["analysis"] = analysis unless analysis.empty?
+        end
         @notifier.record_event("query", data)
+      end
+
+      def cached_query_analysis(data, inspection)
+        options = query_analysis_options
+        fingerprint = data["fingerprint"].to_s
+        @query_inspection_mutex.synchronize do
+          existing = @query_analyses[fingerprint]
+          return existing if existing && inspection.empty?
+          return existing if existing && !hash(existing["inspection"]).empty?
+          return {} unless existing || @query_analyses.length < options[:max_analyses]
+
+          @query_analyses[fingerprint] = @query_analyzer.call(data, inspection)
+        end
+      rescue StandardError => error
+        {"diagnostics" => [{"code" => "query_analysis_failed", "severity" => "error",
+                            "category" => "analysis", "message" => "Normalized query analysis failed",
+                            "evidence" => {"error_class" => safe_error_class(error)}}]}
+      end
+
+      def query_inspection(raw_sql, data, connection, duration)
+        options = query_analysis_options
+        return {} unless options[:inspection_enabled]
+        return {} unless duration >= options[:min_duration_ms]
+        return {} unless @query_inspector && Ports::QueryInspector.compatible?(@query_inspector)
+
+        fingerprint = data["fingerprint"].to_s
+        @query_inspection_mutex.synchronize do
+          return @query_inspections[fingerprint] if @query_inspections.key?(fingerprint)
+          return {} if @query_inspections.length >= options[:max_queries]
+
+          @query_inspections[fingerprint] = @query_inspector.call(
+            raw_sql, data, :connection => connection,
+                           :statistics => options[:statistics_enabled], :plan => options[:plan_enabled]
+          )
+        end
+      rescue StandardError => error
+        {"errors" => [safe_error_class(error)]}
+      end
+
+      def query_analysis_options
+        values = @notifier.respond_to?(:apm_integration_options) ? @notifier.apm_integration_options : {}
+        {
+          :analysis_enabled => values.fetch(:query_analysis_enabled, true) == true,
+          :max_analyses => (values[:query_analysis_max_queries] || 100).to_i,
+          :inspection_enabled => values[:query_inspection_enabled] == true,
+          :statistics_enabled => values[:query_statistics_enabled] == true,
+          :plan_enabled => values[:query_plan_enabled] == true,
+          :min_duration_ms => (values[:query_inspection_min_duration_ms] || 500.0).to_f,
+          :max_queries => (values[:query_inspection_max_queries] || 20).to_i,
+          :transaction_tracking_enabled => values.fetch(:transaction_tracking_enabled, true) == true,
+          :transaction_max_connections => (values[:transaction_max_connections] || 100).to_i,
+          :transaction_ttl_seconds => (values[:transaction_ttl_seconds] || 60.0).to_f
+        }
+      rescue StandardError
+        {:analysis_enabled => true, :max_analyses => 100,
+         :inspection_enabled => false, :statistics_enabled => false,
+         :plan_enabled => false, :min_duration_ms => 500.0, :max_queries => 20,
+         :transaction_tracking_enabled => true, :transaction_max_connections => 100,
+         :transaction_ttl_seconds => 60.0}
+      end
+
+      def track_transaction(data, connection)
+        options = query_analysis_options
+        return unless options[:transaction_tracking_enabled] && connection
+
+        operation = data["operation"].to_s
+        normalized = data["normalized_query"].to_s
+        key = connection.object_id.to_s
+        current_time = monotonic_now
+        @transaction_mutex.synchronize do
+          expire_tracked_transactions(current_time, options[:transaction_ttl_seconds])
+          details = {
+            :operation => operation, :normalized => normalized, :current_time => current_time,
+            :max_connections => options[:transaction_max_connections]
+          }
+          update_transaction_state(data, key, details)
+        end
+      rescue StandardError
+        nil
+      end
+
+      def update_transaction_state(data, key, details)
+        operation = details[:operation]
+        normalized = details[:normalized]
+        current_time = details[:current_time]
+        state = @transactions[key]
+        return start_tracked_transaction(key, state, current_time, details) if transaction_start?(operation, normalized)
+        return unless state
+
+        if operation == "SAVEPOINT"
+          state["depth"] += 1
+        elsif operation == "RELEASE" || normalized =~ /\AROLLBACK\s+TO\b/i
+          state["depth"] = [state["depth"] - 1, 1].max
+        elsif ["COMMIT", "ROLLBACK"].include?(operation)
+          finish_tracked_transaction(data, key, state, current_time)
+          return
+        end
+        state["last_seen_at"] = current_time
+      end
+
+      def transaction_start?(operation, normalized)
+        operation == "BEGIN" || normalized =~ /\ASTART\s+TRANSACTION\b/i
+      end
+
+      def start_tracked_transaction(key, state, current_time, details)
+        if state
+          state["depth"] += 1
+          state["last_seen_at"] = current_time
+        elsif @transactions.length < details[:max_connections]
+          @transactions[key] = {"started_at" => current_time, "last_seen_at" => current_time, "depth" => 1}
+        end
+      end
+
+      def finish_tracked_transaction(data, key, state, current_time)
+        @transactions.delete(key)
+        elapsed = [(current_time - state["started_at"]) * 1000.0, 0.0].max
+        data["transaction_duration_ms"] = elapsed.round(3)
+      end
+
+      def expire_tracked_transactions(current_time, ttl)
+        @transactions.delete_if { |_key, state| current_time - state["last_seen_at"] > ttl }
+      end
+
+      def monotonic_now
+        @clock.call.to_f
+      rescue StandardError
+        Time.now.to_f
+      end
+
+      def default_query_inspector
+        defined?(ActiveRecordQueryInspector) ? ActiveRecordQueryInspector.new : nil
+      rescue StandardError
+        nil
+      end
+
+      def query_inspection_suppressed?
+        defined?(ActiveRecordQueryInspector) && ActiveRecordQueryInspector.suppressed?
+      rescue StandardError
+        false
+      end
+
+      def safe_error_class(error)
+        error.class.name.to_s[0, 128]
+      rescue StandardError
+        "StandardError"
       end
 
       def mailer(payload, duration)

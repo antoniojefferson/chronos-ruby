@@ -95,6 +95,7 @@ jobs:
       - run: gem install bundler -v 1.17.3
       - run: bundle _1.17.3_ install
       - run: ruby script/verify_docs
+      - run: ITERATIONS=10000 WARMUP=1000 bundle _1.17.3_ exec ruby benchmarks/query_analysis.rb
       - run: ITERATIONS=10000 WARMUP=1000 SAMPLES=5 bundle _1.17.3_ exec ruby benchmarks/comparative.rb
       - run: ITERATIONS=500 bundle _1.17.3_ exec ruby benchmarks/fake_endpoint_load.rb
 

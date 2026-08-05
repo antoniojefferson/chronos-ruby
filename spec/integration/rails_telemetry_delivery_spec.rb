@@ -32,6 +32,13 @@ RSpec.describe "Rails telemetry delivery" do
     query = metrics.find { |metric| metric["metric_type"] == "query" }
     expect(request).to include("count" => 1, "error_count" => 0)
     expect(query["dimensions"]["normalized_query"]).to eq("SELECT * FROM accounts WHERE token = ?")
+    expect(query["severity_counts"]).to include("info" => 1, "suggestion" => 1)
+    expect(query["diagnostics"]).to include(
+      include("code" => "query_pattern_analyzed", "severity" => "info"),
+      include("code" => "index_candidate", "severity" => "suggestion")
+    )
+    expect(query["query_analysis"]).to include("tables" => ["accounts"])
+    expect(query["percentiles_ms"]).to include("p50", "p95", "p99")
     agent.close(1.0)
   end
 end

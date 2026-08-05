@@ -29,6 +29,12 @@ For network-free per-instance outbound HTTP instrumentation, run:
 bundle _1.17.3_ exec ruby examples/plain-ruby/external_http.rb
 ```
 
+For a network-free normalized-query/index diagnostic example, run:
+
+```bash
+bundle _1.17.3_ exec ruby examples/plain-ruby/query_analysis.rb
+```
+
 For a network-free deploy event with complete release correlation, run:
 
 ```bash

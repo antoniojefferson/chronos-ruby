@@ -24,10 +24,60 @@
             "type": "object",
             "required": ["total", "min", "max", "average"]
           },
+          "percentiles_ms": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["p50", "p95", "p99"],
+            "properties": {
+              "p50": {"type": "number", "minimum": 0},
+              "p95": {"type": "number", "minimum": 0},
+              "p99": {"type": "number", "minimum": 0}
+            }
+          },
           "histogram": {"type": "array", "maxItems": 20},
           "breakdown_ms": {"type": "object"},
           "signals": {"type": "object"},
-          "status_codes": {"type": "object"}
+          "status_codes": {"type": "object"},
+          "severity_counts": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "error": {"type": "integer", "minimum": 0},
+              "warning": {"type": "integer", "minimum": 0},
+              "info": {"type": "integer", "minimum": 0},
+              "suggestion": {"type": "integer", "minimum": 0}
+            }
+          },
+          "diagnostics": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["code", "severity", "category", "message", "evidence", "count"],
+              "properties": {
+                "code": {"type": "string", "maxLength": 128},
+                "severity": {"enum": ["error", "warning", "info", "suggestion"]},
+                "category": {"type": "string", "maxLength": 64},
+                "message": {"type": "string", "maxLength": 512},
+                "recommendation": {"type": "string", "maxLength": 512},
+                "evidence": {"type": "object"},
+                "count": {"type": "integer", "minimum": 1}
+              }
+            }
+          },
+          "query_analysis": {"type": "object"},
+          "tracking": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["active_traces", "dropped_trace_trackers", "expired_trace_trackers", "dropped_query_fingerprints"],
+            "properties": {
+              "active_traces": {"type": "integer", "minimum": 0},
+              "dropped_trace_trackers": {"type": "integer", "minimum": 0},
+              "expired_trace_trackers": {"type": "integer", "minimum": 0},
+              "dropped_query_fingerprints": {"type": "integer", "minimum": 0}
+            }
+          }
         }
       }
     }
