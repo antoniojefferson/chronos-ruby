@@ -100,3 +100,5 @@ Style/CaseLikeIf:
   Enabled: false
 Layout/HashAlignment:
   Enabled: false
+Style/HashTransformValues:
+  Enabled: false

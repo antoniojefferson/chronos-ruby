@@ -1,12 +1,12 @@
 # Compatibility
 
-Chronos Ruby 1.2 is the transitional line for Rails 7 and Sidekiq 7. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure. Versions 1.0 and 1.1 remain the frozen legacy line.
+Chronos Ruby 1.2.0.pre.1 is the first candidate of the transitional line for Rails 7 and Sidekiq 7. Combinations remain `Best effort` until their dedicated CI and real-application gates pass. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure. Versions 1.0 and 1.1 remain the frozen legacy line.
 
 ## Core and Rack
 
 | Ruby | Status | Evidence |
 |---|---|---|
-| 2.7–3.2 | Supported | Unit, integration, contract, Rack, concurrency, transport, privacy, and package matrix |
+| 2.7–3.2 | Best effort | Transitional matrix introduced in this candidate; promotion requires green CI evidence |
 | 3.3–3.4 | Best effort | Core checks run in modern CI; Rails 8-specific behavior belongs to 2.x |
 | Earlier than 2.7 | Unsupported in 1.2 | Use an appropriate frozen legacy release |
 
@@ -14,7 +14,7 @@ Chronos Ruby 1.2 is the transitional line for Rails 7 and Sidekiq 7. Technical c
 
 | Ruby | Rails | Status | Evidence |
 |---|---|---|---|
-| 2.7–3.2 | 7.0–7.1 | Supported | Notifications, Error Reporter, Action Cable, Active Job, middleware, fake endpoint, flush, and shutdown |
+| 2.7–3.2 | 7.0–7.1 | Best effort | Real Rails applications and the complete integration gate are pending |
 | 3.1–3.4 | 7.2 | Best effort | Feature and package checks; use a validated application combination before production rollout |
 | Rails 4–6 | — | Unsupported in 1.2 | Use a matching earlier Chronos release |
 
@@ -22,7 +22,7 @@ Chronos Ruby 1.2 is the transitional line for Rails 7 and Sidekiq 7. Technical c
 
 | Ruby | Sidekiq | Status | Evidence |
 |---|---|---|---|
-| 2.7–3.4 | 7.x | Supported | Real middleware API, client/server context, success/failure, retries, and deduplication |
+| 2.7–3.4 | 7.x | Best effort | Real Sidekiq 7 smoke applications are pending |
 | Sidekiq 4–6 | — | Unsupported in 1.2 | Use a matching earlier Chronos release |
 
 Active Job uses the public `serialize`, `deserialize`, and `perform_now` extension points with a bounded namespaced field. Support follows the validated Rails pairs above. Adapters that bypass these hooks require their own evidence.

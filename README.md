@@ -24,7 +24,7 @@ A gem não varre variáveis de ambiente, sistema de arquivos ou lockfiles e não
 
 ## Versões Ruby e Rails suportadas
 
-A versão 1.2.0 é a linha transitional para Ruby 2.7–3.4, Rails 7.x e Sidekiq 7. Ela adiciona contexto por Fiber, Rails Error Reporter, Action Cable, Faraday, Trace Context W3C opcional e coexistência com um SDK OpenTelemetry já configurado. As linhas legadas permanecem disponíveis em releases anteriores.
+A versão candidata 1.2.0.pre.1 inicia a linha transitional para Ruby 2.7–3.4, Rails 7.x e Sidekiq 7. Ela adiciona contexto por Fiber, Rails Error Reporter, Action Cable, Faraday, Trace Context W3C opcional e coexistência com um SDK OpenTelemetry já configurado. Use-a explicitamente em staging enquanto a matriz transitional é validada; as linhas legadas permanecem disponíveis em releases anteriores.
 
 Rubies e frameworks antigos estão fora do suporte de segurança de seus mantenedores. A Chronos oferece compatibilidade técnica, não manutenção de segurança do runtime. Veja [Compatibilidade](docs/compatibility.md).
 
