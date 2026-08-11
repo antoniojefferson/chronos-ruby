@@ -1,6 +1,14 @@
 #!/usr/bin/env sh
 set -eu
 
+if ! ruby -e '
+  spec = Gem::Specification.load("chronos-ruby.gemspec")
+  exit(spec && spec.required_ruby_version.satisfied_by?(Gem::Version.new("2.6.10")) ? 0 : 1)
+'; then
+  echo "Skipping legacy CI: this gem line does not support Ruby 2.2-2.6."
+  exit 0
+fi
+
 gem list --installed bundler -v 1.17.3 >/dev/null || gem install bundler -v 1.17.3
 
 run_bundle() {

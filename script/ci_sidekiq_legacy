@@ -1,6 +1,14 @@
 #!/usr/bin/env sh
 set -eu
 
+if ! ruby -e '
+  spec = Gem::Specification.load("chronos-ruby.gemspec")
+  exit(spec && spec.required_ruby_version.satisfied_by?(Gem::Version.new("2.6.10")) ? 0 : 1)
+'; then
+  echo "Skipping legacy Sidekiq CI: this gem line does not support Ruby 2.2-2.6."
+  exit 0
+fi
+
 : "${EXAMPLE_PATH:?EXAMPLE_PATH is required}"
 export BUNDLE_GEMFILE="$EXAMPLE_PATH/Gemfile"
 
