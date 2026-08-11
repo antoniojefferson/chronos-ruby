@@ -67,8 +67,8 @@ module Chronos
 
       def context_errors
         errors = []
-        unless context_store == :thread_local || compatible_context_store?
-          errors << "context_store must be :thread_local or implement get, set, clear, and with_context"
+        unless [:thread_local, :fiber_local].include?(context_store) || compatible_context_store?
+          errors << "context_store must be :thread_local, :fiber_local, or implement get, set, clear, and with_context"
         end
         errors << "breadcrumb_capacity must be a positive integer" unless positive_integer?(breadcrumb_capacity)
         unless breadcrumb_max_bytes.is_a?(Integer) && breadcrumb_max_bytes >= 128

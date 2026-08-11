@@ -40,7 +40,7 @@ module Chronos
         def envelope(notifier)
           source = notifier.respond_to?(:propagation_context) ? notifier.propagation_context : {}
           source = {} unless source.is_a?(Hash)
-          context = %w(trace_id request_id).each_with_object({}) do |key, result|
+          context = %w(trace_id span_id trace_flags request_id).each_with_object({}) do |key, result|
             value = source[key] || source[key.to_sym]
             result[key] = bounded(value) unless value.to_s.empty?
           end
@@ -57,7 +57,7 @@ module Chronos
           source = value["context"] || value[:context]
           return {} unless source.is_a?(Hash)
 
-          %w(trace_id request_id).each_with_object({}) do |key, result|
+          %w(trace_id span_id trace_flags request_id).each_with_object({}) do |key, result|
             candidate = source[key] || source[key.to_sym]
             result[key] = bounded(candidate) unless candidate.to_s.empty?
           end

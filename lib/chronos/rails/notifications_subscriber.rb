@@ -17,6 +17,7 @@ module Chronos
         process_action.action_controller render_template.action_view sql.active_record
         deliver.action_mailer perform.active_job cache_read.active_support
         cache_write.active_support cache_fetch_hit.active_support
+        perform_action.action_cable transmit.action_cable broadcast.action_cable
       ).freeze
 
       @mutex = Mutex.new
@@ -105,6 +106,8 @@ module Chronos
         when "sql.active_record" then sql(payload, duration)
         when "deliver.action_mailer" then mailer(payload, duration)
         when "perform.active_job" then active_job(payload, duration)
+        when "perform_action.action_cable", "transmit.action_cable", "broadcast.action_cable"
+          action_cable(name, payload, duration)
         else cache(name, payload, duration)
         end
       end
@@ -343,6 +346,15 @@ module Chronos
       def cache(name, payload, duration)
         data = @cache_normalizer.call(name, payload).merge("duration_ms" => duration)
         @notifier.record_event("cache", data)
+      end
+
+      def action_cable(name, payload, duration)
+        data = {
+          "kind" => "action_cable", "operation" => name.split(".").first,
+          "channel" => safe_class_name(value(payload, :channel)),
+          "action" => value(payload, :action).to_s[0, 128], "duration_ms" => duration
+        }
+        @notifier.record_event("request", data)
       end
 
       def capture_controller_exception(payload)

@@ -110,6 +110,8 @@ module Chronos
         errors = []
         errors << "external_http_enabled must be true or false" unless boolean?(external_http_enabled)
         errors << "external_http_trace_headers must be true or false" unless boolean?(external_http_trace_headers)
+        errors << "w3c_trace_context must be true or false" unless boolean?(w3c_trace_context)
+        errors << "opentelemetry_bridge must be true or false" unless boolean?(opentelemetry_bridge)
         errors << "cache_key_mode must be :none or :sha256" unless [:none, :sha256].include?(cache_key_mode)
         errors << "dependency_reporting must be true or false" unless boolean?(dependency_reporting)
         unless dependency_max_items.is_a?(Integer) && dependency_max_items >= 1 && dependency_max_items <= 200

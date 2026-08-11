@@ -62,7 +62,7 @@ module Chronos
         def request_capture_context(env)
           request = request_values(env)
           {
-            :context => {"request" => request, "trace_id" => trace_id(env)},
+            :context => trace_context(env).merge("request" => request),
             :parameters => parameters(env),
             :user => hash_value(env["chronos.user"])
           }
@@ -124,7 +124,13 @@ module Chronos
         end
 
         def trace_id(env)
-          env["chronos.trace_id"] || SecureRandom.uuid
+          trace_context(env)["trace_id"]
+        end
+
+        def trace_context(env)
+          parsed = Core::TraceContext.parse(env["HTTP_TRACEPARENT"])
+          parsed["trace_id"] = env["chronos.trace_id"] || SecureRandom.hex(16) if parsed.empty?
+          parsed
         end
 
         def response_size(headers)

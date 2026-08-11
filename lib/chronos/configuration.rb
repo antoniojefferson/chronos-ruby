@@ -54,6 +54,7 @@ module Chronos
       :apm_query_inspection_min_duration_ms, :apm_query_inspection_max_queries,
       :apm_transaction_tracking_enabled, :apm_transaction_max_connections,
       :external_http_enabled, :external_http_trace_headers,
+      :w3c_trace_context, :opentelemetry_bridge,
       :cache_key_mode, :dependency_reporting, :dependency_max_items
     ].freeze
 
@@ -123,7 +124,7 @@ module Chronos
       @user_agent = "chronos-ruby/#{Chronos::VERSION}"
       @max_payload_size = 1_048_576
       @gzip = false
-      @context_store = :thread_local
+      @context_store = :fiber_local
       @breadcrumb_capacity = 20
       @breadcrumb_max_bytes = 2048
     end
@@ -167,6 +168,8 @@ module Chronos
     def initialize_observability_defaults
       @external_http_enabled = false
       @external_http_trace_headers = true
+      @w3c_trace_context = false
+      @opentelemetry_bridge = true
       @cache_key_mode = :none
       @dependency_reporting = true
       @dependency_max_items = 100
