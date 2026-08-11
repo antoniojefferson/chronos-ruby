@@ -17,8 +17,8 @@ jobs:
           persist-credentials: false
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "2.6"
-      - run: gem install bundler -v 1.17.3
+          ruby-version: "3.3"
+          bundler: "2.4.22"
+          bundler-cache: true
       - run: gem install bundler-audit -v 0.9.1
-      - run: bundle _1.17.3_ install
       - run: ruby -e 'load Gem.bin_path("bundler-audit", "bundle-audit", "0.9.1")' -- check --update
