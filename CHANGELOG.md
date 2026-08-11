@@ -4,6 +4,14 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [1.2.0.pre.2] - 2026-08-11
+
+### Changed
+
+- the Rails install generator now writes every public configuration option with explanatory English comments;
+- the official `https://chronosmonitor.com.br` endpoint is now the default host, including when applications omit `config.host`;
+- generated initializers no longer read `CHRONOS_HOST`, while explicit `config.host` assignments remain supported.
+
 ## [1.2.0.pre.1] - 2026-08-11
 
 ### Added

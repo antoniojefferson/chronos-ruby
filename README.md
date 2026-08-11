@@ -24,7 +24,7 @@ A gem não varre variáveis de ambiente, sistema de arquivos ou lockfiles e não
 
 ## Versões Ruby e Rails suportadas
 
-A versão candidata 1.2.0.pre.1 inicia a linha transitional para Ruby 2.7–3.4, Rails 7.x e Sidekiq 7. Ela adiciona contexto por Fiber, Rails Error Reporter, Action Cable, Faraday, Trace Context W3C opcional e coexistência com um SDK OpenTelemetry já configurado. Use-a explicitamente em staging enquanto a matriz transitional é validada; as linhas legadas permanecem disponíveis em releases anteriores.
+A versão candidata 1.2.0.pre.2 continua a linha transitional para Ruby 2.7–3.4, Rails 7.x e Sidekiq 7. Ela adiciona contexto por Fiber, Rails Error Reporter, Action Cable, Faraday, Trace Context W3C opcional e coexistência com um SDK OpenTelemetry já configurado. Use-a explicitamente em staging enquanto a matriz transitional é validada; as linhas legadas permanecem disponíveis em releases anteriores.
 
 Rubies e frameworks antigos estão fora do suporte de segurança de seus mantenedores. A Chronos oferece compatibilidade técnica, não manutenção de segurança do runtime. Veja [Compatibilidade](docs/compatibility.md).
 
@@ -67,7 +67,8 @@ A Versão 0.5 introduziu Railtie, middleware e subscribers idempotentes por APIs
 
 ## Configuração mínima
 
-Obrigatório quando o agente está habilitado: `project_id`, `project_key` e `host` HTTPS. Recomendado: definir ambiente e serviço explicitamente.
+Obrigatório quando o agente está habilitado: `project_id` e `project_key`. O `host` usa
+`https://chronosmonitor.com.br` por padrão. Recomendado: definir ambiente e serviço explicitamente.
 
 ```ruby
 require "chronos"
@@ -75,7 +76,7 @@ require "chronos"
 Chronos.configure do |config|
   config.project_id = ENV["CHRONOS_PROJECT_ID"]
   config.project_key = ENV["CHRONOS_PROJECT_KEY"]
-  config.host = "https://chronos.example.com"
+  config.host = "https://chronosmonitor.com.br"
   config.environment = ENV["APP_ENV"] || "production"
   config.service_name = "billing"
   config.app_version = ENV["APP_VERSION"]
