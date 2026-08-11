@@ -2,6 +2,7 @@ RSpec.describe Chronos::Configuration do # rubocop:disable Metrics/BlockLength
   it "builds an immutable snapshot with legacy-safe defaults" do
     result = snapshot
 
+    expect(described_class.new.host).to eq("https://chronosmonitor.com.br")
     expect(result.queue_size).to eq(100)
     expect(result.workers).to eq(1)
     expect(result.ssl_verify).to eq(true)
