@@ -1,6 +1,6 @@
 # Compatibility
 
-Chronos Ruby 1.2.0.pre.1 is the first candidate of the transitional line for Rails 7 and Sidekiq 7. Combinations remain `Best effort` until their dedicated CI and real-application gates pass. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure. Versions 1.0 and 1.1 remain the frozen legacy line.
+Chronos Ruby 1.2.0.pre.2 is the current candidate of the transitional line for Rails 7 and Sidekiq 7. Combinations remain `Best effort` until their dedicated CI and real-application gates pass. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure. Versions 1.0 and 1.1 remain the frozen legacy line.
 
 ## Core and Rack
 
