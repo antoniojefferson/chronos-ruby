@@ -23,6 +23,7 @@ module Chronos
   class Configuration
     include Internal::ConfigurationValidation
     include Internal::ApmConfigurationValidation
+    DEFAULT_HOST = "https://chronosmonitor.com.br".freeze
     DEFAULT_BLOCKLIST_KEYS = %w(
       password password_confirmation passwd secret api_key apikey authorization
       token access_token refresh_token private_key client_secret cookie set-cookie
@@ -105,7 +106,7 @@ module Chronos
     def initialize_core_defaults
       @project_id = nil
       @project_key = nil
-      @host = nil
+      @host = DEFAULT_HOST
       @environment = "production"
       @app_version = nil
       @service_name = nil

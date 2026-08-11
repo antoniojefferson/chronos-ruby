@@ -1,6 +1,6 @@
 # Chronos Ruby
 
-Chronos Ruby 1.1.0 é o agente independente de framework para enviar exceções e telemetria limitada de aplicações Ruby ao Chronos. Esta é a linha estável legado, compatível com o protocolo v1 e voltada a Ruby 2.2.10–2.6.
+Chronos Ruby 1.1.1 é o agente independente de framework para enviar exceções e telemetria limitada de aplicações Ruby ao Chronos. Esta é a linha estável legado, compatível com o protocolo v1 e voltada a Ruby 2.2.10–2.6.
 
 ## O que a gem coleta
 
@@ -24,7 +24,7 @@ A gem não varre variáveis de ambiente, sistema de arquivos ou lockfiles e não
 
 ## Versões Ruby e Rails suportadas
 
-A versão 1.1.0 suporta Ruby puro e Rack em Ruby 2.2.10, 2.3.8, 2.4.10, 2.5.9 e 2.6.10. As combinações Rails validadas são Rails 4.2 com Ruby 2.2.10/2.3.8 e Rails 5.2 com Ruby 2.5.9/2.6.10. Sidekiq 4.2.10 com Ruby 2.2.10 e Sidekiq 5.2.10 com Ruby 2.5.9 também possuem gates dedicados. Ruby 2.7/Rails 6 não é declarado nesta release porque ainda não possui aplicação e matriz completas.
+A versão 1.1.1 suporta Ruby puro e Rack em Ruby 2.2.10, 2.3.8, 2.4.10, 2.5.9 e 2.6.10. As combinações Rails validadas são Rails 4.2 com Ruby 2.2.10/2.3.8 e Rails 5.2 com Ruby 2.5.9/2.6.10. Sidekiq 4.2.10 com Ruby 2.2.10 e Sidekiq 5.2.10 com Ruby 2.5.9 também possuem gates dedicados. Ruby 2.7/Rails 6 não é declarado nesta release porque ainda não possui aplicação e matriz completas.
 
 Rubies e frameworks antigos estão fora do suporte de segurança de seus mantenedores. A Chronos oferece compatibilidade técnica, não manutenção de segurança do runtime. Veja [Compatibilidade](docs/compatibility.md).
 
@@ -33,7 +33,7 @@ Rubies e frameworks antigos estão fora do suporte de segurança de seus mantene
 Obrigatório: adicione a versão estável ao `Gemfile`.
 
 ```ruby
-gem "chronos-ruby", "~> 1.1.0"
+gem "chronos-ruby", "~> 1.1.1"
 ```
 
 Em runtimes antigos, use Bundler compatível:
@@ -46,7 +46,7 @@ bundle _1.17.3_ install
 Sem Bundler:
 
 ```bash
-gem install chronos-ruby -v 1.1.0
+gem install chronos-ruby -v 1.1.1
 ```
 
 ## Instalação em Rails
@@ -54,7 +54,7 @@ gem install chronos-ruby -v 1.1.0
 Obrigatório: carregue a integração Rails explicitamente para manter Rails/ActiveSupport fora de aplicações Ruby puras.
 
 ```ruby
-gem "chronos-ruby", "~> 1.1.0", :require => "chronos/rails"
+gem "chronos-ruby", "~> 1.1.1", :require => "chronos/rails"
 ```
 
 Gere o initializer:
@@ -67,7 +67,8 @@ A Versão 0.5 introduziu Railtie, middleware e subscribers idempotentes por APIs
 
 ## Configuração mínima
 
-Obrigatório quando o agente está habilitado: `project_id`, `project_key` e `host` HTTPS. Recomendado: definir ambiente e serviço explicitamente.
+Obrigatório quando o agente está habilitado: `project_id` e `project_key`. O `host` usa
+`https://chronosmonitor.com.br` por padrão. Recomendado: definir ambiente e serviço explicitamente.
 
 ```ruby
 require "chronos"
@@ -75,7 +76,7 @@ require "chronos"
 Chronos.configure do |config|
   config.project_id = ENV["CHRONOS_PROJECT_ID"]
   config.project_key = ENV["CHRONOS_PROJECT_KEY"]
-  config.host = "https://chronos.example.com"
+  config.host = "https://chronosmonitor.com.br"
   config.environment = ENV["APP_ENV"] || "production"
   config.service_name = "billing"
   config.app_version = ENV["APP_VERSION"]
@@ -208,7 +209,7 @@ A versão `0.6.0.pre.1` introduziu middleware Sidekiq 4/5; a API estável manté
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "~> 1.1.0", :require => "chronos/sidekiq"
+gem "chronos-ruby", "~> 1.1.1", :require => "chronos/sidekiq"
 ```
 
 O envelope de contexto não altera argumentos públicos e contém somente IDs limitados de trace/request. Active Job usa um campo serializado com namespace (`chronos_context`) e hooks públicos. Erros aninhados são deduplicados e reerguidos. Veja [Sidekiq legado](docs/modules/sidekiq-legacy.md), [Active Job](docs/modules/active-job.md) e [Jobs](docs/modules/job-monitoring.md).

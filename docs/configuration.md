@@ -6,7 +6,7 @@
 |---|---:|---|---|
 | `project_id` | Yes when enabled | `nil` | Public project identifier included in the envelope |
 | `project_key` | Yes when enabled | `nil` | Secret authentication key sent only as an HTTP header |
-| `host` | Yes when enabled | `nil` | Absolute Chronos HTTP endpoint; HTTPS is required by default |
+| `host` | Optional | `https://chronosmonitor.com.br` | Absolute Chronos HTTP endpoint; HTTPS is required by default |
 | `environment` | Recommended | `production` | Application environment |
 | `app_version` | Optional | `nil` | Application release/version identifier |
 | `service_name` | Recommended | `nil` | Logical service name |
