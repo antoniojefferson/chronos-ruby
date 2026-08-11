@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-bundle _1.17.3_ exec ruby benchmarks/capture_exception.rb
-bundle _1.17.3_ exec ruby benchmarks/serialization.rb
-bundle _1.17.3_ exec ruby benchmarks/filtering.rb
-bundle _1.17.3_ exec ruby benchmarks/queue.rb
-bundle _1.17.3_ exec ruby benchmarks/retry_backlog.rb
-bundle _1.17.3_ exec ruby benchmarks/request_overhead.rb
-bundle _1.17.3_ exec ruby benchmarks/rails_notifications.rb
-bundle _1.17.3_ exec ruby benchmarks/sidekiq_middleware.rb
-bundle _1.17.3_ exec ruby benchmarks/apm_aggregation.rb
-bundle _1.17.3_ exec ruby benchmarks/query_analysis.rb
-bundle _1.17.3_ exec ruby benchmarks/external_http.rb
-bundle _1.17.3_ exec ruby benchmarks/correlation.rb
-bundle _1.17.3_ exec ruby benchmarks/comparative.rb
-bundle _1.17.3_ exec ruby benchmarks/fake_endpoint_load.rb
+bundle exec ruby benchmarks/capture_exception.rb
+bundle exec ruby benchmarks/serialization.rb
+bundle exec ruby benchmarks/filtering.rb
+bundle exec ruby benchmarks/queue.rb
+bundle exec ruby benchmarks/retry_backlog.rb
+bundle exec ruby benchmarks/request_overhead.rb
+bundle exec ruby benchmarks/rails_notifications.rb
+bundle exec ruby benchmarks/sidekiq_middleware.rb
+bundle exec ruby benchmarks/apm_aggregation.rb
+bundle exec ruby benchmarks/query_analysis.rb
+bundle exec ruby benchmarks/external_http.rb
+bundle exec ruby benchmarks/correlation.rb
+bundle exec ruby benchmarks/comparative.rb
+bundle exec ruby benchmarks/fake_endpoint_load.rb

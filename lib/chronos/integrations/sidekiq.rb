@@ -110,7 +110,7 @@ module Chronos
           source = @notifier.propagation_context
           return {} unless source.is_a?(Hash)
 
-          %w(trace_id request_id).each_with_object({}) do |key, result|
+          %w(trace_id span_id trace_flags request_id).each_with_object({}) do |key, result|
             value = source[key] || source[key.to_sym]
             result[key] = value.to_s unless value.to_s.empty?
           end

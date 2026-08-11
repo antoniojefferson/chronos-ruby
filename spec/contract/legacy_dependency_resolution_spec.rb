@@ -1,10 +1,10 @@
-RSpec.describe "legacy dependency resolution" do
-  it "pins transitive tools that dropped supported Ruby versions" do
+RSpec.describe "transitional dependency resolution" do
+  it "uses tooling compatible with the supported Ruby range" do
     gemspec = Gem::Specification.load(File.expand_path("../../chronos-ruby.gemspec", __dir__))
-    parallel = gemspec.development_dependencies.find { |dependency| dependency.name == "parallel" }
-    sidekiq_gemfile = File.read(File.expand_path("../../examples/sidekiq-5/Gemfile", __dir__))
+    bundler = gemspec.development_dependencies.find { |dependency| dependency.name == "bundler" }
+    rspec = gemspec.development_dependencies.find { |dependency| dependency.name == "rspec" }
 
-    expect(parallel.requirement.to_s).to eq("= 1.19.2")
-    expect(sidekiq_gemfile).to include('gem "rack-protection", "2.2.4"')
+    expect(bundler.requirement).to be_satisfied_by(Gem::Version.new("2.1.0"))
+    expect(rspec.requirement).to be_satisfied_by(Gem::Version.new("3.13.0"))
   end
 end

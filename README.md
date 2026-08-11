@@ -24,7 +24,7 @@ A gem não varre variáveis de ambiente, sistema de arquivos ou lockfiles e não
 
 ## Versões Ruby e Rails suportadas
 
-A versão 1.1.0 suporta Ruby puro e Rack em Ruby 2.2.10, 2.3.8, 2.4.10, 2.5.9 e 2.6.10. As combinações Rails validadas são Rails 4.2 com Ruby 2.2.10/2.3.8 e Rails 5.2 com Ruby 2.5.9/2.6.10. Sidekiq 4.2.10 com Ruby 2.2.10 e Sidekiq 5.2.10 com Ruby 2.5.9 também possuem gates dedicados. Ruby 2.7/Rails 6 não é declarado nesta release porque ainda não possui aplicação e matriz completas.
+A versão candidata 1.2.0.pre.1 inicia a linha transitional para Ruby 2.7–3.4, Rails 7.x e Sidekiq 7. Ela adiciona contexto por Fiber, Rails Error Reporter, Action Cable, Faraday, Trace Context W3C opcional e coexistência com um SDK OpenTelemetry já configurado. Use-a explicitamente em staging enquanto a matriz transitional é validada; as linhas legadas permanecem disponíveis em releases anteriores.
 
 Rubies e frameworks antigos estão fora do suporte de segurança de seus mantenedores. A Chronos oferece compatibilidade técnica, não manutenção de segurança do runtime. Veja [Compatibilidade](docs/compatibility.md).
 
@@ -204,14 +204,16 @@ Por padrão, SQL bruto e binds não são lidos pelo pipeline de análise. A insp
 
 ## Sidekiq e Active Job
 
-A versão `0.6.0.pre.1` introduziu middleware Sidekiq 4/5; a API estável mantém o require explícito:
+A integração mantém o require explícito e suporta a API pública de middleware do Sidekiq 7:
+
+O suporte histórico começou em `0.6.0.pre.1`; aplicações em Sidekiq 4/5 devem permanecer numa release legada compatível.
 
 ```ruby
 gem "sidekiq", "~> 5.0"
 gem "chronos-ruby", "~> 1.1.0", :require => "chronos/sidekiq"
 ```
 
-O envelope de contexto não altera argumentos públicos e contém somente IDs limitados de trace/request. Active Job usa um campo serializado com namespace (`chronos_context`) e hooks públicos. Erros aninhados são deduplicados e reerguidos. Veja [Sidekiq legado](docs/modules/sidekiq-legacy.md), [Active Job](docs/modules/active-job.md) e [Jobs](docs/modules/job-monitoring.md).
+O envelope de contexto não altera argumentos públicos e contém somente IDs limitados de trace/span/request e flags. Active Job usa um campo serializado com namespace (`chronos_context`) e hooks públicos. Erros aninhados são deduplicados e reerguidos. Veja [Sidekiq legado](docs/modules/sidekiq-legacy.md), [Active Job](docs/modules/active-job.md) e [Jobs](docs/modules/job-monitoring.md).
 
 ## Deploy tracking
 
@@ -319,7 +321,7 @@ Execute suíte e lint no runtime atual:
 bundle _1.17.3_ exec rake
 ```
 
-A matriz CI cobre Ruby 2.2.10–2.6.10, aplicações Rails 4.2/5.2 e Sidekiq 4/5. O workflow de release repete toda a matriz, documentação, benchmark comparativo e carga antes de publicar.
+A matriz CI cobre a linha transitional e os checks de pacote/documentação; workflows legados preservam evidência das releases anteriores.
 
 ## Contribuição
 

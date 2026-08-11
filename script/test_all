@@ -2,10 +2,11 @@
 set -euo pipefail
 
 tested=0
-for version in 2.2.10 2.3.8 2.4.10 2.5.9 2.6.10; do
+versions="${CHRONOS_RUBIES:-2.7.8 3.0.7 3.1.6 3.2.7 3.3.5 3.4.3}"
+for version in $versions; do
   if rbenv versions --bare | grep -x "$version" >/dev/null; then
     echo "Testing Ruby $version"
-    RBENV_VERSION="$version" bundle _1.17.3_ exec rake
+    RBENV_VERSION="$version" bundle exec rake
     tested=$((tested + 1))
   else
     echo "Skipping Ruby $version because it is not installed"

@@ -148,7 +148,8 @@ module Chronos
     end
 
     def external_http_integration_options
-      {:enabled => @config.external_http_enabled, :trace_headers => @config.external_http_trace_headers}
+      {:enabled => @config.external_http_enabled, :trace_headers => @config.external_http_trace_headers,
+       :w3c_trace_context => @config.w3c_trace_context}
     end
 
     def cache_integration_options
@@ -165,6 +166,10 @@ module Chronos
         "request_id" => nested["request_id"] || nested[:request_id] ||
                         request["request_id"] || request[:request_id]
       }
+      if @config.opentelemetry_bridge
+        otel = Integrations::OpenTelemetry.current_context
+        values = otel.merge(values.delete_if { |_key, value| value.to_s.empty? })
+      end
       values.delete_if { |_key, value| value.to_s.empty? }
     rescue StandardError
       {}
@@ -237,6 +242,7 @@ module Chronos
 
     def build_context_store(strategy)
       return Adapters::ThreadLocalContextStore.new if strategy == :thread_local
+      return Adapters::FiberLocalContextStore.new if strategy == :fiber_local
 
       strategy
     end

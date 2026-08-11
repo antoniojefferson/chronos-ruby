@@ -1,5 +1,7 @@
 AllCops:
-  TargetRubyVersion: 2.2
+  TargetRubyVersion: 2.7
+  NewCops: disable
+  SuggestExtensions: false
   Exclude:
     - "vendor/**/*"
     - "pkg/**/*"
@@ -23,23 +25,80 @@ Style/PercentLiteralDelimiters:
   PreferredDelimiters:
     "%w": "()"
 
-Metrics/LineLength:
+Layout/LineLength:
   Max: 120
 
 Metrics/MethodLength:
   Max: 25
 
 Metrics/AbcSize:
-  Max: 30
+  Max: 33
 
 Metrics/CyclomaticComplexity:
-  Max: 10
+  Max: 12
 
 Metrics/PerceivedComplexity:
-  Max: 10
+  Max: 12
 
 Metrics/BlockLength:
   Max: 80
 
 Metrics/ClassLength:
   Max: 220
+
+# Keep the historical 0.49 style baseline while using a Ruby 2.7+-compatible
+# RuboCop runtime. These cops changed defaults or semantics after that baseline.
+Style/FrozenStringLiteralComment:
+  Enabled: false
+Naming/RescuedExceptionsVariableName:
+  Enabled: false
+Lint/ConstantDefinitionInBlock:
+  Enabled: false
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+Style/SafeNavigation:
+  Enabled: false
+Lint/HashCompareByIdentity:
+  Enabled: false
+Style/FormatStringToken:
+  Enabled: false
+Style/MutableConstant:
+  Enabled: false
+Style/IfUnlessModifier:
+  Enabled: false
+Style/NumericPredicate:
+  Enabled: false
+Style/ExpandPathArguments:
+  Enabled: false
+Style/StringConcatenation:
+  Enabled: false
+Style/OptionalBooleanParameter:
+  Enabled: false
+Layout/FirstHashElementIndentation:
+  Enabled: false
+Layout/ClosingParenthesisIndentation:
+  Enabled: false
+Style/RedundantBegin:
+  Enabled: false
+Style/RedundantRegexpEscape:
+  Enabled: false
+Style/SlicingWithRange:
+  Enabled: false
+Style/ExplicitBlockArgument:
+  Enabled: false
+Style/RedundantAssignment:
+  Enabled: false
+Style/Encoding:
+  Enabled: false
+Layout/LeadingEmptyLines:
+  Enabled: false
+Style/HashAsLastArrayItem:
+  Enabled: false
+Lint/RedundantCopDisableDirective:
+  Enabled: false
+Style/CaseLikeIf:
+  Enabled: false
+Layout/HashAlignment:
+  Enabled: false
+Style/HashTransformValues:
+  Enabled: false

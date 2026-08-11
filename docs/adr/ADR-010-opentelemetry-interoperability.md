@@ -2,7 +2,7 @@
 
 ## Status
 
-Adiado; limite aceito para 1.0 legado.
+Aceito para 1.2.
 
 ## Contexto
 
@@ -10,7 +10,7 @@ O Chronos precisa correlacionar trace/request sem duplicar SDKs ou impor depend�
 
 ## Decisão
 
-Manter IDs de correlação e portas independentes do fornecedor na 1.0. Não depender de OpenTelemetry nem instalar instrumentação global na linha legado. Uma ponte opcional será projetada na linha transitional/modern e deverá traduzir somente campos permitidos.
+Manter IDs de correlação e portas independentes do fornecedor. Na 1.2, a ponte opcional consulta somente o span atual de um SDK já carregado, traduz `trace_id`, `span_id` e flags, e nunca instala SDK, instrumentação ou exporter. IDs Chronos explícitos têm precedência; a presença de OTel deve ser usada pelas integrações para evitar spans paralelos equivalentes.
 
 ## Alternativas
 
@@ -22,4 +22,4 @@ O protocolo v1 permanece estável e aplicações legadas não recebem novas depe
 
 ## Consequências negativas
 
-Não há propagação automática com ecossistemas OpenTelemetry na 1.0; integrações futuras exigirão contrato e matriz próprios.
+A ponte não exporta spans OTel completos nem controla exporters; consumidores que precisam desses dados continuam responsáveis pela configuração do SDK.

@@ -47,7 +47,7 @@
 | `sampling_rate` | Optional | `1.0` | Local upper bound for event sampling |
 | `enabled_event_types` | Optional | exception, request, query, job, cache, external_http, dependencies, deploy, metric_batch | Local allowlist for supported event envelopes |
 | `max_remote_send_interval` | Optional | `60.0` | Local upper bound for remotely requested send spacing |
-| `context_store` | Optional | `:thread_local` | `:thread_local` or an object implementing `get`, `set`, `clear`, and `with_context` |
+| `context_store` | Optional | `:fiber_local` | `:fiber_local`, `:thread_local`, or an object implementing `get`, `set`, `clear`, and `with_context` |
 | `breadcrumb_capacity` | Optional | `20` | Positive count of newest breadcrumbs retained per execution |
 | `breadcrumb_max_bytes` | Optional | `2048` | Maximum bytes per normalized breadcrumb; minimum `128` |
 | `rails_enabled` | Optional | `true` | Enables automatic Rails middleware and subscribers |
@@ -75,6 +75,8 @@
 | `apm_transaction_max_connections` | Optional | `100` | Maximum concurrently tracked transaction connections; range 1–500 |
 | `external_http_enabled` | Optional | `false` | Allows explicit per-instance outbound `Net::HTTP` instrumentation |
 | `external_http_trace_headers` | Optional | `true` | Propagates Chronos trace/request headers on instrumented requests |
+| `w3c_trace_context` | Optional | `false` | Injects a validated W3C `traceparent` header when trace and span IDs exist |
+| `opentelemetry_bridge` | Optional | `true` | Consumes the current OpenTelemetry span when an SDK is already active; installs nothing |
 | `cache_key_mode` | Optional | `:none` | `:none` omits keys; `:sha256` emits a project-scoped key hash |
 | `dependency_reporting` | Optional | `true` | Emits one bounded dependency event per configured agent |
 | `dependency_max_items` | Optional | `100` | Loaded gem entries retained in the inventory; range 1–200 |
@@ -100,7 +102,7 @@ Chronos.configure do |config|
   config.max_retries = 3
   config.backlog_size = 100
   config.circuit_failure_threshold = 5
-  config.context_store = :thread_local
+  config.context_store = :fiber_local
   config.breadcrumb_capacity = 20
   config.rails_capture_in_test = false
   config.rails_capture_in_console = false
@@ -125,6 +127,8 @@ Chronos.configure do |config|
   config.apm_transaction_max_connections = 100
   config.external_http_enabled = false
   config.external_http_trace_headers = true
+  config.w3c_trace_context = false
+  config.opentelemetry_bridge = true
   config.cache_key_mode = :none
   config.dependency_reporting = true
   config.dependency_max_items = 100

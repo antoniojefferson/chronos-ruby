@@ -2,8 +2,11 @@ name: Legacy Sidekiq CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - "legacy/**"
   pull_request:
+    branches:
+      - "legacy/**"
 
 permissions:
   contents: read

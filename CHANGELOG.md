@@ -4,6 +4,24 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [1.2.0.pre.1] - 2026-08-11
+
+### Added
+
+- fiber-aware execution context with a thread-local fallback;
+- Sidekiq 7 and Rails 7 error reporter integration using public extension APIs;
+- Action Cable notification spans and a dependency-free Faraday middleware;
+- optional W3C `traceparent` propagation and an OpenTelemetry bridge that consumes the active span without installing an SDK or exporter.
+
+### Changed
+
+- the transitional runtime range is Ruby 2.7 through 3.4 and the default context strategy is `:fiber_local`;
+- Active Job and Sidekiq envelopes may propagate allowlisted span ID and trace flags in addition to trace/request IDs.
+
+### Security
+
+- W3C identifiers are syntax-validated, all-zero IDs are rejected, and Rails error reporter context is reduced to bounded allowlisted metadata.
+
 ## [1.1.0] - 2026-08-05
 
 ### Added

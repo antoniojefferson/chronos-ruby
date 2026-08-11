@@ -187,4 +187,17 @@ RSpec.describe Chronos::Rails::NotificationsSubscriber do # rubocop:disable Metr
     )
     expect(notifier.exceptions.first.first).to equal(error)
   end
+
+  it "records Action Cable spans without message contents" do
+    notifications = FakeNotifications.new
+    notifier = RecordingNotifier.new
+    described_class.new(notifier, notifications).install
+
+    notifications.publish("perform_action.action_cable", :channel => Object.new,
+                                                            :action => "speak", :data => "private-message")
+
+    expectation = include("kind" => "action_cable", "operation" => "perform_action", "action" => "speak")
+    expect(notifier.events.last).to match(["request", expectation, {}])
+    expect(notifier.events.last.to_s).not_to include("private-message")
+  end
 end

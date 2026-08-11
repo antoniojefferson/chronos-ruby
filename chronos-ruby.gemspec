@@ -10,10 +10,10 @@ Gem::Specification.new do |spec|
   spec.email         = ["antoniojeferson96@gmail.com"]
 
   spec.summary       = "Cliente Ruby para captura de eventos do Chronos"
-  spec.description   = "Base do cliente Chronos para excecoes, telemetria e observabilidade em aplicacoes Ruby legadas."
+  spec.description   = "Cliente Chronos para excecoes, telemetria e observabilidade em aplicacoes Ruby e Rails."
   spec.homepage      = "https://github.com/antoniojefferson/chronos-ruby"
   spec.license       = "MIT"
-  spec.required_ruby_version = Gem::Requirement.new(">= 2.2.10", "< 2.7")
+  spec.required_ruby_version = Gem::Requirement.new(">= 2.7", "< 3.5")
 
   if spec.respond_to?(:metadata)
     spec.metadata["allowed_push_host"] = "https://rubygems.org"
@@ -40,9 +40,8 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_development_dependency "bundler", "~> 1.17"
-  spec.add_development_dependency "rake", "~> 12.3", ">= 12.3.3"
-  spec.add_development_dependency "rspec", "~> 3.0"
-  spec.add_development_dependency "rubocop", "~> 0.49.0"
-  spec.add_development_dependency "parallel", "1.19.2"
+  spec.add_development_dependency "bundler", ">= 2.1", "< 3"
+  spec.add_development_dependency "rake", ">= 12.3", "< 14"
+  spec.add_development_dependency "rspec", ">= 3.10", "< 4"
+  spec.add_development_dependency "rubocop", "~> 1.57.0"
 end

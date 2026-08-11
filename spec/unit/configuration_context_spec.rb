@@ -3,7 +3,7 @@ RSpec.describe Chronos::Configuration, "execution context options" do
     config = configuration(:context_store => Object.new, :breadcrumb_capacity => 0, :breadcrumb_max_bytes => 0)
 
     expect(config.validation_errors).to include(
-      "context_store must be :thread_local or implement get, set, clear, and with_context"
+      "context_store must be :thread_local, :fiber_local, or implement get, set, clear, and with_context"
     )
     expect(config.validation_errors).to include("breadcrumb_capacity must be a positive integer")
     expect(config.validation_errors).to include(

@@ -1,39 +1,33 @@
 # Compatibility
 
-Chronos Ruby 1.1 is the current stable legacy line. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure. The planned Ruby 2.7/Rails 6 transitional matrix remains deferred until it has dedicated CI and a real application gate.
+Chronos Ruby 1.2.0.pre.1 is the first candidate of the transitional line for Rails 7 and Sidekiq 7. Combinations remain `Best effort` until their dedicated CI and real-application gates pass. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure. Versions 1.0 and 1.1 remain the frozen legacy line.
 
 ## Core and Rack
 
 | Ruby | Status | Evidence |
 |---|---|---|
-| 2.2.10 | Supported | Full unit, integration, contract, Rack, concurrency, fork, transport, privacy, and lint gate |
-| 2.3.8 | Supported | Same dedicated Docker gate |
-| 2.4.10 | Supported | Same dedicated Docker gate |
-| 2.5.9 | Supported | Same dedicated Docker gate |
-| 2.6.10 | Supported | Same dedicated Docker gate |
-| 2.7 and newer | Unsupported in 1.x legacy | Belongs to the transitional or modern lines |
+| 2.7–3.2 | Best effort | Transitional matrix introduced in this candidate; promotion requires green CI evidence |
+| 3.3–3.4 | Best effort | Core checks run in modern CI; Rails 8-specific behavior belongs to 2.x |
+| Earlier than 2.7 | Unsupported in 1.2 | Use an appropriate frozen legacy release |
 
 ## Rails
 
 | Ruby | Rails | Status | Evidence |
 |---|---|---|---|
-| 2.2.10 | 4.2 | Supported | Real application boot, successful/error request, SQL, view, cache, Active Job, mailer, fake endpoint, flush, and shutdown |
-| 2.3.8 | 4.2 | Supported | Same dedicated application gate |
-| 2.5.9 | 5.2 | Supported | Same dedicated application gate |
-| 2.6.10 | 5.2 | Supported | Same dedicated application gate |
-| Other Ruby/Rails pairs | — | Unsupported | No complete release gate; feature detection alone is not a support claim |
+| 2.7–3.2 | 7.0–7.1 | Best effort | Real Rails applications and the complete integration gate are pending |
+| 3.1–3.4 | 7.2 | Best effort | Feature and package checks; use a validated application combination before production rollout |
+| Rails 4–6 | — | Unsupported in 1.2 | Use a matching earlier Chronos release |
 
 ## Sidekiq
 
 | Ruby | Sidekiq | Status | Evidence |
 |---|---|---|---|
-| 2.2.10 | 4.2.10 | Supported | Real-gem client/server middleware smoke with context, success/failure, and deduplication |
-| 2.5.9 | 5.2.10 | Supported | Same dedicated application gate |
-| Other Ruby/Sidekiq pairs | — | Unsupported | No complete release gate |
+| 2.7–3.4 | 7.x | Best effort | Real Sidekiq 7 smoke applications are pending |
+| Sidekiq 4–6 | — | Unsupported in 1.2 | Use a matching earlier Chronos release |
 
 Active Job uses the public `serialize`, `deserialize`, and `perform_now` extension points with a bounded namespaced field. Support follows the validated Rails pairs above. Adapters that bypass these hooks require their own evidence.
 
-The release workflow repeats every supported pair before publishing. Historical 1.0 evidence remains in [Version 1.0 readiness](release-1.0-readiness.md); the 1.1 candidate is recorded in [Version 1.1 readiness](release-1.1-readiness.md).
+Historical evidence remains in [Version 1.0 readiness](release-1.0-readiness.md) and [Version 1.1 readiness](release-1.1-readiness.md).
 
 Status meanings:
 

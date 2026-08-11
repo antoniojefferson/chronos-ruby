@@ -10,6 +10,7 @@ Chronos.configure do |config|
   # connection settings omitted
   config.external_http_enabled = true
   config.external_http_trace_headers = true
+  config.w3c_trace_context = true
 end
 
 http = Net::HTTP.new("payments.example.com", 443)
@@ -18,10 +19,10 @@ Chronos.instrument_net_http(http)
 response = http.request(Net::HTTP::Get.new("/health"))
 ```
 
-The event contains a bounded lowercase host, uppercase method, response status, monotonic duration, timeout flag, connection-error flag, and error class. A request made inside a Chronos context receives `X-Chronos-Trace-ID` and `X-Chronos-Request-ID` unless the application already set those headers. Disable propagation with `external_http_trace_headers = false`.
+The event contains a bounded lowercase host, uppercase method, response status, monotonic duration, timeout flag, connection-error flag, and error class. A request made inside a Chronos context receives `X-Chronos-Trace-ID` and `X-Chronos-Request-ID` unless the application already set those headers. With `w3c_trace_context = true`, Net::HTTP and `Chronos::Integrations::FaradayMiddleware` also preserve an existing header or inject a validated `traceparent`. Disable all propagation with `external_http_trace_headers = false`.
 
 The wrapper never reads or records the path, query string, Authorization, other request headers, request body, response headers/body, or exception message. The native streaming block is forwarded and the identical HTTP exception is re-raised. Telemetry failures are contained.
 
-Successful and failed calls become bounded `external_http` APM groups keyed only by host and method. A call carrying a trace ID contributes its duration to the enclosing request's `external_http` breakdown. Faraday, HTTP.rb, Excon, and RestClient are outside this release.
+Successful and failed calls become bounded `external_http` APM groups keyed only by host and method. A call carrying a trace ID contributes its duration to the enclosing request's `external_http` breakdown. Faraday is supported through explicit middleware installation; HTTP.rb, Excon, and RestClient remain outside this release.
 
 Installation is idempotent per object. A `false` result means collection is disabled, the object is incompatible or already instrumented, or installation was contained after an internal error.

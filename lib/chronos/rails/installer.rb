@@ -34,6 +34,7 @@ module Chronos
 
           install_middleware(application, options)
           install_active_job
+          install_error_reporter
           @subscriber.install
           self.class.applications[application.object_id] = true
         end
@@ -63,6 +64,18 @@ module Chronos
         return false unless defined?(::ActiveJob::Base)
 
         Chronos::Integrations::ActiveJob.install(::ActiveJob::Base, @notifier)
+      end
+
+      def install_error_reporter
+        return false unless defined?(::Rails) && ::Rails.respond_to?(:error)
+
+        reporter = ::Rails.error
+        return false unless reporter && reporter.respond_to?(:subscribe)
+
+        reporter.subscribe(ErrorReporterSubscriber.new(@notifier))
+        true
+      rescue StandardError
+        false
       end
 
       def environment

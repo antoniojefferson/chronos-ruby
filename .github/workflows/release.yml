@@ -10,78 +10,23 @@ permissions:
   contents: read
 
 jobs:
-  legacy-core:
+  transitional-core:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        image:
-          - ruby:2.2.10
-          - ruby:2.3.8
-          - ruby:2.4.10
-          - ruby:2.5.9
-          - ruby:2.6.10
+        ruby: ["2.7", "3.0", "3.1", "3.2", "3.3", "3.4"]
+    name: Ruby ${{ matrix.ruby }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Run legacy suite
-        run: |
-          docker run --rm \
-            --volume "$PWD:/app" \
-            --workdir /app \
-            "${{ matrix.image }}" \
-            sh script/ci_legacy
-
-  legacy-rails:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - image: ruby:2.2.10
-            example: examples/rails-4.2
-          - image: ruby:2.3.8
-            example: examples/rails-4.2
-          - image: ruby:2.5.9
-            example: examples/rails-5.2
-          - image: ruby:2.6.10
-            example: examples/rails-5.2
-    steps:
-      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
         with:
-          persist-credentials: false
-      - name: Run Rails compatibility application
-        run: |
-          docker run --rm \
-            --volume "$PWD:/app" \
-            --workdir /app \
-            --env EXAMPLE_PATH="${{ matrix.example }}" \
-            "${{ matrix.image }}" \
-            sh script/ci_rails_legacy
-
-  legacy-sidekiq:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - image: ruby:2.2.10
-            example: examples/sidekiq-4
-          - image: ruby:2.5.9
-            example: examples/sidekiq-5
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Run Sidekiq compatibility application
-        run: |
-          docker run --rm \
-            --volume "$PWD:/app" \
-            --workdir /app \
-            --env EXAMPLE_PATH="${{ matrix.example }}" \
-            "${{ matrix.image }}" \
-            sh script/ci_sidekiq_legacy
+          ruby-version: ${{ matrix.ruby }}
+          bundler: "2.4.22"
+          bundler-cache: true
+      - run: bundle exec rake
 
   release-readiness:
     runs-on: ubuntu-latest
@@ -91,16 +36,16 @@ jobs:
           persist-credentials: false
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "2.6"
-      - run: gem install bundler -v 1.17.3
-      - run: bundle _1.17.3_ install
+          ruby-version: "3.3"
+          bundler: "2.4.22"
+          bundler-cache: true
       - run: ruby script/verify_docs
-      - run: ITERATIONS=10000 WARMUP=1000 bundle _1.17.3_ exec ruby benchmarks/query_analysis.rb
-      - run: ITERATIONS=10000 WARMUP=1000 SAMPLES=5 bundle _1.17.3_ exec ruby benchmarks/comparative.rb
-      - run: ITERATIONS=500 bundle _1.17.3_ exec ruby benchmarks/fake_endpoint_load.rb
+      - run: ITERATIONS=10000 WARMUP=1000 bundle exec ruby benchmarks/query_analysis.rb
+      - run: ITERATIONS=10000 WARMUP=1000 SAMPLES=5 bundle exec ruby benchmarks/comparative.rb
+      - run: ITERATIONS=500 bundle exec ruby benchmarks/fake_endpoint_load.rb
 
   publish:
-    needs: [legacy-core, legacy-rails, legacy-sidekiq, release-readiness]
+    needs: [transitional-core, release-readiness]
     runs-on: ubuntu-latest
     environment: rubygems
     permissions:
@@ -112,7 +57,9 @@ jobs:
           persist-credentials: false
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "2.6"
+          ruby-version: "3.3"
+          bundler: "2.4.22"
+          bundler-cache: true
       - name: Update RubyGems
         run: gem update --system 3.4.22 --no-document
       - name: Verify tag and gem version
@@ -121,14 +68,12 @@ jobs:
             expected = "v#{Chronos::VERSION}"
             abort "Tag must be #{expected}" unless ENV["GITHUB_REF_NAME"] == expected
           '
-      - run: gem install bundler -v 1.17.3
-      - run: bundle _1.17.3_ install
-      - run: bundle _1.17.3_ exec rake
+      - run: bundle exec rake
       - run: gem build chronos-ruby.gemspec
       - name: Generate checksum and SBOM
         run: |
           sha256sum chronos-ruby-*.gem > "chronos-ruby-${GITHUB_REF_NAME#v}.gem.sha256"
-          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)" bundle _1.17.3_ exec ruby -Ilib script/generate_sbom
+          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)" bundle exec ruby -Ilib script/generate_sbom
       - uses: actions/upload-artifact@v4
         with:
           name: chronos-ruby-${{ github.ref_name }}

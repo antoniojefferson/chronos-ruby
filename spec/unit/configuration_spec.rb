@@ -14,7 +14,7 @@ RSpec.describe Chronos::Configuration do # rubocop:disable Metrics/BlockLength
     expect(result.circuit_failure_threshold).to eq(5)
     expect(result.remote_configuration).to eq(true)
     expect(result.sampling_rate).to eq(1.0)
-    expect(result.context_store).to eq(:thread_local)
+    expect(result.context_store).to eq(:fiber_local)
     expect(result.breadcrumb_capacity).to eq(20)
     expect(result.apm_enabled).to eq(true)
     expect(result.apm_max_groups).to eq(200)

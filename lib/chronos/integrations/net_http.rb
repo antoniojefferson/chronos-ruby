@@ -53,7 +53,8 @@ module Chronos
           {
             :notifier => notifier,
             :clock => options[:clock] || proc { monotonic_time },
-            :trace_headers => configured.fetch(:trace_headers, true)
+            :trace_headers => configured.fetch(:trace_headers, true),
+            :w3c_trace_context => configured.fetch(:w3c_trace_context, false)
           }
         end
 
@@ -106,6 +107,9 @@ module Chronos
                     end
           set_header(request, "X-Chronos-Trace-ID", context["trace_id"] || context[:trace_id])
           set_header(request, "X-Chronos-Request-ID", context["request_id"] || context[:request_id])
+          if options[:w3c_trace_context]
+            set_header(request, "traceparent", Core::TraceContext.format(context))
+          end
         rescue StandardError
           nil
         end

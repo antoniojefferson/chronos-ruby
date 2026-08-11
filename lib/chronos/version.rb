@@ -1,4 +1,4 @@
 module Chronos
-  # Current version of the legacy Chronos Ruby agent.
-  VERSION = "1.1.0".freeze
+  # Current version of the transitional Chronos Ruby agent.
+  VERSION = "1.2.0.pre.1".freeze
 end
