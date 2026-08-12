@@ -1,6 +1,6 @@
 # Chronos Ruby
 
-Chronos Ruby 1.1.0 é o agente independente de framework para enviar exceções e telemetria limitada de aplicações Ruby ao Chronos. Esta é a linha estável legado, compatível com o protocolo v1 e voltada a Ruby 2.2.10–2.6.
+Chronos Ruby 1.2.0 é o agente para enviar exceções, métricas e telemetria limitada de aplicações Ruby e Rails ao Chronos. Esta é a linha estável atual para Ruby 2.7–3.4, compatível com o protocolo v1.
 
 ## O que a gem coleta
 
@@ -24,7 +24,7 @@ A gem não varre variáveis de ambiente, sistema de arquivos ou lockfiles e não
 
 ## Versões Ruby e Rails suportadas
 
-A versão candidata 1.2.0.pre.2 continua a linha transitional para Ruby 2.7–3.4, Rails 7.x e Sidekiq 7. Ela adiciona contexto por Fiber, Rails Error Reporter, Action Cable, Faraday, Trace Context W3C opcional e coexistência com um SDK OpenTelemetry já configurado. Use-a explicitamente em staging enquanto a matriz transitional é validada; as linhas legadas permanecem disponíveis em releases anteriores.
+A versão estável 1.2.0 atende a linha transitional para Ruby 2.7–3.4, Rails 7.x e Sidekiq 7. Ela adiciona contexto por Fiber, Rails Error Reporter, Action Cable, Faraday, Trace Context W3C opcional, integração automática com Sidekiq em Rails e coexistência com um SDK OpenTelemetry já configurado. Combinações ainda classificadas como `Best effort` devem ser validadas pela aplicação antes da adoção em produção; as linhas legadas permanecem disponíveis em releases anteriores.
 
 Rubies e frameworks antigos estão fora do suporte de segurança de seus mantenedores. A Chronos oferece compatibilidade técnica, não manutenção de segurança do runtime. Veja [Compatibilidade](docs/compatibility.md).
 
@@ -33,14 +33,14 @@ Rubies e frameworks antigos estão fora do suporte de segurança de seus mantene
 Obrigatório: adicione a versão estável ao `Gemfile`.
 
 ```ruby
-gem "chronos-ruby", "~> 1.1.0"
+gem "chronos-ruby", "~> 1.2.0"
 ```
 
-Em runtimes antigos, use Bundler compatível:
+Use Bundler 2 em um runtime suportado:
 
 ```bash
-gem install bundler -v 1.17.3
-bundle _1.17.3_ install
+gem install bundler -v "~> 2.4"
+bundle install
 ```
 
 Sem Bundler:
@@ -308,21 +308,20 @@ Migre por etapas e mantenha os dois agentes juntos somente durante a validação
 
 ## Desenvolvimento local
 
-Instale Bundler 1.17.3 e as dependências:
+Instale as dependências:
 
 ```bash
-gem install bundler -v 1.17.3
 bin/setup
 ```
 
-Use `bin/console` para inspeção e `bundle _1.17.3_ exec rake install` para instalar a fonte localmente. A arquitetura hexagonal está descrita em [Arquitetura](docs/architecture.md).
+Use `bin/console` para inspeção e `bundle exec rake install` para instalar a fonte localmente. A arquitetura hexagonal está descrita em [Arquitetura](docs/architecture.md).
 
 ## Testes
 
 Execute suíte e lint no runtime atual:
 
 ```bash
-bundle _1.17.3_ exec rake
+bundle exec rake
 ```
 
 A matriz CI cobre a linha transitional e os checks de pacote/documentação; workflows legados preservam evidência das releases anteriores.

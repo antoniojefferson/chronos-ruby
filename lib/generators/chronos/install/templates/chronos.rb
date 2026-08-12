@@ -5,8 +5,8 @@ require "chronos/rails"
 env_boolean = lambda do |name, default|
   value = ENV[name]
   normalized = value.to_s.downcase
-  next true if %w[1 true yes on].include?(normalized)
-  next false if %w[0 false no off].include?(normalized)
+  next true if %w(1 true yes on).include?(normalized)
+  next false if %w(0 false no off).include?(normalized)
 
   default
 end
