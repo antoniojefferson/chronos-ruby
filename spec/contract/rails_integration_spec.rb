@@ -5,17 +5,18 @@ RSpec.describe "Rails legacy integration contract" do
 
     expect(template).to include(
       "require \"chronos/rails\"", "CHRONOS_PROJECT_ID", "CHRONOS_PROJECT_KEY",
-      'config.host = "https://chronosmonitor.com.br"',
-      "config.rails_capture_in_test = false", "config.rails_capture_in_console = false",
+      'config.service_name = ENV["CHRONOS_SERVICE_NAME"] || Chronos::Rails.application_name',
+      'config.ssl_verify = env_boolean.call("CHRONOS_SSL_VERIFY", true)',
+      'config.environment = ENV.fetch("CHRONOS_ENVIRONMENT", Rails.env.to_s)',
+      'config.timeout = ENV.fetch("CHRONOS_TIMEOUT", "5").to_f',
+      'config.rails_capture_in_test = env_boolean.call("CHRONOS_RAILS_CAPTURE_IN_TEST", false)',
+      'config.rails_capture_in_console = env_boolean.call("CHRONOS_RAILS_CAPTURE_IN_CONSOLE", false)',
       "Chronos::Rails::Installer.new.install(Rails.application)"
     )
 
-    missing_options = Chronos::Configuration::ATTRIBUTES.reject do |attribute|
-      template.include?("config.#{attribute} =")
-    end
-
-    expect(missing_options).to be_empty
-    expect(template).not_to include("CHRONOS_HOST", "ENV.to_h", "ENV.each")
+    expect(template).not_to include("config.host =")
+    expect(template).to include("rescue StandardError", "config.logger = Rails.logger")
+    expect(template).not_to include("CHRONOS_HOST", "ENV.to_h", "ENV.each", "config.proxy =")
   end
 
   it "loads the Rails integration without requiring Zeitwerk" do
@@ -23,6 +24,7 @@ RSpec.describe "Rails legacy integration contract" do
 
     expect(defined?(Chronos::Rails::Installer)).to eq("constant")
     expect(defined?(Chronos::Rails::NotificationsSubscriber)).to eq("constant")
+    expect(defined?(Chronos::Integrations::Sidekiq)).to eq("constant")
     expect($LOADED_FEATURES.grep(/zeitwerk/)).to be_empty
   end
 end

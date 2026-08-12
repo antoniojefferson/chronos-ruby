@@ -184,4 +184,13 @@ RSpec.describe Chronos::Configuration do # rubocop:disable Metrics/BlockLength
     expect(result.filters).to be_frozen
     expect(filter).not_to be_frozen
   end
+
+  it "does not freeze the application logger shared with Rails" do
+    logger = Object.new
+
+    result = snapshot(:logger => logger)
+
+    expect(result.logger).to equal(logger)
+    expect(logger).not_to be_frozen
+  end
 end

@@ -205,14 +205,17 @@ Por padrão, SQL bruto e binds não são lidos pelo pipeline de análise. A insp
 
 ## Sidekiq e Active Job
 
-A integração mantém o require explícito e suporta a API pública de middleware do Sidekiq 7:
+A integração Rails detecta o Sidekiq e instala automaticamente os middlewares de cliente e servidor. O carregamento
+explícito continua disponível para aplicações sem Rails e suporta a API pública de middleware do Sidekiq 7:
 
 O suporte histórico começou em `0.6.0.pre.1`; aplicações em Sidekiq 4/5 devem permanecer numa release legada compatível.
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "~> 1.1.0", :require => "chronos/sidekiq"
+gem "chronos-ruby", "~> 1.1.0"
 ```
+
+Em uma aplicação Ruby sem Rails, use `require "chronos/sidekiq"`.
 
 O envelope de contexto não altera argumentos públicos e contém somente IDs limitados de trace/span/request e flags. Active Job usa um campo serializado com namespace (`chronos_context`) e hooks públicos. Erros aninhados são deduplicados e reerguidos. Veja [Sidekiq legado](docs/modules/sidekiq-legacy.md), [Active Job](docs/modules/active-job.md) e [Jobs](docs/modules/job-monitoring.md).
 
