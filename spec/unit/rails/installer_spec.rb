@@ -46,6 +46,7 @@ RSpec.describe Chronos::Rails::Installer do
     app, middleware = application
     subscriber = FakeSubscriber.new
     installer = described_class.new(FakeRailsNotifier.new, subscriber)
+    allow(installer).to receive(:sidekiq_library).and_return(nil)
 
     expect(installer.install(app)).to eq(true)
     expect(installer.install(app)).to eq(false)
@@ -59,8 +60,29 @@ RSpec.describe Chronos::Rails::Installer do
   it "does not install when the configured environment disables Rails collection" do
     app, middleware = application
     installer = described_class.new(FakeRailsNotifier.new(false), FakeSubscriber.new)
+    allow(installer).to receive(:sidekiq_library).and_return(nil)
 
     expect(installer.install(app)).to eq(false)
     expect(middleware.entries).to be_empty
+  end
+
+  it "automatically installs Sidekiq when it is available" do
+    app, = application
+    notifier = FakeRailsNotifier.new
+    installer = described_class.new(notifier, FakeSubscriber.new)
+    sidekiq = Module.new
+    allow(installer).to receive(:sidekiq_library).and_return(sidekiq)
+
+    expect(Chronos::Integrations::Sidekiq).to receive(:install).with(sidekiq, notifier).and_return(true)
+
+    expect(installer.install(app)).to eq(true)
+  end
+
+  it "contains Sidekiq installation failures" do
+    app, = application
+    installer = described_class.new(FakeRailsNotifier.new, FakeSubscriber.new)
+    allow(installer).to receive(:sidekiq_library).and_raise("failed")
+
+    expect(installer.install(app)).to eq(true)
   end
 end

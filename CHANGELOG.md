@@ -4,6 +4,25 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-08-13
+
+### Changed
+
+- the generated Rails initializer now exposes only common application-facing options with safe environment overrides;
+- the official Chronos endpoint remains an internal default and is no longer assigned in generated initializers;
+- Rails derives the service name from the application namespace when `CHRONOS_SERVICE_NAME` is absent;
+- Rails applications automatically install the optional Sidekiq 4/5 client and server middleware when Sidekiq is available.
+
+### Fixed
+
+- configuration snapshots no longer freeze the Rails-owned logger, preventing later logger extensions from raising `FrozenError`;
+- logger lookup and optional Sidekiq installation failures are contained so they cannot abort Rails boot.
+
+### Security
+
+- `CHRONOS_SSL_VERIFY` remains enabled by default and unknown Boolean values retain the secure default;
+- generated Boolean overrides accept only explicit `1/0`, `true/false`, `yes/no`, and `on/off` forms.
+
 ## [1.1.1] - 2026-08-11
 
 ### Changed
