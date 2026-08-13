@@ -1,6 +1,6 @@
 # Chronos Ruby
 
-Chronos Ruby 1.2.0 é o agente para enviar exceções, métricas e telemetria limitada de aplicações Ruby e Rails ao Chronos. Esta é a linha estável atual para Ruby 2.7–3.4, compatível com o protocolo v1.
+Chronos Ruby 1.2.1 é o agente para enviar exceções, métricas e telemetria limitada de aplicações Ruby e Rails ao Chronos. Esta é a linha estável atual para Ruby 2.7–3.4, compatível com o protocolo v1.
 
 ## O que a gem coleta
 
@@ -24,7 +24,7 @@ A gem não varre variáveis de ambiente, sistema de arquivos ou lockfiles e não
 
 ## Versões Ruby e Rails suportadas
 
-A versão estável 1.2.0 atende a linha transitional para Ruby 2.7–3.4, Rails 7.x e Sidekiq 7. Ela adiciona contexto por Fiber, Rails Error Reporter, Action Cable, Faraday, Trace Context W3C opcional, integração automática com Sidekiq em Rails e coexistência com um SDK OpenTelemetry já configurado. Combinações ainda classificadas como `Best effort` devem ser validadas pela aplicação antes da adoção em produção; as linhas legadas permanecem disponíveis em releases anteriores.
+A versão estável 1.2.1 atende a linha transitional para Ruby 2.7–3.4, Rails 7.x e Sidekiq 7. Ela adiciona contexto por Fiber, Rails Error Reporter, Action Cable, Faraday, Trace Context W3C opcional, integração automática com Sidekiq em Rails e coexistência com um SDK OpenTelemetry já configurado. Combinações ainda classificadas como `Best effort` devem ser validadas pela aplicação antes da adoção em produção; as linhas legadas permanecem disponíveis em releases anteriores.
 
 Rubies e frameworks antigos estão fora do suporte de segurança de seus mantenedores. A Chronos oferece compatibilidade técnica, não manutenção de segurança do runtime. Veja [Compatibilidade](docs/compatibility.md).
 
@@ -33,7 +33,7 @@ Rubies e frameworks antigos estão fora do suporte de segurança de seus mantene
 Obrigatório: adicione a versão estável ao `Gemfile`.
 
 ```ruby
-gem "chronos-ruby", "~> 1.2.0"
+gem "chronos-ruby", "~> 1.2.1"
 ```
 
 Use Bundler 2 em um runtime suportado:
@@ -46,7 +46,7 @@ bundle install
 Sem Bundler:
 
 ```bash
-gem install chronos-ruby -v 1.1.0
+gem install chronos-ruby -v 1.2.1
 ```
 
 ## Instalação em Rails
@@ -54,7 +54,7 @@ gem install chronos-ruby -v 1.1.0
 Obrigatório: carregue a integração Rails explicitamente para manter Rails/ActiveSupport fora de aplicações Ruby puras.
 
 ```ruby
-gem "chronos-ruby", "~> 1.1.0", :require => "chronos/rails"
+gem "chronos-ruby", "~> 1.2.1", :require => "chronos/rails"
 ```
 
 Gere o initializer:

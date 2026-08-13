@@ -1,6 +1,6 @@
 # Compatibility
 
-Chronos Ruby 1.2.0 is the current stable release of the transitional line for modern Ruby, Rails, and Sidekiq applications. Individual combinations remain `Best effort` until their dedicated CI and real-application gates pass; a stable package version does not by itself promote an unverified combination to `Supported`. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure. Versions 1.0 and 1.1 remain the frozen legacy line.
+Chronos Ruby 1.2.1 is the current stable release of the transitional line for modern Ruby, Rails, and Sidekiq applications. Individual combinations remain `Best effort` until their dedicated CI and real-application gates pass; a stable package version does not by itself promote an unverified combination to `Supported`. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure. Versions 1.0 and 1.1 remain the frozen legacy line.
 
 ## Core and Rack
 
