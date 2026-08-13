@@ -16,7 +16,7 @@ Run:
 rails generate chronos:install
 ```
 
-The generator creates `config/initializers/chronos.rb`. The template reads only explicitly named `CHRONOS_*` variables, uses `Rails.env`, adopts `Rails.logger` when available, and disables automatic integration in test and console by default. It invokes the idempotent installer as a fallback for applications that disabled Bundler auto-require, so the Railtie and initializer paths cannot create duplicate hooks. It never scans all environment variables or modifies routes and application classes.
+The generator creates `config/initializers/chronos.rb`. The concise template reads only explicitly named `CHRONOS_*` variables, uses documented safe defaults, derives the service name from the Rails application namespace, adopts `Rails.logger` without freezing it, and disables automatic integration in test and console by default. It invokes the idempotent installer as a fallback for applications that disabled Bundler auto-require, so the Railtie and initializer paths cannot create duplicate hooks. When Sidekiq is available, the installer also activates its existing optional client and server middleware. It never scans all environment variables or modifies routes and application classes.
 
 ## Captured integrations
 
@@ -57,4 +57,4 @@ The repository contains independent applications under `examples/rails-4.2` and 
 
 ## Limits
 
-Version 0.7 aggregates controller, SQL, and job timings into bounded APM batches. SQL literals and binds remain excluded while a bounded normalized query and fingerprint are produced. Sidekiq support remains a separate optional integration. Version `0.9.0.pre.2` provides bounded Active Job trace/request propagation through a namespaced serialized field; adapters that replace the standard Active Job serialization/execution hooks require separate compatibility evidence.
+Version 0.7 aggregates controller, SQL, and job timings into bounded APM batches. SQL literals and binds remain excluded while a bounded normalized query and fingerprint are produced. Sidekiq remains an optional dependency but is installed automatically when present in Rails. Version `0.9.0.pre.2` provides bounded Active Job trace/request propagation through a namespaced serialized field; adapters that replace the standard Active Job serialization/execution hooks require separate compatibility evidence.

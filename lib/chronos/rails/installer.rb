@@ -34,6 +34,7 @@ module Chronos
 
           install_middleware(application, options)
           install_active_job
+          install_sidekiq
           @subscriber.install
           self.class.applications[application.object_id] = true
         end
@@ -63,6 +64,24 @@ module Chronos
         return false unless defined?(::ActiveJob::Base)
 
         Chronos::Integrations::ActiveJob.install(::ActiveJob::Base, @notifier)
+      end
+
+      def install_sidekiq
+        library = sidekiq_library
+        return false unless library
+
+        Chronos::Integrations::Sidekiq.install(library, @notifier)
+      rescue StandardError
+        false
+      end
+
+      def sidekiq_library
+        return ::Sidekiq if defined?(::Sidekiq)
+
+        require "sidekiq"
+        ::Sidekiq if defined?(::Sidekiq)
+      rescue LoadError
+        nil
       end
 
       def environment

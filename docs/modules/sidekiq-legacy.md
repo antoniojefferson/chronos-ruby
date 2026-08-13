@@ -1,13 +1,13 @@
 # Sidekiq 4/5 legacy integration
 
-Version `0.6.0.pre.1` starts the legacy jobs line with optional Sidekiq 4 and 5 client and server middleware. Load it after declaring Sidekiq:
+Version `0.6.0.pre.1` starts the legacy jobs line with optional Sidekiq 4 and 5 client and server middleware. Version `1.1.2` installs it automatically when Sidekiq is available in a Rails application:
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "~> 1.1.0", :require => "chronos/sidekiq"
+gem "chronos-ruby", "~> 1.1.2", :require => "chronos/rails"
 ```
 
-`chronos/sidekiq` installs middleware through the public `configure_client` and `configure_server` APIs. It does nothing when Sidekiq is unavailable, and the core gem never requires Sidekiq. Installation adds no Chronos thread or Redis/database connection per job; delivery continues through the agent's existing fixed worker pool.
+Plain Ruby applications continue to use `require "chronos/sidekiq"` explicitly. Both entry points install middleware through the public `configure_client` and `configure_server` APIs. They do nothing when Sidekiq is unavailable, and the framework-independent core never requires Sidekiq. Installation adds no Chronos thread or Redis/database connection per job; delivery continues through the agent's existing fixed worker pool.
 
 The client middleware adds a top-level `chronos` metadata object to the Sidekiq envelope. It never changes the public `args` array. Only `trace_id` and `request_id` propagate, with schema version and enqueue time. The server scopes that context for the worker, measures duration and calculable queue latency, and emits one `job` event.
 

@@ -3,7 +3,7 @@ module Chronos
   #
   # @responsibility Expose validated settings without mutable containers.
   # @motivation Keep capture behavior stable while multiple threads run.
-  # @limits It cannot be edited after creation.
+  # @limits Snapshot values cannot be edited; the host application's logger remains externally owned.
   # @collaborators Configuration and runtime services.
   # @thread_safety Safe to share between threads after construction.
   # @compatibility Ruby 2.2.10 through Ruby 2.6.
@@ -17,7 +17,7 @@ module Chronos
     def initialize(values)
       Configuration::ATTRIBUTES.each do |attribute|
         value = values[attribute]
-        deep_freeze(value)
+        deep_freeze(value) unless attribute == :logger
         instance_variable_set("@#{attribute}", value)
       end
       freeze

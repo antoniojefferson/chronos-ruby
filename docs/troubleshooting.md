@@ -56,7 +56,7 @@ Require `chronos/capistrano` after the Capistrano/Rake task DSL is loaded. The i
 
 ## Sidekiq telemetry is missing
 
-Require `chronos/sidekiq` after Sidekiq is available and configure Chronos before jobs run. The entry point uses Sidekiq's public client/server middleware configuration and remains optional. Requiring only `chronos` or `chronos/rails` does not load Sidekiq. A job already enqueued before client middleware installation may lack propagated trace context, but server timing and failure capture can still run.
+In Rails, require `chronos/rails` and configure Chronos before jobs run; version 1.1.2 detects Sidekiq and installs its public client/server middleware automatically. In plain Ruby, require `chronos/sidekiq` explicitly after Sidekiq is available. Sidekiq remains optional in both cases. A job already enqueued before client middleware installation may lack propagated trace context, but server timing and failure capture can still run.
 
 ## A failed Sidekiq job appears twice
 
