@@ -1,6 +1,6 @@
 # Compatibility
 
-Chronos Ruby 1.2.0.pre.2 is the current candidate of the transitional line for Rails 7 and Sidekiq 7. Combinations remain `Best effort` until their dedicated CI and real-application gates pass. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure. Versions 1.0 and 1.1 remain the frozen legacy line.
+Chronos Ruby 1.2.0 is the current stable release of the transitional line for modern Ruby, Rails, and Sidekiq applications. Individual combinations remain `Best effort` until their dedicated CI and real-application gates pass; a stable package version does not by itself promote an unverified combination to `Supported`. Technical compatibility does not make an end-of-life Ruby, Rails, Rack, or Sidekiq release secure. Versions 1.0 and 1.1 remain the frozen legacy line.
 
 ## Core and Rack
 
@@ -27,7 +27,7 @@ Chronos Ruby 1.2.0.pre.2 is the current candidate of the transitional line for R
 
 Active Job uses the public `serialize`, `deserialize`, and `perform_now` extension points with a bounded namespaced field. Support follows the validated Rails pairs above. Adapters that bypass these hooks require their own evidence.
 
-Historical evidence remains in [Version 1.0 readiness](release-1.0-readiness.md) and [Version 1.1 readiness](release-1.1-readiness.md).
+Release evidence is recorded in [Version 1.2 readiness](release-1.2-readiness.md). Historical evidence remains in [Version 1.0 readiness](release-1.0-readiness.md) and [Version 1.1 readiness](release-1.1-readiness.md).
 
 Status meanings:
 

@@ -4,6 +4,31 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-12
+
+### Added
+
+- automatic Sidekiq client and server middleware installation when Sidekiq is available in a Rails application;
+- Rails application namespace discovery as the default service name when `CHRONOS_SERVICE_NAME` is absent;
+- environment-driven defaults for the most frequently customized Rails, transport, privacy, and APM settings in the generated initializer.
+
+### Changed
+
+- promoted the Ruby 2.7–3.4 transitional line from `1.2.0.pre.2` to the stable `1.2.0` release;
+- simplified the generated Rails initializer while retaining safe SDK defaults and explicit application overrides;
+- kept the official Chronos endpoint internal instead of exposing `config.host` in generated initializers;
+- Sidekiq telemetry now activates through the ordinary Rails integration without requiring `chronos/sidekiq` explicitly.
+
+### Fixed
+
+- configuration snapshots no longer freeze the Rails-owned logger, preventing `FrozenError` during later Rails 8 and dotenv logger initialization;
+- Rails logger lookup and optional Sidekiq installation remain contained so integration failures cannot abort application boot.
+
+### Security
+
+- boolean environment overrides accept only explicit true/false forms and fall back to documented safe defaults;
+- existing bounded payload, sanitization, trace validation, and optional OpenTelemetry behavior remain unchanged under protocol v1.
+
 ## [1.2.0.pre.2] - 2026-08-11
 
 ### Changed
