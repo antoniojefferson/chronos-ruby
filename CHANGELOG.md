@@ -4,6 +4,14 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-08-13
+
+### Changed
+
+- expanded the gem summary and description to clarify its exception, metrics, and telemetry monitoring purpose;
+- highlighted the official Chronos Monitor endpoint at https://chronosmonitor.com.br so RubyGems users can identify the platform that receives and displays the collected observability data;
+- updated stable-release references and installation examples to `1.2.1`.
+
 ## [1.2.0] - 2026-08-12
 
 ### Added
