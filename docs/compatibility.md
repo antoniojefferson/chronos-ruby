@@ -33,7 +33,7 @@ Chronos Ruby 1.1 is the current stable legacy line. Technical compatibility does
 
 Active Job uses the public `serialize`, `deserialize`, and `perform_now` extension points with a bounded namespaced field. Support follows the validated Rails pairs above. Adapters that bypass these hooks require their own evidence.
 
-The release workflow repeats every supported pair before publishing. Version 1.1.2 evidence is recorded in [Version 1.1.2 readiness](release-1.1.2-readiness.md); historical evidence remains in [Version 1.0 readiness](release-1.0-readiness.md) and [Version 1.1 readiness](release-1.1-readiness.md).
+The release workflow repeats every supported pair before publishing. Version 1.1.3 evidence is recorded in [Version 1.1.3 readiness](release-1.1.3-readiness.md); historical evidence remains in [Version 1.1.2 readiness](release-1.1.2-readiness.md), [Version 1.0 readiness](release-1.0-readiness.md), and [Version 1.1 readiness](release-1.1-readiness.md).
 
 Status meanings:
 

@@ -9,8 +9,12 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Antonio Jefferson"]
   spec.email         = ["antoniojeferson96@gmail.com"]
 
-  spec.summary       = "Cliente Ruby para captura de eventos do Chronos"
-  spec.description   = "Base do cliente Chronos para excecoes, telemetria e observabilidade em aplicacoes Ruby legadas."
+  spec.summary       = "Monitoramento de exceções, métricas e telemetria para Ruby e Rails"
+  spec.description   = "Cliente oficial do Chronos para capturar e enviar exceções, métricas e " \
+                       "dados de telemetria de aplicações Ruby e Rails. A gem centraliza sinais " \
+                       "de observabilidade para facilitar o monitoramento, a análise de desempenho " \
+                       "e o diagnóstico de falhas no Chronos Monitor. Conheça a plataforma oficial " \
+                       "de recebimento e visualização dos dados em https://chronosmonitor.com.br."
   spec.homepage      = "https://github.com/antoniojefferson/chronos-ruby"
   spec.license       = "MIT"
   spec.required_ruby_version = Gem::Requirement.new(">= 2.2.10", "< 2.7")

@@ -4,6 +4,14 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-08-13
+
+### Changed
+
+- expanded the gem summary and description to clarify its exception, metrics, and telemetry monitoring purpose;
+- highlighted https://chronosmonitor.com.br as the official Chronos Monitor platform for receiving and visualizing observability data;
+- synchronized stable legacy release references and installation examples with version `1.1.3`.
+
 ## [1.1.2] - 2026-08-13
 
 ### Changed
