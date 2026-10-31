@@ -4,6 +4,38 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-10-31
+
+### Added
+
+- Packaged `chronos` executable with `deploy notify`, `deploy verify`, `deploy diagnose --offline`, and `deploy install`, without requiring Rails or a copied notification script.
+- Explicit CLI configuration through public options, canonical environment variables, compatible aliases, and optional allowlisted YAML; stable publication identity and actual artifact revision/version are required for notification.
+- Idempotent integration installers for Kamal, Capistrano, GitHub Actions, GitLab CI, Jenkins, and Azure DevOps, plus optional Rails generator and Rake task adapters.
+- Versioned JSON outcomes, documented exit codes, bounded transport operations, and a warning policy that preserves unconfirmed delivery status.
+- Local HTTPS tests, installed-package smoke gates, Rails generator smoke coverage, and an isolated Docker helper for individual and combined legacy matrix runs.
+
+### Changed
+
+- Include the executable and deploy implementation in the gem package while preserving the existing Ruby requirement and protocol v1.
+- Disable retries and backlog in the CLI; receipt verification also disables dependency reporting. The existing Ruby API defaults remain unchanged.
+- Translate the README into English and document Docker test preparation and matrix execution.
+- Prepare release metadata, compatibility references, and readiness documentation for 1.1.4. Legacy runtime, supplier, and SaaS validation remain release gates, not claims established by modern local tests.
+
+### Security
+
+- Mask SQL literals lexically before output truncation and omit oversized, incomplete, or ambiguous SQL instead of retaining partial private values.
+- Validate the entire original query before optional plan inspection; reject additional statements even when normalized metadata was truncated.
+- Sanitize sensitive symbol values before JSON conversion and copy diagnostic structures with cycle, depth, collection, node, and string limits before event construction.
+- Preserve mutable caller-owned telemetry data and bound scoped context merging to prevent stack exhaustion.
+- Anchor integration installation to opened POSIX directories with no-follow reads and descriptor-relative creation/atomic publication, preventing symlink swaps from redirecting filesystem changes.
+- Add regression coverage for all five security findings and installed-package integration generation.
+
+### Fixed
+
+- Reject conflicting configuration aliases, unsupported command options, incomplete offline diagnostics, and oversized deployment metadata before sending.
+- Preserve existing integration files, reject destination symlinks, and expose proposed templates without disclosing customer file contents.
+- Always close the CLI agent and report notification shutdown failures as unconfirmed; keep Rake registration idempotent with bounded method complexity.
+
 ## [1.1.3] - 2026-08-13
 
 ### Changed

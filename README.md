@@ -1,74 +1,75 @@
 # Chronos Ruby
 
-Chronos Ruby 1.1.3 é o agente independente de framework para enviar exceções e telemetria limitada de aplicações Ruby ao Chronos. Esta é a linha estável legado, compatível com o protocolo v1 e voltada a Ruby 2.2.10–2.6.
+Chronos Ruby 1.1.4 is a framework-independent agent for sending exceptions and bounded telemetry from Ruby applications to Chronos. This is the stable legacy line, compatible with protocol v1 and targeting Ruby 2.2.10–2.6.
 
-## O que a gem coleta
+## What the gem collects
 
-A versão 1.1 pode coletar:
+Version 1.1 can collect:
 
-- classe, mensagem, backtrace estruturado e causas encadeadas da exceção;
-- timestamp, severidade, tags e fingerprint opcional;
-- contexto, parâmetros, sessão e usuário fornecidos pela aplicação;
-- versão, engine e plataforma Ruby, PID, thread opaca e hostname;
-- ambiente, serviço, versão da aplicação, release, revision, deploy ID, região e instância;
-- método, rota normalizada, status, duração e breakdown de requests Rack/Rails;
-- SQL normalizado sem literais/binds e sinais heurísticos de desempenho;
-- jobs Sidekiq/Active Job, cache, HTTP externo explicitamente instrumentado e dependências carregadas;
-- breadcrumbs limitados fornecidos pela aplicação ou por integrações.
+- exception class, message, structured backtrace, and chained causes;
+- timestamp, severity, tags, and an optional fingerprint;
+- context, parameters, session, and user information supplied by the application;
+- Ruby version, engine, platform, PID, opaque thread identifier, and hostname;
+- environment, service, application version, release, revision, deploy ID, region, and instance;
+- Rack/Rails request method, normalized route, status, duration, and timing breakdown;
+- normalized SQL without literals or bind values, plus heuristic performance signals;
+- Sidekiq/Active Job activity, cache operations, explicitly instrumented outbound HTTP, and loaded dependencies;
+- bounded breadcrumbs supplied by the application or integrations.
 
-Veja a tabela completa em [Dados coletados](docs/data-collected.md).
+See the full inventory in [Collected data](docs/data-collected.md).
 
-## O que não é coletado por padrão
+## What is not collected by default
 
-A gem não varre variáveis de ambiente, sistema de arquivos ou lockfiles e não coleta bodies HTTP, cookies, headers de autorização, conteúdo de e-mail, SQL bruto, binds, valores de cache ou código-fonte. A inspeção de plano, desativada por padrão, usa o SQL original somente na conexão local para `EXPLAIN` sem `ANALYZE` e o descarta. O inventário de dependências contém somente nomes e versões já carregados, uma vez por agente. A aplicação continua responsável por minimização e base legal dos dados enviados.
+The agent does not scan environment variables, the filesystem, or lockfiles. It does not collect HTTP bodies, cookies, authorization headers, email contents, raw SQL, bind values, cache values, or source code. Query plan inspection is disabled by default; when enabled, it uses the original SQL only on the local connection for `EXPLAIN` without `ANALYZE`, then discards it. Dependency inventory includes only names and versions of loaded dependencies, once per agent. The application remains responsible for data minimization and the legal basis for sending data.
 
-## Versões Ruby e Rails suportadas
+The explicit deploy CLI described below reads its documented environment variables and optional configuration file. It does not change how the Ruby configuration API works.
 
-A versão 1.1.3 suporta Ruby puro e Rack em Ruby 2.2.10, 2.3.8, 2.4.10, 2.5.9 e 2.6.10. As combinações Rails validadas são Rails 4.2 com Ruby 2.2.10/2.3.8 e Rails 5.2 com Ruby 2.5.9/2.6.10. Sidekiq 4.2.10 com Ruby 2.2.10 e Sidekiq 5.2.10 com Ruby 2.5.9 também possuem gates dedicados. Ruby 2.7/Rails 6 não é declarado nesta release porque ainda não possui aplicação e matriz completas.
+## Supported Ruby and Rails versions
 
-Rubies e frameworks antigos estão fora do suporte de segurança de seus mantenedores. A Chronos oferece compatibilidade técnica, não manutenção de segurança do runtime. Veja [Compatibilidade](docs/compatibility.md).
+Version 1.1.4 targets the existing legacy matrix: it supports plain Ruby and Rack on Ruby 2.2.10, 2.3.8, 2.4.10, 2.5.9, and 2.6.10. Validated Rails combinations are Rails 4.2 with Ruby 2.2.10/2.3.8 and Rails 5.2 with Ruby 2.5.9/2.6.10. Sidekiq 4.2.10 on Ruby 2.2.10 and Sidekiq 5.2.10 on Ruby 2.5.9 also have dedicated gates. This release does not declare Ruby 2.7/Rails 6 support because a complete application fixture and matrix are not available.
 
-## Instalação em Ruby puro
+These older Rubies and frameworks no longer receive security support from their maintainers. Chronos provides technical compatibility, not runtime security maintenance. See [Compatibility](docs/compatibility.md).
 
-Obrigatório: adicione a versão estável ao `Gemfile`.
+## Installing in plain Ruby
+
+Add the stable version to your `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "~> 1.1.3"
+gem "chronos-ruby", "~> 1.1.4"
 ```
 
-Em runtimes antigos, use Bundler compatível:
+Use a compatible Bundler on older runtimes:
 
 ```bash
 gem install bundler -v 1.17.3
 bundle _1.17.3_ install
 ```
 
-Sem Bundler:
+Without Bundler:
 
 ```bash
-gem install chronos-ruby -v 1.1.3
+gem install chronos-ruby -v 1.1.4
 ```
 
-## Instalação em Rails
+## Installing in Rails
 
-Obrigatório: carregue a integração Rails explicitamente para manter Rails/ActiveSupport fora de aplicações Ruby puras.
+Load the Rails integration explicitly to keep Rails/ActiveSupport out of plain Ruby applications:
 
 ```ruby
-gem "chronos-ruby", "~> 1.1.3", :require => "chronos/rails"
+gem "chronos-ruby", "~> 1.1.4", :require => "chronos/rails"
 ```
 
-Gere o initializer:
+Generate the initializer:
 
 ```bash
 rails generate chronos:install
 ```
 
-A Versão 0.5 introduziu Railtie, middleware e subscribers idempotentes por APIs públicas e feature detection. A coleta automática fica desativada em test e console por padrão. Veja [Rails legado](docs/modules/rails-legacy.md).
+Version 0.5 introduced the Railtie, middleware, and idempotent subscribers through public APIs and feature detection. Automatic collection is disabled in tests and the console by default. See [Legacy Rails](docs/modules/rails-legacy.md).
 
-## Configuração mínima
+## Minimal configuration
 
-Obrigatório quando o agente está habilitado: `project_id` e `project_key`. O `host` usa
-`https://chronosmonitor.com.br` por padrão. Recomendado: definir ambiente e serviço explicitamente.
+An enabled agent requires `project_id` and `project_key`. The default `host` is `https://chronosmonitor.com.br`. Set the environment and service explicitly whenever possible.
 
 ```ruby
 require "chronos"
@@ -82,28 +83,28 @@ Chronos.configure do |config|
 end
 ```
 
-TLS é verificado por padrão. HTTP exige `ssl_verify = false` explicitamente e deve ser limitado a endpoints locais de teste. Depois de configurar, valide credenciais e ingestão:
+TLS verification is enabled by default. The Ruby API requires an explicit `ssl_verify = false` to use HTTP, which should be restricted to local test endpoints. After configuration, verify credentials and ingestion:
 
 ```bash
 bundle exec rake chronos:verify_integration
 ```
 
-O task envia uma exceção sintética identificada e só retorna código `0` após uma resposta v1 correlacionada. Em Ruby puro, instale o task com `require "chronos/rake_tasks"` e `Chronos::RakeTasks.install`; por código, use `Chronos.verify_integration`. Veja [Verificação da integração](docs/modules/integration-verification.md).
+The task sends an identified synthetic exception and returns exit code `0` only after a correlated v1 response. In plain Ruby, register the task with `require "chronos/rake_tasks"` and `Chronos::RakeTasks.install`; from Ruby code, use `Chronos.verify_integration`. See [Integration verification](docs/modules/integration-verification.md).
 
-## Captura automática
+## Automatic capture
 
-Opcional em Rack: instale o middleware. Ele notifica exceções não tratadas, preserva a mesma exceção para a aplicação e não consome bodies.
+For Rack applications, optionally install the middleware. It reports unhandled exceptions, preserves the original exception for the application, and does not consume request bodies.
 
 ```ruby
 use Chronos::Integrations::Rack::Middleware,
     :include_user_agent => false
 ```
 
-Em Rails, o Railtie instala middleware e subscribers uma única vez. Veja [Monitoramento de requests](docs/modules/request-monitoring.md).
+In Rails, the Railtie installs middleware and subscribers once. See [Request monitoring](docs/modules/request-monitoring.md).
 
-## Captura manual
+## Manual capture
 
-Recomendado no fluxo da aplicação: captura assíncrona.
+Use asynchronous capture in application flows:
 
 ```ruby
 begin
@@ -114,27 +115,27 @@ rescue StandardError => error
 end
 ```
 
-Opcional para scripts e shutdown controlado: captura síncrona.
+Synchronous capture is available for scripts and controlled shutdown:
 
 ```ruby
 delivered = Chronos.notify_sync(RuntimeError.new("import failed"))
 ```
 
-Falhas internas retornam `false` e não escapam para o fluxo principal.
+Internal capture failures return `false` without escaping into the application's main flow.
 
-## Contexto de usuário
+## User context
 
-Contexto de usuário é opt-in. Envie somente campos necessários e autorizados:
+User context is opt-in. Send only necessary, authorized fields:
 
 ```ruby
 Chronos.notify(error, :user => {"id" => "customer-42", "role" => "operator"})
 ```
 
-O valor é limitado e sanitizado, mas a minimização continua sendo responsabilidade da aplicação. Veja [Contexto de execução](docs/modules/context.md).
+Values are bounded and sanitized, but data minimization remains the application's responsibility. See [Execution context](docs/modules/context.md).
 
 ## Breadcrumbs
 
-Breadcrumbs formam um buffer circular delimitado no escopo atual:
+Breadcrumbs use a bounded ring buffer in the current scope:
 
 ```ruby
 Chronos.add_breadcrumb(
@@ -144,11 +145,11 @@ Chronos.add_breadcrumb(
 )
 ```
 
-A gem não transforma logs, SQL ou bodies em breadcrumbs brutos. Veja [Breadcrumbs](docs/modules/breadcrumbs.md).
+The gem does not turn logs, SQL, or bodies into raw breadcrumbs. See [Breadcrumbs](docs/modules/breadcrumbs.md).
 
-## Filtros e LGPD
+## Filters and LGPD
 
-A gem bloqueia chaves sensíveis e detecta Bearer tokens, JWTs, e-mails, CPF, CNPJ e candidatos válidos a cartão. IPv4 é anonimizado por padrão. Opcionalmente, amplie a blocklist, aplique hash irreversível ou filtros próprios:
+The gem blocks sensitive keys and detects Bearer tokens, JWTs, email addresses, Brazilian CPF/CNPJ identifiers, and valid payment card candidates. IPv4 addresses are anonymized by default. You can extend the blocklist, apply irreversible hashing, or add custom filters:
 
 ```ruby
 Chronos.configure do |config|
@@ -158,11 +159,11 @@ Chronos.configure do |config|
 end
 ```
 
-Sanitização ocorre antes de fila, retry e backlog. Veja [Privacidade e LGPD](docs/privacy-lgpd.md).
+Diagnostic trees are copied with cycle, depth, collection, node, and string limits before immutable event construction. Caller-owned telemetry data is not frozen. Sensitive symbol values are filtered before conversion to JSON text. Sanitization happens before queueing, retries, and backlog storage. See [Privacy and LGPD](docs/privacy-lgpd.md).
 
 ## Ignore rules
 
-Ambientes inteiros podem ser ignorados na configuração. A versão `0.9.0.pre.2` introduziu regras locais limitadas, preservadas na API estável:
+Configuration can exclude entire environments. Version `0.9.0.pre.2` introduced bounded local rules, preserved in the stable API:
 
 ```ruby
 Chronos.ignore_if do |notice|
@@ -170,11 +171,11 @@ Chronos.ignore_if do |notice|
 end
 ```
 
-A regra recebe um notice normalizado e imutável, e somente `true` descarta. Falhas do callback são contidas. Veja [Ignore rules](docs/modules/ignore-rules.md).
+Rules receive a normalized, immutable notice. Only `true` discards it, and callback failures are contained. See [Ignore rules](docs/modules/ignore-rules.md).
 
-## Monitoramento de performance
+## Performance monitoring
 
-A Versão 0.7 introduziu agregação local de requests, queries e jobs em `metric_batch`; a Versão 0.8 adicionou HTTP externo. Grupos possuem contagem, erro, duração, histograma, percentis aproximados, severidades, diagnósticos, status e breakdown limitados.
+Version 0.7 introduced local request, query, and job aggregation into `metric_batch`; Version 0.8 added outbound HTTP. Groups contain bounded counts, errors, durations, histograms, approximate percentiles, severities, diagnostics, statuses, and timing breakdowns.
 
 ```ruby
 Chronos.configure do |config|
@@ -189,7 +190,7 @@ Chronos.configure do |config|
   config.apm_query_analysis_enabled = true
   config.apm_query_analysis_max_queries = 100
 
-  # Opt-in: cada fingerprint elegível pode consultar catálogo/estatística/plano.
+  # Opt-in: each eligible fingerprint may inspect catalogs, statistics, or plans.
   config.apm_query_inspection_enabled = false
   config.apm_query_statistics_enabled = false
   config.apm_query_plan_enabled = false
@@ -200,24 +201,24 @@ Chronos.configure do |config|
 end
 ```
 
-Por padrão, SQL bruto e binds não são lidos pelo pipeline de análise. A inspeção opt-in usa o SQL original apenas localmente para solicitar `EXPLAIN` sem `ANALYZE`; nunca o inclui no evento. A análise estática produz candidatos, não ordens de criação de índice. Erros usam severidade `error`; lentidão e risco usam `warning`; padrões observados usam `info`; correções propostas usam `suggestion`. Veja [APM](docs/modules/apm-aggregation.md), [Requests](docs/modules/request-monitoring.md) e [SQL](docs/modules/sql-monitoring.md).
+By default, the analysis pipeline does not read raw SQL or bind values. Opt-in inspection uses the original SQL only locally to request `EXPLAIN` without `ANALYZE`; it never includes that SQL in the event. Oversized, incomplete, or lexically ambiguous SQL is omitted instead of emitting partial literals. Plan inspection validates the entire original query and rejects multiple statements independently of normalized metadata. Static analysis produces candidates rather than instructions to create indexes. Errors use `error` severity; slowness and risks use `warning`; observed patterns use `info`; proposed fixes use `suggestion`. See [APM](docs/modules/apm-aggregation.md), [Requests](docs/modules/request-monitoring.md), and [SQL](docs/modules/sql-monitoring.md).
 
-## Sidekiq e Active Job
+## Sidekiq and Active Job
 
-A versão `0.6.0.pre.1` introduziu middleware Sidekiq 4/5. Em Rails, a versão 1.1.3 detecta Sidekiq e instala automaticamente os middlewares de cliente e servidor:
+Version `0.6.0.pre.1` introduced Sidekiq 4/5 middleware. In Rails, version 1.1.3 detects Sidekiq and automatically installs client and server middleware:
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "~> 1.1.3", :require => "chronos/rails"
+gem "chronos-ruby", "~> 1.1.4", :require => "chronos/rails"
 ```
 
-Aplicações Ruby sem Rails continuam usando `require "chronos/sidekiq"` explicitamente.
+Ruby applications without Rails still use an explicit `require "chronos/sidekiq"`.
 
-O envelope de contexto não altera argumentos públicos e contém somente IDs limitados de trace/request. Active Job usa um campo serializado com namespace (`chronos_context`) e hooks públicos. Erros aninhados são deduplicados e reerguidos. Veja [Sidekiq legado](docs/modules/sidekiq-legacy.md), [Active Job](docs/modules/active-job.md) e [Jobs](docs/modules/job-monitoring.md).
+The context envelope preserves public job arguments and contains only bounded trace/request IDs. Active Job uses a namespaced serialized field (`chronos_context`) and public hooks. Nested errors are deduplicated and re-raised. See [Legacy Sidekiq](docs/modules/sidekiq-legacy.md), [Active Job](docs/modules/active-job.md), and [Jobs](docs/modules/job-monitoring.md).
 
 ## Deploy tracking
 
-A Versão 0.9 introduziu deploy síncrono e correlação fixa em todos os eventos:
+Version 0.9 introduced synchronous deploy reporting and fixed correlation across events:
 
 ```ruby
 Chronos.notify_deploy(
@@ -229,35 +230,45 @@ Chronos.notify_deploy(
 )
 ```
 
-Configure release/revision/deploy na inicialização de cada novo processo. A gem não lê Git ou variáveis automaticamente. Capistrano é opcional; Kamal e GitHub Actions usam exemplos em `examples/deploy/`. Veja [Deploys](docs/modules/deploys.md).
+Configure release/revision/deploy metadata when each new process starts. The Ruby API does not read Git or environment variables automatically. Capistrano is optional; Kamal and GitHub Actions recipes are available in `examples/deploy/`. See [Deploys](docs/modules/deploys.md).
 
-## Fila assíncrona
+Version 1.1.4 adds a packaged deploy command without a copied Ruby notification script:
 
-A fila tem capacidade fixa, descarta o evento mais novo quando cheia e cria workers somente após a primeira captura aceita.
+```bash
+bundle exec chronos deploy notify
+```
+
+Supply `CHRONOS_PROJECT_ID`, `CHRONOS_PROJECT_KEY`, `CHRONOS_ENVIRONMENT`, a stable `CHRONOS_DEPLOY_ID`, and `CHRONOS_DEPLOY_REVISION` or `CHRONOS_DEPLOY_VERSION` for the artifact actually published. The CLI reads explicit ENV and optional public YAML without booting Rails. It requires HTTPS and never accepts the project key as a process argument. Optional integration installers cover Kamal, Capistrano, GitHub Actions, GitLab CI, Jenkins, and Azure DevOps. Integration file installation requires POSIX filesystem support (Linux/macOS) and anchors operations to opened directories to prevent symlink redirection.
+
+This branch prepares 1.1.4; publication remains subject to the [release gates](docs/release-1.1.4-readiness.md). See the [CLI guide](docs/deploy-cli.md) for configuration, receipt verification, exit codes, and integration fragments.
+
+## Asynchronous queue
+
+The queue has a fixed capacity, drops the newest event when full, and starts workers only after the first accepted capture.
 
 ```mermaid
 flowchart LR
-  E[Exceção ou telemetria] --> N[Normalização]
-  N --> P[Sanitização]
-  P --> S[Serialização limitada]
-  S --> D[Pipeline de entrega]
-  D --> Q[Fila limitada]
-  Q --> W[Workers fixos]
+  E[Exception or telemetry] --> N[Normalization]
+  N --> P[Sanitization]
+  P --> S[Bounded serialization]
+  S --> D[Delivery pipeline]
+  D --> Q[Bounded queue]
+  Q --> W[Fixed workers]
   W --> H[Net::HTTP]
-  W --> B[Backlog em memória]
+  W --> B[In-memory backlog]
 ```
 
-Use `Chronos.flush(timeout)` antes de encerrar e `Chronos.close(timeout)` no shutdown. Workers são recriados após fork. Veja [Fila assíncrona](docs/modules/async-queue.md).
+Use `Chronos.flush(timeout)` before termination and `Chronos.close(timeout)` during shutdown. Workers are recreated after a fork. See [Asynchronous queue](docs/modules/async-queue.md).
 
-## Retry e backlog
+## Retry and backlog
 
-Retry cobre erros de rede, HTTP `408`, `429` e `5xx`, com backoff exponencial, jitter e tentativas limitadas. Outros `4xx` são permanentes. Circuit breaker reduz tempestades de retry.
+Retries cover network errors and HTTP `408`, `429`, and `5xx`, with exponential backoff, jitter, and bounded attempts. Other `4xx` responses are permanent failures. A circuit breaker reduces retry storms.
 
-O backlog guarda somente eventos já sanitizados/serializados, possui capacidade fixa, vive em memória e é perdido no encerramento. Configuração remota aceita apenas sampling, tipos habilitados, limite menor de payload, fingerprints exatas, intervalo e kill switch; nunca altera host, credenciais, TLS ou executa código. Veja [Retry e backlog](docs/modules/retry-backlog.md), [Sampling](docs/modules/sampling.md) e [Configuração remota](docs/modules/remote-configuration.md).
+The backlog stores only sanitized, serialized events. It has a fixed capacity, lives in memory, and is lost on shutdown. Remote configuration accepts only sampling, enabled event types, a smaller payload limit, exact fingerprints, send interval, and a kill switch; it never changes the host, credentials, or TLS settings, or executes code. See [Retry and backlog](docs/modules/retry-backlog.md), [Sampling](docs/modules/sampling.md), and [Remote configuration](docs/modules/remote-configuration.md).
 
-## Configuração por ambiente
+## Environment-based configuration
 
-A gem não varre o ambiente. Leia somente variáveis escolhidas pela aplicação:
+The Ruby API does not scan the environment. Read only variables chosen by your application:
 
 ```ruby
 Chronos.configure do |config|
@@ -280,56 +291,138 @@ Chronos.configure do |config|
 end
 ```
 
-Todas as opções, defaults e limites estão em [Configuração](docs/configuration.md).
+See [Configuration](docs/configuration.md) for all options, defaults, and limits.
 
 ## Troubleshooting
 
-Erros de configuração são levantados durante `Chronos.configure`; falhas de captura/entrega são contidas e podem ir ao logger seguro. Confirme TLS, credenciais, timeouts e retorno de `flush`. Consulte [Troubleshooting](docs/troubleshooting.md).
+Configuration errors are raised during `Chronos.configure`; capture and delivery failures are contained and may be reported to the safe logger. Check TLS, credentials, timeouts, and the return value of `flush`. See [Troubleshooting](docs/troubleshooting.md).
 
-## Benchmark
+## Benchmarks
 
-O gate estável executa comparação Rack repetível e carga contra endpoint fake:
+The stable release gate runs a repeatable Rack comparison and load against a fake endpoint:
 
 ```bash
 ITERATIONS=50000 WARMUP=5000 SAMPLES=7 bundle _1.17.3_ exec ruby benchmarks/comparative.rb
 ITERATIONS=500 bundle _1.17.3_ exec ruby benchmarks/fake_endpoint_load.rb
 ```
 
-Resultados dependem de runtime e hardware. Não há alegação genérica de superioridade; registre CPU, SO, Ruby, commit, warmup, amostras, mediana e dispersão. Outros benchmarks ficam em `benchmarks/` e estão descritos em [Performance](docs/performance.md).
+Results depend on the runtime and hardware. There is no general claim of superiority: record CPU, OS, Ruby, commit, warmup, samples, median, and dispersion. Additional benchmarks are in `benchmarks/` and documented in [Performance](docs/performance.md).
 
-## Migração do Airbrake
+## Migrating from Airbrake
 
-Migre por etapas e mantenha os dois agentes juntos somente durante a validação, evitando duplicidade prolongada. Callbacks e notices não são API-compatíveis e devem ser traduzidos/testados explicitamente. Consulte o [guia de migração do Airbrake](docs/migration-from-airbrake.md).
+Migrate in stages. Run both agents together only during validation to avoid prolonged duplicate reporting. Callbacks and notices are not API-compatible and must be translated and tested explicitly. See the [Airbrake migration guide](docs/migration-from-airbrake.md).
 
-## Desenvolvimento local
+## Local development
 
-Instale Bundler 1.17.3 e as dependências:
+On a supported legacy Ruby, install Bundler 1.17.3 and the dependencies:
 
 ```bash
 gem install bundler -v 1.17.3
 bin/setup
 ```
 
-Use `bin/console` para inspeção e `bundle _1.17.3_ exec rake install` para instalar a fonte localmente. A arquitetura hexagonal está descrita em [Arquitetura](docs/architecture.md).
+Use `bin/console` for inspection and `bundle _1.17.3_ exec rake install` to install the source locally. See [Architecture](docs/architecture.md) for the hexagonal design.
 
-## Testes
+## Tests
 
-Execute suíte e lint no runtime atual:
+On a supported Ruby with dependencies installed, run the existing suite and lint:
 
 ```bash
 bundle _1.17.3_ exec rake
 ```
 
-A matriz CI cobre Ruby 2.2.10–2.6.10, aplicações Rails 4.2/5.2 e Sidekiq 4/5. O workflow de release repete toda a matriz, documentação, benchmark comparativo e carga antes de publicar.
+To also run the deploy CLI, adapter, HTTPS receiver, and installed-package checks, use the legacy CI entry point:
 
-## Contribuição
+```bash
+sh script/ci_legacy
+```
 
-Abra uma issue antes de adicionar API pública ou dependência. Classes públicas precisam de YARD, testes, documentação de módulo e evidência de compatibilidade. Veja [CONTRIBUTING.md](CONTRIBUTING.md).
+The CI matrix covers Ruby 2.2.10–2.6.10, Rails 4.2/5.2 applications, and Sidekiq 4/5. The release workflow repeats the compatibility matrix, documentation checks, comparative benchmark, and load gate before publishing. Tests on a modern Ruby alone do not establish legacy compatibility.
 
-## Segurança
+### Prepare Docker
 
-Nunca inclua credenciais no contexto. Releases usam Trusted Publishing, checksum SHA-256 e SBOM; dependências passam por auditoria. Reporte vulnerabilidades pelo canal privado de [SECURITY.md](SECURITY.md).
+Install Docker Desktop for your platform, start its engine, and run these checks from the repository root:
 
-## Licença
+```bash
+# macOS: start Docker Desktop; on other systems, start your Docker engine.
+open -a Docker
+docker version
+docker info
+```
 
-Chronos Ruby é distribuída sob a licença MIT. Veja [LICENSE.txt](LICENSE.txt).
+`docker version` must show both Client and Server. The commands below require access to the image registry and RubyGems to download images and dependencies. No SaaS credentials are required.
+
+The helper uses `linux/amd64`, including on Apple Silicon through emulation. It mounts the repository read-only and runs tests against a temporary copy inside the container. It excludes local Bundler configuration, credentials directories, and `.env` files, and removes lockfiles only from that copy. Your host Bundler, installed gems, and `Gemfile.lock` remain unchanged.
+
+### Run one Ruby version
+
+Choose any supported version and run its complete legacy checks:
+
+```bash
+sh script/test_legacy_docker 2.2.10
+sh script/test_legacy_docker 2.3.8
+sh script/test_legacy_docker 2.4.10
+sh script/test_legacy_docker 2.5.9
+sh script/test_legacy_docker 2.6.10
+```
+
+Each line is independent. The helper installs Bundler 1.17.3 and dependencies inside the container, then runs `script/ci_legacy`, including the installed-gem smoke tests against a local HTTPS receiver.
+
+### Run all Ruby versions
+
+Run this block to execute the five versions sequentially and stop at the first failure with a nonzero exit status:
+
+```bash
+(
+  set -e
+  for version in 2.2.10 2.3.8 2.4.10 2.5.9 2.6.10; do
+    sh script/test_legacy_docker "$version"
+  done
+)
+```
+
+### Run one Rails/Ruby combination
+
+Select one of the documented pairs:
+
+```bash
+sh script/test_legacy_docker 2.2.10 examples/rails-4.2
+sh script/test_legacy_docker 2.3.8 examples/rails-4.2
+sh script/test_legacy_docker 2.5.9 examples/rails-5.2
+sh script/test_legacy_docker 2.6.10 examples/rails-5.2
+```
+
+Each command runs the Rails application smoke and deploy generator checks. These are separate from the plain Ruby suite; run both groups before approving a release.
+
+### Run the complete Ruby and Rails matrix
+
+Run this block to execute all five Ruby checks followed by all four supported Rails pairs. It stops at the first failure:
+
+```bash
+(
+  set -e
+  for version in 2.2.10 2.3.8 2.4.10 2.5.9 2.6.10; do
+    sh script/test_legacy_docker "$version"
+  done
+  for version in 2.2.10 2.3.8; do
+    sh script/test_legacy_docker "$version" examples/rails-4.2
+  done
+  for version in 2.5.9 2.6.10; do
+    sh script/test_legacy_docker "$version" examples/rails-5.2
+  done
+)
+```
+
+Keep the logs for each combination. The helper prints Ruby, OpenSSL, and JSON versions. A stopped matrix does not approve the remaining combinations, and these commands do not run the separate Sidekiq gates or validate SaaS ledger/projection behavior. If certificate or dependency resolution fails, fix the compatible image or dependency versions while keeping HTTPS verification enabled. See the [detailed legacy test environment guide](docs/legacy-test-environment.md).
+
+## Contributing
+
+Open an issue before adding a public API or dependency. Public classes require YARD documentation, tests, module documentation, and compatibility evidence. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Security
+
+Never include credentials in context. Releases use Trusted Publishing, SHA-256 checksums, and an SBOM; dependencies are audited. Report vulnerabilities through the private channel in [SECURITY.md](SECURITY.md).
+
+## License
+
+Chronos Ruby is distributed under the MIT license. See [LICENSE.txt](LICENSE.txt).

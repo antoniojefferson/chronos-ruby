@@ -53,7 +53,7 @@ module Chronos
       def sanitize_type(value, depth, state)
         return sanitize_hash(value, depth, state) if value.is_a?(Hash)
         return sanitize_array(value, depth, state) if value.is_a?(Array)
-        return @sensitive_value_filter.call(value) if value.is_a?(String)
+        return @sensitive_value_filter.call(value.to_s) if value.is_a?(String) || value.is_a?(Symbol)
 
         value
       end

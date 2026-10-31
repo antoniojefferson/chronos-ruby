@@ -1,3 +1,5 @@
+require "chronos/core/bounded_copy"
+
 module Chronos
   module Core
     # Immutable value object containing a normalized Ruby exception.
@@ -22,8 +24,9 @@ module Chronos
       attr_reader(*ATTRIBUTES)
 
       def initialize(attributes)
+        copied = BoundedCopy.new.call(attributes)
         ATTRIBUTES.each do |attribute|
-          instance_variable_set("@#{attribute}", immutable_copy(attributes[attribute]))
+          instance_variable_set("@#{attribute}", copied[attribute])
         end
         freeze
       end
@@ -31,33 +34,6 @@ module Chronos
       def to_h
         ATTRIBUTES.each_with_object({}) do |attribute, result|
           result[attribute] = public_send(attribute)
-        end
-      end
-
-      private
-
-      def immutable_copy(value)
-        case value
-        when Hash
-          value.each_with_object({}) do |(key, child), copy|
-            copy[immutable_copy(key)] = immutable_copy(child)
-          end
-        when Array
-          value.map { |child| immutable_copy(child) }
-        when String
-          value.dup
-        when NilClass, TrueClass, FalseClass, Symbol, Numeric
-          value
-        else
-          value.dup
-        end.freeze
-      rescue TypeError
-        value
-      rescue StandardError
-        begin
-          value.dup.freeze
-        rescue StandardError
-          value
         end
       end
     end
