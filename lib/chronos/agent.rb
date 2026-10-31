@@ -248,12 +248,17 @@ module Chronos
     end
 
     def context_for_capture(additional)
-      merged = deep_merge(context_hash(@context_store.get), context_hash(additional))
+      current = context_hash(@context_store.get)
+      additions = context_hash(additional)
+      buffer = breadcrumb_buffer(additions) || breadcrumb_buffer(current)
+      copier = Core::BoundedCopy.new
+      merged = deep_merge(copier.call(current), copier.call(additions))
       merged.delete(:__chronos_captured_exceptions)
       merged.delete("__chronos_captured_exceptions")
       merged.delete(:__chronos_captured_events)
       merged.delete("__chronos_captured_events")
-      buffer = merged.delete(:__chronos_breadcrumbs) || merged.delete("__chronos_breadcrumbs")
+      merged.delete(:__chronos_breadcrumbs)
+      merged.delete("__chronos_breadcrumbs")
       if buffer.respond_to?(:to_a)
         merged[:context] = context_hash(merged[:context]).merge("breadcrumbs" => buffer.to_a)
       end
@@ -262,9 +267,13 @@ module Chronos
       context_hash(additional)
     end
 
+    def breadcrumb_buffer(context)
+      context[:__chronos_breadcrumbs] || context["__chronos_breadcrumbs"]
+    end
+
     def telemetry_context(additional)
       merged = context_for_capture(additional)
-      context = context_hash(merged.delete(:context) || merged.delete("context"))
+      context = context_hash(merged.delete(:context) || merged.delete("context")).dup
       parameters = merged.delete(:parameters) || merged.delete("parameters")
       user = merged.delete(:user) || merged.delete("user")
       context["parameters"] = parameters if parameters.is_a?(Hash) && !parameters.empty?
@@ -272,9 +281,11 @@ module Chronos
       context.merge(merged)
     end
 
-    def deep_merge(left, right)
+    def deep_merge(left, right, depth = 0)
+      return {} if depth >= Core::BoundedCopy::MAX_DEPTH
+
       left.merge(right) do |_key, old_value, new_value|
-        old_value.is_a?(Hash) && new_value.is_a?(Hash) ? deep_merge(old_value, new_value) : new_value
+        old_value.is_a?(Hash) && new_value.is_a?(Hash) ? deep_merge(old_value, new_value, depth + 1) : new_value
       end
     end
 

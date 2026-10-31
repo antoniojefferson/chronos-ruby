@@ -1,4 +1,5 @@
 require "json"
+require "chronos/core/sql_lexer"
 
 module Chronos
   module Rails
@@ -63,10 +64,7 @@ module Chronos
         return false unless connection
         return false unless (query["operation"] || query[:operation]).to_s == "SELECT"
         return false if table(query).empty?
-        return false unless raw_sql.to_s.lstrip =~ /\ASELECT\b/i
-
-        normalized = (query["normalized_query"] || query[:normalized_query]).to_s
-        normalized.sub(/;\s*\z/, "") !~ /;/
+        Core::SqlLexer.new(raw_sql, adapter_name(connection)).single_select?
       end
 
       def indexes(connection, table_name)
