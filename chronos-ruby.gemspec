@@ -38,7 +38,8 @@ Gem::Specification.new do |spec|
     "SECURITY.md",
     "contracts/*.json",
     "docs/**/*.md",
-    "lib/**/*.rb"
+    "lib/**/*.rb",
+    "exe/*"
   ]
   spec.bindir        = "exe"
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
