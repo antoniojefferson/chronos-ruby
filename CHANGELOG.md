@@ -21,6 +21,15 @@ All notable changes are documented here. The project follows Semantic Versioning
 - Translate the README into English and document Docker test preparation and matrix execution.
 - Prepare release metadata, compatibility references, and readiness documentation for 1.1.4. Legacy runtime, supplier, and SaaS validation remain release gates, not claims established by modern local tests.
 
+### Security
+
+- Mask SQL literals lexically before output truncation and omit oversized, incomplete, or ambiguous SQL instead of retaining partial private values.
+- Validate the entire original query before optional plan inspection; reject additional statements even when normalized metadata was truncated.
+- Sanitize sensitive symbol values before JSON conversion and copy diagnostic structures with cycle, depth, collection, node, and string limits before event construction.
+- Preserve mutable caller-owned telemetry data and bound scoped context merging to prevent stack exhaustion.
+- Anchor integration installation to opened POSIX directories with no-follow reads and descriptor-relative creation/atomic publication, preventing symlink swaps from redirecting filesystem changes.
+- Add regression coverage for all five security findings and installed-package integration generation.
+
 ### Fixed
 
 - Reject conflicting configuration aliases, unsupported command options, incomplete offline diagnostics, and oversized deployment metadata before sending.

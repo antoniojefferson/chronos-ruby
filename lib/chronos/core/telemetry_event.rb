@@ -1,5 +1,6 @@
 require "securerandom"
 require "time"
+require "chronos/core/bounded_copy"
 
 module Chronos
   module Core
@@ -21,30 +22,16 @@ module Chronos
       attr_reader :event_id, :event_type, :timestamp, :context, :payload
 
       def initialize(event_type, payload = {}, context = {}, options = {})
-        type = event_type.to_s
+        type = event_type.to_s.dup
         raise ArgumentError, "unsupported telemetry event type" unless TYPES.include?(type)
 
         clock = options[:clock] || proc { Time.now }
-        @event_id = (options[:event_id] || SecureRandom.uuid).to_s.freeze
+        @event_id = (options[:event_id] || SecureRandom.uuid).to_s.dup.freeze
         @event_type = type.freeze
         @timestamp = clock.call.utc.iso8601(6).freeze
-        @context = deep_freeze(context.is_a?(Hash) ? context : {})
-        @payload = deep_freeze(payload.is_a?(Hash) ? payload : {})
+        @context = BoundedCopy.new.call(context.is_a?(Hash) ? context : {})
+        @payload = BoundedCopy.new.call(payload.is_a?(Hash) ? payload : {})
         freeze
-      end
-
-      private
-
-      def deep_freeze(value)
-        if value.is_a?(Hash)
-          value.each do |key, child|
-            deep_freeze(key)
-            deep_freeze(child)
-          end
-        elsif value.is_a?(Array)
-          value.each { |child| deep_freeze(child) }
-        end
-        value.freeze
       end
     end
 

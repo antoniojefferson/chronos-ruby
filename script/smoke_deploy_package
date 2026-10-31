@@ -23,5 +23,13 @@ CHRONOS_PROJECT_ID=package-test CHRONOS_PROJECT_KEY=not-a-real-key \
 CHRONOS_ENVIRONMENT=package-test CHRONOS_DEPLOY_ID=package-test CHRONOS_DEPLOY_REVISION=package-test \
 GEM_HOME="$artifact_dir/gems" GEM_PATH="$artifact_dir/gems" "$artifact_dir/gems/bin/chronos" deploy diagnose --offline
 
+customer_root="$artifact_dir/customer with spaces"
+mkdir "$customer_root"
+GEM_HOME="$artifact_dir/gems" GEM_PATH="$artifact_dir/gems" "$artifact_dir/gems/bin/chronos" \
+  deploy install --provider kamal --root "$customer_root"
+GEM_HOME="$artifact_dir/gems" GEM_PATH="$artifact_dir/gems" "$artifact_dir/gems/bin/chronos" \
+  deploy install --provider kamal --root "$customer_root" --check
+test -x "$customer_root/.kamal/hooks/post-deploy"
+
 GEM_HOME="$artifact_dir/gems" GEM_PATH="$artifact_dir/gems:$(ruby -e 'puts Gem.path.join(":")')" \
 CHRONOS_TEST_EXECUTABLE="$artifact_dir/gems/bin/chronos" ruby test/deploy_transport_test.rb
