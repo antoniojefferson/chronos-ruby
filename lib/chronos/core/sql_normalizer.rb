@@ -1,4 +1,5 @@
 require "digest"
+require "chronos/core/sql_lexer"
 
 module Chronos
   module Core
@@ -15,7 +16,7 @@ module Chronos
     # @errors Malformed or unreadable input returns bounded unknown metadata.
     # @performance Input and normalized output are capped before fingerprinting.
     class SqlNormalizer
-      MAX_SQL_BYTES = 4096
+      MAX_SQL_BYTES = SqlLexer::MAX_BYTES
       MAX_NORMALIZED_BYTES = 512
       KEYWORDS = %w(
         select insert update delete from into where join left right inner outer on set values
@@ -23,7 +24,7 @@ module Chronos
       ).freeze
 
       def call(sql, metadata = {})
-        normalized = normalize(sql)
+        normalized = normalize(sql, metadata)
         {
           "adapter" => adapter(metadata), "operation" => operation(normalized),
           "table" => table(normalized), "normalized_query" => normalized,
@@ -41,11 +42,10 @@ module Chronos
 
       private
 
-      def normalize(sql)
-        text = bounded(sql.to_s, MAX_SQL_BYTES)
-        text = text.gsub(%r{/\*.*?\*/}m, " ").gsub(/--[^\r\n]*/, " ")
-        text = text.gsub(/'(?:''|[^'])*'/, "?")
-        text = text.gsub(/\$([A-Za-z_][A-Za-z0-9_]*)?\$.*?\$\1\$/m, "?")
+      def normalize(sql, metadata)
+        text = SqlLexer.new(sql, adapter(metadata)).call
+        return "" unless text
+
         text = text.gsub(/\b(?:0x[0-9a-f]+|\d+(?:\.\d+)?)\b/i, "?")
         text = text.gsub(/\b(?:true|false|null)\b/i, "?")
         text = text.gsub(/\(\s*\?(?:\s*,\s*\?)+\s*\)/, "(?)")

@@ -41,3 +41,5 @@ install_bundle() {
 
 install_bundle
 run_bundle exec ruby "$EXAMPLE_PATH/script/smoke"
+
+run_bundle exec ruby -Ilib test/smoke_deploy_rails.rb

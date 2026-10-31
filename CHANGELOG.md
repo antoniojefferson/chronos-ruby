@@ -4,6 +4,24 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-10-31
+
+### Added
+
+- Packaged deploy CLI and safe provider installers ported from legacy 1.1.4, with equivalent explicit configuration, receipt verification, offline diagnostics and exit codes.
+- Transitional core/package gates on Ruby 2.7–3.4, real Rails 7.0/7.1/7.2 fixtures, Sidekiq 7 middleware-chain smokes and an isolated Docker helper.
+
+### Security
+
+- Port SQL literal masking and full original-query inspection guards, sensitive symbol filtering, bounded diagnostic copies/context merging, and descriptor-anchored POSIX installation with regression coverage.
+
+### Changed
+
+- Preserve the existing Ruby >= 2.7 and < 3.5 requirement, protocol v1 and main-line integrations, including fiber-aware context and Rails Error Reporter.
+- Correct legacy references introduced by conflict resolution; prepare 1.2.2 release metadata, English documentation and dedicated readiness evidence.
+- Wire standalone deploy and installed-package tests into PR and release gates. Framework smokes remain focused evidence and do not automatically promote Best effort combinations.
+
+
 ## [1.2.1] - 2026-08-13
 
 ### Changed

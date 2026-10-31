@@ -7,7 +7,7 @@ module Chronos
     # @limits It does not configure credentials or depend on private Rails APIs.
     # @collaborators Rails application middleware, NotificationsSubscriber, and Chronos facade.
     # @thread_safety A mutex protects the per-application installation registry.
-    # @compatibility Rails 4.2 through Rails 5.2 without Zeitwerk.
+    # @compatibility Rails 7; optional integrations are feature-detected.
     # @example
     #   Chronos::Rails::Installer.new.install(Rails.application)
     # @errors Missing optional Rails capabilities return false without affecting boot.

@@ -38,13 +38,15 @@ Gem::Specification.new do |spec|
     "SECURITY.md",
     "contracts/*.json",
     "docs/**/*.md",
-    "lib/**/*.rb"
+    "lib/**/*.rb",
+    "exe/*"
   ]
   spec.bindir        = "exe"
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "bundler", ">= 2.1", "< 3"
+  spec.add_development_dependency "minitest", ">= 5.15", "< 6"
   spec.add_development_dependency "rake", ">= 12.3", "< 14"
   spec.add_development_dependency "rspec", ">= 3.10", "< 4"
   spec.add_development_dependency "rubocop", "~> 1.57.0"

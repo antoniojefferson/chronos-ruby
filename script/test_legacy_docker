@@ -1,0 +1,33 @@
+#!/usr/bin/env sh
+set -eu
+version=${1:-2.2.10}
+example=${2:-}
+case "$version" in
+  2.2.10|2.3.8|2.4.10|2.5.9|2.6.10) ;;
+  *) echo "Use Ruby 2.2.10, 2.3.8, 2.4.10, 2.5.9 or 2.6.10." >&2; exit 1 ;;
+esac
+case "$version:$example" in
+  *:) ;;
+  2.2.10:examples/rails-4.2|2.3.8:examples/rails-4.2|2.5.9:examples/rails-5.2|2.6.10:examples/rails-5.2) ;;
+  *) echo "Use only the documented Rails/Ruby pairs." >&2; exit 1 ;;
+esac
+project_root=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
+docker run --rm --platform linux/amd64 \
+  --volume "$project_root:/src:ro" \
+  --env EXAMPLE_PATH="$example" \
+  --env BUNDLE_IGNORE_CONFIG=1 \
+  --env BUNDLE_PATH=/tmp/chronos-bundle \
+  "ruby:$version" sh -eu -c '
+    mkdir /work
+    tar -C /src --exclude=.git --exclude=.bundle --exclude=.aws --exclude=.codex --exclude=.agents --exclude=".env*" \
+      --exclude=vendor --exclude=tmp --exclude=log --exclude="*.gem" -cf - . | tar -C /work -xf -
+    cd /work
+    rm -f Gemfile.lock examples/rails-4.2/Gemfile.lock examples/rails-5.2/Gemfile.lock
+    ruby -v
+    ruby -ropenssl -rjson -e '\''puts "OpenSSL: #{OpenSSL::OPENSSL_VERSION}; JSON: #{JSON::VERSION}"'\''
+    if [ -n "$EXAMPLE_PATH" ]; then
+      sh script/ci_rails_legacy
+    else
+      sh script/ci_legacy
+    fi
+  '
