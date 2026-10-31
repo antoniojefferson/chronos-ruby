@@ -4,7 +4,7 @@ Version `0.6.0.pre.1` starts the legacy jobs line with optional Sidekiq 4 and 5 
 
 ```ruby
 gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "~> 1.1.3", :require => "chronos/rails"
+gem "chronos-ruby", "~> 1.1.4", :require => "chronos/rails"
 ```
 
 Plain Ruby applications continue to use `require "chronos/sidekiq"` explicitly. Both entry points install middleware through the public `configure_client` and `configure_server` APIs. They do nothing when Sidekiq is unavailable, and the framework-independent core never requires Sidekiq. Installation adds no Chronos thread or Redis/database connection per job; delivery continues through the agent's existing fixed worker pool.

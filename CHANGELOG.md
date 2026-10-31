@@ -4,6 +4,29 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-10-31
+
+### Added
+
+- Packaged `chronos` executable with `deploy notify`, `deploy verify`, `deploy diagnose --offline`, and `deploy install`, without requiring Rails or a copied notification script.
+- Explicit CLI configuration through public options, canonical environment variables, compatible aliases, and optional allowlisted YAML; stable publication identity and actual artifact revision/version are required for notification.
+- Idempotent integration installers for Kamal, Capistrano, GitHub Actions, GitLab CI, Jenkins, and Azure DevOps, plus optional Rails generator and Rake task adapters.
+- Versioned JSON outcomes, documented exit codes, bounded transport operations, and a warning policy that preserves unconfirmed delivery status.
+- Local HTTPS tests, installed-package smoke gates, Rails generator smoke coverage, and an isolated Docker helper for individual and combined legacy matrix runs.
+
+### Changed
+
+- Include the executable and deploy implementation in the gem package while preserving the existing Ruby requirement and protocol v1.
+- Disable retries and backlog in the CLI; receipt verification also disables dependency reporting. The existing Ruby API defaults remain unchanged.
+- Translate the README into English and document Docker test preparation and matrix execution.
+- Prepare release metadata, compatibility references, and readiness documentation for 1.1.4. Legacy runtime, supplier, and SaaS validation remain release gates, not claims established by modern local tests.
+
+### Fixed
+
+- Reject conflicting configuration aliases, unsupported command options, incomplete offline diagnostics, and oversized deployment metadata before sending.
+- Preserve existing integration files, reject destination symlinks, and expose proposed templates without disclosing customer file contents.
+- Always close the CLI agent and report notification shutdown failures as unconfirmed; keep Rake registration idempotent with bounded method complexity.
+
 ## [1.1.3] - 2026-08-13
 
 ### Changed
