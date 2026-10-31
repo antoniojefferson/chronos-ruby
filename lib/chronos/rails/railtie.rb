@@ -7,7 +7,7 @@ module Chronos
     # @limits It performs no autoloading and does not use private Rails initialization APIs.
     # @collaborators Rails::Railtie and Chronos::Rails::Installer.
     # @thread_safety Rails invokes the initializer during serialized application boot.
-    # @compatibility Rails 4.2 through Rails 5.2; no Zeitwerk requirement.
+    # @compatibility Rails 7 public initialization and task APIs.
     # @example
     #   require "chronos/rails"
     # @errors Installer contains optional integration failures and allows Rails to boot.

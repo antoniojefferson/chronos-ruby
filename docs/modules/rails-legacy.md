@@ -1,6 +1,6 @@
-# Rails 4.2 and 5.2 legacy integration
+# Rails 7 transitional integration
 
-Version 0.5 adds an explicit Rails entry point:
+Version 0.5 introduced the explicit Rails entry point. In the 1.2 line it targets the documented Rails 7 combinations; Rails 4/5 belong to the legacy 1.1 line:
 
 ```ruby
 require "chronos/rails"

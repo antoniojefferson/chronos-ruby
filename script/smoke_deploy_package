@@ -33,3 +33,34 @@ test -x "$customer_root/.kamal/hooks/post-deploy"
 
 GEM_HOME="$artifact_dir/gems" GEM_PATH="$artifact_dir/gems:$(ruby -e 'puts Gem.path.join(":")')" \
 CHRONOS_TEST_EXECUTABLE="$artifact_dir/gems/bin/chronos" ruby test/deploy_transport_test.rb
+
+# Resolve an isolated client against the installed artifact, then exercise Bundler frozen mode.
+client_root="$artifact_dir/bundled-client"
+mkdir "$client_root"
+ruby -Ilib -rchronos/version -e '
+  File.write(ARGV.fetch(0), "source \"https://rubygems.org\"\ngem \"chronos-ruby\", \"#{Chronos::VERSION}\"\n")
+' "$client_root/Gemfile"
+parent_gem_path=$(ruby -e 'puts Gem.path.join(":")')
+test_driver="$(pwd)/test/deploy_transport_test.rb"
+(
+  cd "$client_root"
+  export GEM_HOME="$artifact_dir/gems"
+  export GEM_PATH="$artifact_dir/gems:$parent_gem_path"
+  unset BUNDLE_PATH BUNDLE_BIN_PATH BUNDLE_APP_CONFIG BUNDLE_WITHOUT BUNDLE_DEPLOYMENT BUNDLE_FROZEN
+  export BUNDLE_GEMFILE="$client_root/Gemfile"
+  export BUNDLE_IGNORE_CONFIG=1
+  bundle _2.4.22_ lock --local
+  export BUNDLE_FROZEN=true
+  bundle _2.4.22_ exec ruby -e '
+    spec = Gem.loaded_specs.fetch("chronos-ruby")
+    abort "Bundler selected a different artifact" unless spec.full_gem_path.start_with?(ARGV.fetch(0) + "/")
+  ' "$artifact_dir/gems"
+  bundle _2.4.22_ exec chronos --help
+  CHRONOS_PROJECT_ID=package-test CHRONOS_PROJECT_KEY=synthetic-package-key \
+  CHRONOS_ENVIRONMENT=package-test CHRONOS_DEPLOY_ID=package-test CHRONOS_DEPLOY_REVISION=package-test \
+  bundle _2.4.22_ exec chronos deploy diagnose --offline
+  bundle _2.4.22_ exec chronos deploy install --provider kamal --root "$client_root"
+  bundle _2.4.22_ exec chronos deploy install --provider kamal --root "$client_root" --check
+  bundle _2.4.22_ binstubs chronos-ruby --path bin
+  CHRONOS_TEST_EXECUTABLE="$client_root/bin/chronos" ruby "$test_driver"
+)

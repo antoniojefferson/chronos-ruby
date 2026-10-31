@@ -1,36 +1,35 @@
-# Deploy pela CLI legada
+# Transitional deploy CLI
 
-A CLI está incluída na release legada 1.1.4 em preparação. Após sua publicação e instalação, configure pelo ambiente:
+Version 1.2.2 ports the CLI/security contract from legacy 1.1.4 while preserving Ruby >= 2.7 and < 3.5 and the existing transitional integrations. After the release is published and installed:
 
 ```sh
-export CHRONOS_PROJECT_ID=seu-projeto
-# Injete CHRONOS_PROJECT_KEY pelo mecanismo de secrets da publicação.
+export CHRONOS_PROJECT_ID=your-project
+# Inject CHRONOS_PROJECT_KEY through the deployment secret mechanism.
 export CHRONOS_ENVIRONMENT=production
-export CHRONOS_DEPLOY_ID=identidade-estavel-da-publicacao
-export CHRONOS_DEPLOY_REVISION=revisao-do-artefato-publicado
+export CHRONOS_DEPLOY_ID=stable-publication-identity
+export CHRONOS_DEPLOY_REVISION=revision-of-the-actually-published-artifact
 bundle exec chronos deploy notify
 ```
 
-Não é necessário copiar um script Ruby. A CLI não inicializa Rails e não lê credentials ou initializer. `CHRONOS_SERVICE_NAME` deve corresponder ao serviço do runtime. `CHRONOS_DEPLOY_VERSION` pode substituir a revisão. Host padrão: https://chronosmonitor.com.br; override: CHRONOS_HOST, somente HTTPS sem credenciais, query ou fragmento. TLS mantém a verificação existente.
+No Ruby notification script needs to be copied. The CLI does not boot Rails or read credentials/initializers implicitly. CHRONOS_SERVICE_NAME must match runtime service configuration; CHRONOS_DEPLOY_VERSION can replace the revision. The default host is https://chronosmonitor.com.br; CHRONOS_HOST overrides it with HTTPS only, without URL credentials, query or fragment.
 
-Aliases: DEPLOY_ENVIRONMENT, SERVICE_NAME, DEPLOY_ID, GIT_SHA e APP_VERSION. Conflitos com ENV canônica são erros. Opções públicas explícitas prevalecem sobre ENV e `config/chronos-deploy.yml`; a chave somente entra por CHRONOS_PROJECT_KEY. YAML aceita apenas project_id, host, environment, service_name, deploy_id, revision e version, com valores string. Nunca grave secrets nesse arquivo.
+Canonical variables: CHRONOS_PROJECT_ID, CHRONOS_PROJECT_KEY, CHRONOS_HOST, CHRONOS_ENVIRONMENT, CHRONOS_SERVICE_NAME, CHRONOS_DEPLOY_ID, CHRONOS_DEPLOY_REVISION, CHRONOS_DEPLOY_VERSION. Aliases: DEPLOY_ENVIRONMENT, SERVICE_NAME, DEPLOY_ID, GIT_SHA, APP_VERSION. Conflicting aliases are errors. Explicit public options override ENV, which overrides optional config/chronos-deploy.yml. The key is ENV-only. YAML accepts only string values for project_id, host, environment, service_name, deploy_id, revision and version; never persist secrets there.
 
-`deploy diagnose --offline` exige a configuração completa de notify e verifica sua leitura local, sem autenticar credenciais. `deploy verify` usa o receipt existente, sem criar Deployment; receipt não comprova projeção. `--help` e `--version` são locais. `--timeout` aceita 0 < segundos <= 60; tentativas adicionais do transporte e backlog são desativados na CLI. O timeout limita operações do transporte e flush, não é um deadline global do processo.
+`deploy diagnose --offline` validates complete notify configuration locally without authenticating credentials. `deploy verify` uses the existing correlated receipt and sends no deploy or dependency inventory. A receipt is not proof of SaaS projection. Help/version are local. `--timeout` accepts 0 < seconds <= 60 and bounds transport/flush operations, not one global process deadline. Retries/backlog are disabled for this short-lived CLI. Notify can still produce dependency events.
 
-Saída operacional JSON schema_version=1: success e state; erros de configuração incluem orientação estática e, quando necessário, missing_fields. Verify acrescenta verification_status do contrato de receipt. Códigos: 0 sucesso local ou entrega confirmada pela gem, 1 configuração/uso inválidos, 2 entrega não confirmada, 3 falha interna. `--on-error=warn` converte somente entrega não confirmada em status 0 e preserva success=false. Um false pode acontecer após aceite remoto; não faça retry cego. Reenvio com mesmo deploy ID pode consumir outro evento; dependências podem adicionar eventos. Não há garantia de cobrança única.
+Operational JSON uses schema_version=1, success and state; verify also exposes verification_status. Exit codes: 0 local/confirmed success, 1 invalid configuration, 2 unconfirmed delivery, 3 internal failure. `--on-error=warn` converts only unconfirmed delivery to process status 0 and retains success=false. Do not retry blindly: the receiver may already have accepted an event. A stable deployment ID does not guarantee exactly-once event consumption or billing.
 
-Gere integrações explicitamente:
+Generate integrations explicitly:
 
 ```sh
 bundle exec chronos deploy install --provider kamal --dry-run
 bundle exec chronos deploy install --provider kamal
 bundle exec chronos deploy install --provider kamal --check
+bundle exec rails generate chronos:deploy:install --provider=kamal
 ```
 
-Providers: kamal, capistrano, github-actions, gitlab-ci, jenkins, azure-devops. Use `--root PATH` para destino explícito. O generator `rails generate chronos:deploy:install --provider=kamal` usa o mesmo instalador. Arquivos iguais não mudam; conflitos falham. A resposta de conflito oferece a proposta de template, omitindo o conteúdo anterior por privacidade. Faça merge manual antes de considerar `--force`. Symlinks no caminho de destino são rejeitados. O instalador usa operações relativas a descritores de diretórios POSIX (Linux/macOS), sem mudar o diretório global do processo, para impedir redirecionamento por troca concorrente de symlinks. Leituras de arquivos existentes são limitadas a 64 KiB e não seguem symlinks. A raiz deve pertencer a um contexto de publicação confiável; isso não protege contra uma conta local já autorizada a modificar o projeto inteiro. Nenhum pipeline é ativado automaticamente.
+Providers: kamal, capistrano, github-actions, gitlab-ci, jenkins and azure-devops. Use --root for an explicit destination. Equal content is unchanged; conflicts preserve customer files and expose only the proposed template. Merge manually before considering --force. POSIX installation (Linux/macOS) uses descriptor-relative operations, bounded reads and no-follow opens to prevent symlink redirection. No pipeline is activated automatically and no Gemfile/lockfile/dependency is modified by the installer.
 
-Kamal cria .kamal/hooks/post-deploy; Capistrano cria lib/capistrano/tasks/chronos_deploy.rake após deploy:published, localmente uma vez. Não combine com chronos/capistrano. Os quatro CI criam fragmentos em config/chronos/deploy: faça merge no job real depois da publicação bem sucedida, exportando identidade e revisão do artefato efetivamente publicado. O template GitLab é oculto e precisa ser incorporado ao job existente.
+Kamal creates .kamal/hooks/post-deploy; Capistrano creates lib/capistrano/tasks/chronos_deploy.rake and runs locally after deploy:published. Do not also load chronos/capistrano. CI fragments are generated in config/chronos/deploy for manual merge after the real successful publication; explicitly export its actual identity/revision outputs. The GitLab fragment is hidden and must be incorporated into an existing job. A modern deployment runner does not automatically belong to this gem's Ruby matrix.
 
-Aplicações antigas continuam usando API/receitas existentes até confirmar a capability da versão instalada. O SaaS deve selecionar a receita por faixa explícita de versões, sem remover scripts customizados. Publicação, backport e promoção dependem dos gates em docs/adr/legacy-deploy-cli.md.
-
-Preparação de testes: [guia Docker para macOS](legacy-test-environment.md). Não é necessário instalar Rubies antigos ou alterar o Bundler global do Mac.
+Use [transitional Docker tests](../README.md#tests) and [1.2.2 readiness](release-1.2.2-readiness.md). The historical legacy ADR describes the origin; current publication and capability decisions belong to this release's readiness document. SaaS recipe selection must use explicit per-line capabilities and retain fallback for older clients. Rails boot/credentials integration and the Ruby 4/Rails 8 line remain separate work.

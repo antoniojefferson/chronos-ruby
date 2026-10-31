@@ -1,0 +1,10 @@
+source "https://rubygems.org"
+
+gem "actionpack", "7.0.10"
+gem "activejob", "7.0.10"
+gem "activerecord", "7.0.10"
+gem "chronos-ruby", :path => "../.."
+gem "logger", "~> 1.6"
+gem "railties", "7.0.10"
+gem "sidekiq", "7.3.10"
+gem "sqlite3", "~> 1.7"

@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+set -eu
+gem list --installed bundler -v 2.4.22 >/dev/null || gem install bundler -v 2.4.22 --no-document
+bundle _2.4.22_ install
+bundle _2.4.22_ exec rake
+bundle _2.4.22_ exec ruby -Ilib test/deploy_cli_test.rb
+bundle _2.4.22_ exec ruby -Ilib test/deploy_transport_test.rb
+bundle _2.4.22_ exec ruby -Ilib test/deploy_adapters_test.rb
+ruby script/verify_docs
+sh script/smoke_deploy_package

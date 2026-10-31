@@ -1,10 +1,10 @@
 # Chronos Ruby
 
-Chronos Ruby 1.2.1 é o agente para enviar exceções, métricas e telemetria limitada de aplicações Ruby e Rails ao Chronos. Esta é a linha estável atual para Ruby 2.7–3.4, compatível com o protocolo v1.
+Chronos Ruby 1.2.2 sends exceptions, metrics, and bounded telemetry from Ruby and Rails applications to Chronos. This is the transitional line for Ruby >= 2.7 and < 3.5, using protocol v1. Release preparation does not imply publication or promotion of unverified framework combinations.
 
 ## What the gem collects
 
-Version 1.1 can collect:
+The transitional line can collect:
 
 - exception class, message, structured backtrace, and chained causes;
 - timestamp, severity, tags, and an optional fingerprint;
@@ -24,31 +24,33 @@ The agent does not scan environment variables, the filesystem, or lockfiles. It 
 
 The explicit deploy CLI described below reads its documented environment variables and optional configuration file. It does not change how the Ruby configuration API works.
 
-A versão estável 1.2.1 atende a linha transitional para Ruby 2.7–3.4, Rails 7.x e Sidekiq 7. Ela adiciona contexto por Fiber, Rails Error Reporter, Action Cable, Faraday, Trace Context W3C opcional, integração automática com Sidekiq em Rails e coexistência com um SDK OpenTelemetry já configurado. Combinações ainda classificadas como `Best effort` devem ser validadas pela aplicação antes da adoção em produção; as linhas legadas permanecem disponíveis em releases anteriores.
+## Supported Ruby and framework versions
 
-Version 1.1.4 targets the existing legacy matrix: it supports plain Ruby and Rack on Ruby 2.2.10, 2.3.8, 2.4.10, 2.5.9, and 2.6.10. Validated Rails combinations are Rails 4.2 with Ruby 2.2.10/2.3.8 and Rails 5.2 with Ruby 2.5.9/2.6.10. Sidekiq 4.2.10 on Ruby 2.2.10 and Sidekiq 5.2.10 on Ruby 2.5.9 also have dedicated gates. This release does not declare Ruby 2.7/Rails 6 support because a complete application fixture and matrix are not available.
+The core matrix covers MRI 2.7, 3.0, 3.1, 3.2, 3.3 and 3.4. Rails 7.0/7.1 and Sidekiq 7 require Ruby 2.7 or newer; Rails 7.2 requires Ruby 3.1 or newer. The exact application smoke pairs and their evidence are documented in [Compatibility](docs/compatibility.md). They remain Best effort until all mandatory promotion gates pass. Rails 8 and Ruby 4 belong to the separate 2.x plan.
 
-These older Rubies and frameworks no longer receive security support from their maintainers. Chronos provides technical compatibility, not runtime security maintenance. See [Compatibility](docs/compatibility.md).
+The transitional integrations include fiber-aware context, Rails Error Reporter, Action Cable, Faraday, optional W3C Trace Context, automatic Rails/Sidekiq installation, and coexistence with an application-managed OpenTelemetry SDK. These integrations are preserved by this deploy CLI port.
+
+Legacy Ruby 2.2–2.6 and Rails 4/5 consumers must use an appropriate 1.1 release. Technical compatibility does not provide security maintenance for end-of-life runtimes or frameworks.
 
 ## Installing in plain Ruby
 
 Add the stable version to your `Gemfile`:
 
 ```ruby
-gem "chronos-ruby", "~> 1.2.1"
+gem "chronos-ruby", "~> 1.2.2"
 ```
 
-Use Bundler 2 em um runtime suportado:
+Use Bundler 2 on a compatible runtime (CI pins 2.4.22):
 
 ```bash
-gem install bundler -v "~> 2.4"
+gem install bundler -v 2.4.22
 bundle install
 ```
 
 Without Bundler:
 
 ```bash
-gem install chronos-ruby -v 1.2.1
+gem install chronos-ruby -v 1.2.2
 ```
 
 ## Installing in Rails
@@ -56,7 +58,7 @@ gem install chronos-ruby -v 1.2.1
 Load the Rails integration explicitly to keep Rails/ActiveSupport out of plain Ruby applications:
 
 ```ruby
-gem "chronos-ruby", "~> 1.2.1", :require => "chronos/rails"
+gem "chronos-ruby", "~> 1.2.2", :require => "chronos/rails"
 ```
 
 Generate the initializer:
@@ -206,19 +208,14 @@ By default, the analysis pipeline does not read raw SQL or bind values. Opt-in i
 
 ## Sidekiq and Active Job
 
-A integração Rails detecta o Sidekiq e instala automaticamente os middlewares de cliente e servidor. O carregamento
-explícito continua disponível para aplicações sem Rails e suporta a API pública de middleware do Sidekiq 7:
-
-O suporte histórico começou em `0.6.0.pre.1`; aplicações em Sidekiq 4/5 devem permanecer numa release legada compatível.
+The Rails integration detects Sidekiq and installs its client/server middleware automatically. Explicit loading remains available in plain Ruby applications. Historical middleware support began with `0.6.0.pre.1`; Sidekiq 4/5 users must remain on a matching legacy release.
 
 ```ruby
-gem "sidekiq", "~> 5.0"
-gem "chronos-ruby", "~> 1.1.0"
+gem "sidekiq", "~> 7.3"
+gem "chronos-ruby", "~> 1.2.2", :require => "chronos/rails"
 ```
 
-Em uma aplicação Ruby sem Rails, use `require "chronos/sidekiq"`.
-
-O envelope de contexto não altera argumentos públicos e contém somente IDs limitados de trace/span/request e flags. Active Job usa um campo serializado com namespace (`chronos_context`) e hooks públicos. Erros aninhados são deduplicados e reerguidos. Veja [Sidekiq legado](docs/modules/sidekiq-legacy.md), [Active Job](docs/modules/active-job.md) e [Jobs](docs/modules/job-monitoring.md).
+Without Rails, load `chronos/sidekiq` after Sidekiq. The context envelope preserves public arguments and contains only bounded trace/span/request IDs and flags. Active Job uses its namespaced `chronos_context` field and public serialization hooks. Nested errors are deduplicated and re-raised. See [Sidekiq](docs/modules/sidekiq-legacy.md), [Active Job](docs/modules/active-job.md), and [Jobs](docs/modules/job-monitoring.md).
 
 ## Deploy tracking
 
@@ -236,7 +233,7 @@ Chronos.notify_deploy(
 
 Configure release/revision/deploy metadata when each new process starts. The Ruby API does not read Git or environment variables automatically. Capistrano is optional; Kamal and GitHub Actions recipes are available in `examples/deploy/`. See [Deploys](docs/modules/deploys.md).
 
-Version 1.1.4 adds a packaged deploy command without a copied Ruby notification script:
+Version 1.2.2 ports a packaged deploy command without a copied Ruby notification script:
 
 ```bash
 bundle exec chronos deploy notify
@@ -244,7 +241,7 @@ bundle exec chronos deploy notify
 
 Supply `CHRONOS_PROJECT_ID`, `CHRONOS_PROJECT_KEY`, `CHRONOS_ENVIRONMENT`, a stable `CHRONOS_DEPLOY_ID`, and `CHRONOS_DEPLOY_REVISION` or `CHRONOS_DEPLOY_VERSION` for the artifact actually published. The CLI reads explicit ENV and optional public YAML without booting Rails. It requires HTTPS and never accepts the project key as a process argument. Optional integration installers cover Kamal, Capistrano, GitHub Actions, GitLab CI, Jenkins, and Azure DevOps. Integration file installation requires POSIX filesystem support (Linux/macOS) and anchors operations to opened directories to prevent symlink redirection.
 
-This branch prepares 1.1.4; publication remains subject to the [release gates](docs/release-1.1.4-readiness.md). See the [CLI guide](docs/deploy-cli.md) for configuration, receipt verification, exit codes, and integration fragments.
+This branch prepares 1.2.2; publication remains subject to the [release gates](docs/release-1.2.2-readiness.md). See the [CLI guide](docs/deploy-cli.md) for configuration, receipt verification, exit codes, and integration fragments.
 
 ## Asynchronous queue
 
@@ -307,8 +304,8 @@ Configuration errors are raised during `Chronos.configure`; capture and delivery
 The stable release gate runs a repeatable Rack comparison and load against a fake endpoint:
 
 ```bash
-ITERATIONS=50000 WARMUP=5000 SAMPLES=7 bundle _1.17.3_ exec ruby benchmarks/comparative.rb
-ITERATIONS=500 bundle _1.17.3_ exec ruby benchmarks/fake_endpoint_load.rb
+ITERATIONS=50000 WARMUP=5000 SAMPLES=7 bundle _2.4.22_ exec ruby benchmarks/comparative.rb
+ITERATIONS=500 bundle _2.4.22_ exec ruby benchmarks/fake_endpoint_load.rb
 ```
 
 Results depend on the runtime and hardware. There is no general claim of superiority: record CPU, OS, Ruby, commit, warmup, samples, median, and dispersion. Additional benchmarks are in `benchmarks/` and documented in [Performance](docs/performance.md).
@@ -319,105 +316,67 @@ Migrate in stages. Run both agents together only during validation to avoid prol
 
 ## Local development
 
-Instale as dependências:
-
-```bash
-bin/setup
-```
-
-Use `bin/console` para inspeção e `bundle exec rake install` para instalar a fonte localmente. A arquitetura hexagonal está descrita em [Arquitetura](docs/architecture.md).
+On a compatible Ruby, install Bundler 2.4.22 and run `bundle _2.4.22_ install`. Use `bin/console` for inspection. See [Architecture](docs/architecture.md).
 
 ## Tests
 
-On a supported Ruby with dependencies installed, run the existing suite and lint:
+The transitional CI entry point runs RSpec/security regressions, RuboCop 1.57, standalone CLI/adapters, documentation and built-gem smoke tests:
 
 ```bash
-bundle exec rake
+sh script/ci_transitional
 ```
 
-A matriz CI cobre a linha transitional e os checks de pacote/documentação; workflows legados preservam evidência das releases anteriores.
-
-```bash
-sh script/ci_legacy
-```
-
-The CI matrix covers Ruby 2.2.10–2.6.10, Rails 4.2/5.2 applications, and Sidekiq 4/5. The release workflow repeats the compatibility matrix, documentation checks, comparative benchmark, and load gate before publishing. Tests on a modern Ruby alone do not establish legacy compatibility.
+For a focused suite/lint check with dependencies installed, use `bundle _2.4.22_ exec rake`. The additional tests and installed-package gates are required before release as well.
 
 ### Prepare Docker
 
-Install Docker Desktop for your platform, start its engine, and run these checks from the repository root:
+Start Docker Desktop on macOS and verify both client and server:
 
 ```bash
-# macOS: start Docker Desktop; on other systems, start your Docker engine.
 open -a Docker
 docker version
 docker info
 ```
 
-`docker version` must show both Client and Server. The commands below require access to the image registry and RubyGems to download images and dependencies. No SaaS credentials are required.
+The helper uses Linux/amd64 (emulated on Apple Silicon), mounts the repository read-only, and runs a temporary copy without local Bundler configuration, credentials directories, `.env` files or lockfiles. Host gems and lockfiles are unchanged. Images and dependencies require registry access; no SaaS credentials are needed.
 
-The helper uses `linux/amd64`, including on Apple Silicon through emulation. It mounts the repository read-only and runs tests against a temporary copy inside the container. It excludes local Bundler configuration, credentials directories, and `.env` files, and removes lockfiles only from that copy. Your host Bundler, installed gems, and `Gemfile.lock` remain unchanged.
-
-### Run one Ruby version
-
-Choose any supported version and run its complete legacy checks:
+### Run individual core or framework checks
 
 ```bash
-sh script/test_legacy_docker 2.2.10
-sh script/test_legacy_docker 2.3.8
-sh script/test_legacy_docker 2.4.10
-sh script/test_legacy_docker 2.5.9
-sh script/test_legacy_docker 2.6.10
+sh script/test_transitional_docker 2.7
+sh script/test_transitional_docker 3.4
+sh script/test_transitional_docker 2.7 examples/rails-7.0
+sh script/test_transitional_docker 3.2 examples/rails-7.1
+sh script/test_transitional_docker 3.4 examples/rails-7.2
+sh script/test_transitional_docker 3.4 examples/sidekiq-7
 ```
 
-Each line is independent. The helper installs Bundler 1.17.3 and dependencies inside the container, then runs `script/ci_legacy`, including the installed-gem smoke tests against a local HTTPS receiver.
+Core checks accept Ruby 2.7, 3.0, 3.1, 3.2, 3.3 and 3.4. Rails fixtures pin 7.0.10, 7.1.6 and 7.2.4; Sidekiq pins 7.3.10. The Rails application checks controller/SQL telemetry, Active Job, Error Reporter deduplication, initialization and deploy generation. Sidekiq checks its real middleware chains without starting Redis or a worker process.
 
-### Run all Ruby versions
+### Run the complete configured matrix
 
-Run this block to execute the five versions sequentially and stop at the first failure with a nonzero exit status:
+This block stops at the first failure and returns a nonzero status:
 
 ```bash
 (
   set -e
-  for version in 2.2.10 2.3.8 2.4.10 2.5.9 2.6.10; do
-    sh script/test_legacy_docker "$version"
+  for version in 2.7 3.0 3.1 3.2 3.3 3.4; do
+    sh script/test_transitional_docker "$version"
+    sh script/test_transitional_docker "$version" examples/sidekiq-7
+  done
+  for version in 2.7 3.0; do
+    sh script/test_transitional_docker "$version" examples/rails-7.0
+  done
+  for version in 2.7 3.1 3.2; do
+    sh script/test_transitional_docker "$version" examples/rails-7.1
+  done
+  for version in 3.1 3.3 3.4; do
+    sh script/test_transitional_docker "$version" examples/rails-7.2
   done
 )
 ```
 
-### Run one Rails/Ruby combination
-
-Select one of the documented pairs:
-
-```bash
-sh script/test_legacy_docker 2.2.10 examples/rails-4.2
-sh script/test_legacy_docker 2.3.8 examples/rails-4.2
-sh script/test_legacy_docker 2.5.9 examples/rails-5.2
-sh script/test_legacy_docker 2.6.10 examples/rails-5.2
-```
-
-Each command runs the Rails application smoke and deploy generator checks. These are separate from the plain Ruby suite; run both groups before approving a release.
-
-### Run the complete Ruby and Rails matrix
-
-Run this block to execute all five Ruby checks followed by all four supported Rails pairs. It stops at the first failure:
-
-```bash
-(
-  set -e
-  for version in 2.2.10 2.3.8 2.4.10 2.5.9 2.6.10; do
-    sh script/test_legacy_docker "$version"
-  done
-  for version in 2.2.10 2.3.8; do
-    sh script/test_legacy_docker "$version" examples/rails-4.2
-  done
-  for version in 2.5.9 2.6.10; do
-    sh script/test_legacy_docker "$version" examples/rails-5.2
-  done
-)
-```
-
-Keep the logs for each combination. The helper prints Ruby, OpenSSL, and JSON versions. A stopped matrix does not approve the remaining combinations, and these commands do not run the separate Sidekiq gates or validate SaaS ledger/projection behavior. If certificate or dependency resolution fails, fix the compatible image or dependency versions while keeping HTTPS verification enabled. See the [detailed legacy test environment guide](docs/legacy-test-environment.md).
+Keep per-runtime logs and resolved versions. A stopped matrix does not approve unexecuted combinations. These checks do not replace dependency audit, benchmarks/load, Redis-backed worker lifecycle, authorized provider execution or SaaS receipt/ledger/projection gates. See [1.2.2 readiness](docs/release-1.2.2-readiness.md). Legacy Docker helpers remain historical tools and do not validate this gem's Ruby requirement.
 
 ## Contributing
 

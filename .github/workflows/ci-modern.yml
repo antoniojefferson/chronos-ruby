@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
+  workflow_call:
 
 permissions:
   contents: read
@@ -25,7 +27,72 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler: "2.4.22"
           bundler-cache: true
-      - run: bundle exec rake
+      - run: sh script/ci_transitional
+      - name: Preserve resolved core dependencies
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-lock-${{ matrix.ruby }}
+          path: Gemfile.lock
+
+  frameworks:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ruby: "2.7"
+            example: examples/rails-7.0
+          - ruby: "3.0"
+            example: examples/rails-7.0
+          - ruby: "2.7"
+            example: examples/rails-7.1
+          - ruby: "3.1"
+            example: examples/rails-7.1
+          - ruby: "3.2"
+            example: examples/rails-7.1
+          - ruby: "3.1"
+            example: examples/rails-7.2
+          - ruby: "3.3"
+            example: examples/rails-7.2
+          - ruby: "3.4"
+            example: examples/rails-7.2
+          - ruby: "2.7"
+            example: examples/sidekiq-7
+          - ruby: "3.0"
+            example: examples/sidekiq-7
+          - ruby: "3.1"
+            example: examples/sidekiq-7
+          - ruby: "3.2"
+            example: examples/sidekiq-7
+          - ruby: "3.3"
+            example: examples/sidekiq-7
+          - ruby: "3.4"
+            example: examples/sidekiq-7
+    name: ${{ matrix.example }} / Ruby ${{ matrix.ruby }}
+    env:
+      BUNDLE_GEMFILE: ${{ matrix.example }}/Gemfile
+      EXAMPLE_PATH: ${{ matrix.example }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install framework native build headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev libyaml-dev
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler: "2.4.22"
+          bundler-cache: true
+      - run: sh script/ci_transitional_integration
+      - name: Preserve resolved framework dependencies
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: framework-lock-${{ strategy.job-index }}-${{ matrix.ruby }}
+          path: ${{ matrix.example }}/Gemfile.lock
 
   documentation-and-package:
     runs-on: ubuntu-latest
@@ -40,3 +107,17 @@ jobs:
           bundler-cache: true
       - run: ruby script/verify_docs
       - run: gem build chronos-ruby.gemspec
+
+  transitional-dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler: "2.4.22"
+          bundler-cache: true
+      - run: gem install bundler-audit -v 0.9.1 --no-document
+      - run: ruby -e 'load Gem.bin_path("bundler-audit", "bundle-audit", "0.9.1")' -- check --update
